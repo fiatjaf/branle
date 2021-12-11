@@ -5,28 +5,23 @@ const routes = [
     children: [
       {path: '', component: () => import('pages/Home.vue'), name: 'home'},
       {
-        path: '/messages',
-        component: () => import('pages/Messages.vue'),
-        name: 'messages'
-      },
-      {path: '/chat/:pubkey', component: () => import('pages/Chat.vue')},
-      {
-        path: '/user/:pubkey',
-        component: () => import('pages/Profile.vue')
-      },
-      {
-        path: '/notifications',
-        component: () => import('pages/Notifications.vue')
-      },
-      {
         path: '/settings',
         component: () => import('pages/Settings.vue'),
         name: 'settings'
       },
       {
-        path: '/help',
-        component: () => import('pages/Help.vue'),
-        name: 'help'
+        path: '/messages',
+        component: () => import('pages/Messages.vue'),
+        name: 'messages'
+      },
+      {path: '/messages/:pubkey', component: () => import('pages/Chat.vue')},
+      {
+        path: '/notifications',
+        component: () => import('pages/Notifications.vue')
+      },
+      {
+        path: '/:pubkey',
+        component: () => import('pages/Profile.vue')
       }
     ]
   },

@@ -9,7 +9,9 @@
       class="small-screen-only fixed-top-left q-ma-xs"
     />
 
-    <center><strong class="text-h6 q-ma-sm">Profile</strong></center>
+    <div class="text-center">
+      <strong class="text-h6 q-ma-sm">Profile</strong>
+    </div>
     <br />
     <br />
 
@@ -81,7 +83,6 @@
 </template>
 
 <script>
-import 'md-gum-polyfill'
 import helpersMixin from '../utils/mixin'
 import {pool} from '../global'
 
@@ -100,7 +101,7 @@ export default {
 
   computed: {
     isFollowing() {
-      return this.$route.params.pubkey in this.$store.state.theirProfile
+      return this.$store.state.following.includes(this.$route.params.pubkey)
     }
   },
 
@@ -129,12 +130,12 @@ export default {
 
   methods: {
     unFollow() {
-      this.$store.dispatch('stopFollowing', this.$route.params.pubkey)
+      this.$store.commit('unfollow', this.$route.params.pubkey)
       this.$router.push('/')
     },
 
     addPubFollow() {
-      this.$store.dispatch('startFollowing', this.$route.params.pubkey)
+      this.$store.commit('follow', this.$route.params.pubkey)
     }
   }
 }

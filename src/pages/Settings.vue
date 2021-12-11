@@ -73,10 +73,10 @@
         />
         <q-input
           disable
-          v-model="imagetemp"
+          v-model="picture"
           filled
           type="text"
-          hint="Profile picture (imgur url)"
+          hint="Picture URL"
           maxlength="150"
         />
         <q-btn
@@ -97,7 +97,7 @@
         <div class="row">
           <div class="col-9">
             <q-input
-              v-model="relaya"
+              v-model="addingRelay"
               filled
               type="textarea"
               autogrow
@@ -120,7 +120,7 @@
         <div class="row">
           <div class="col-9">
             <q-select
-              v-model="relayr"
+              v-model="removingRelay"
               filled
               :options="$store.state.myProfile.relays"
               hint="Remove a relay"
@@ -219,7 +219,7 @@
 
         <q-card-actions align="right" class="text-primary">
           <q-btn flat label="Cancel" v-close-popup />
-          <q-btn flat label="Yes, delete storage" @click="deletels" />
+          <q-btn flat label="Yes, delete storage" @click="hardReset" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -229,44 +229,31 @@
 <script>
 import helpersMixin from '../utils/mixin'
 import {copyToClipboard} from 'quasar'
-const bip39 = require('bip39')
 
 export default {
   name: 'Settings',
   mixins: [helpersMixin],
   data() {
-    const {imagetemp, handle, about} = this.$store.state.myProfile
+    const {name, picture, about} = this.$store.state.me
 
     return {
       privatekey: null,
       publickey: null,
       deleteAccDialog: false,
       privateKeyDialog: false,
-      imagetemp,
-      handle,
-      about,
-      relayr: '',
-      relaya: '',
+      removingRelay: '',
+      addingRelay: '',
       isPrivPwd: true,
       isPwd: true,
       addPubKey: ''
     }
   },
   methods: {
-    addPubFollow() {
-      if (this.addPubKey.trim() !== this.$store.state.myProfile.pubkey) {
-        this.$store.dispatch('startFollowing', this.addPubKey.trim())
-      } else {
-        this.$q.notify({color: 'pink', message: 'You cant follow yourself!'})
-      }
-
-      this.addPubKey = ''
-    },
     setProfile() {
-      this.$store.dispatch('saveMeta', {
-        image: this.imagetemp,
-        handle: this.handle,
-        about: this.about
+      this.$store.dispatch('setMetadata', {
+        name: this.handle,
+        about: this.about,
+        picture: this.picture
       })
     },
     privateKey() {
@@ -285,15 +272,15 @@ export default {
           this.$q.notify({type: 'negative', message: 'FAILED'})
         })
     },
-    relayAdd() {
-      this.$store.dispatch('relayPush', this.relaya)
-      this.relaya = ''
+    addRelay() {
+      this.$store.commit('addRelay', this.addingRelay)
+      this.addingRelay = ''
     },
-    relayRem() {
-      this.$store.dispatch('relayRemove', this.relayr)
-      this.relayr = ''
+    removeRelay() {
+      this.$store.commit('removeRelat', this.removingRelay)
+      this.removingRelay = ''
     },
-    deletels() {
+    hardReset() {
       this.$q.localStorage.clear()
       window.location.reload()
     }

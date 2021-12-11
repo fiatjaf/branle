@@ -1,8 +1,8 @@
 <template>
   <q-page>
-    <center>
+    <div class="text-center">
       <strong class="text-h6 q-pa-lg">Encrypted Messages</strong>
-    </center>
+    </div>
     <q-btn
       v-go-back.single
       flat
@@ -20,7 +20,7 @@
     <div class="q-mx-auto q-px-md">
       <q-list>
         <q-item
-          v-for="(_, followedKey) in $store.state.theirProfile"
+          v-for="(_, followedKey) in $store.state.following"
           :key="followedKey"
           v-ripple
           clickable
@@ -33,7 +33,7 @@
           </q-item-section>
 
           <q-item-section>{{
-            $store.getters.handle(followedKey)
+            $store.getters.displayName(followedKey)
           }}</q-item-section>
         </q-item>
       </q-list>

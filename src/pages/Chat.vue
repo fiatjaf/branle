@@ -1,8 +1,8 @@
 <template>
   <q-page>
-    <center>
+    <div class="text-center">
       <strong class="text-h6 q-pa-lg">Chat</strong>
-    </center>
+    </div>
     <q-btn
       v-go-back.single
       flat
@@ -21,31 +21,28 @@
       >
         <q-scroll-area
           ref="chatScroll"
-          :thumb-style="thumbStyle"
+          :thumb-style="{
+            left: '102%',
+            backgroundColor: '#26A69A',
+            width: '10px',
+            opacity: 0.35
+          }"
           style="height: 100%; max-width: 100%"
         >
-          <div v-for="message in messages" :key="message.id">
+          <div
+            v-for="event in $store.state.events.kind4[$route.params.pubkey] ||
+            []"
+            :key="event.id"
+          >
             <q-chat-message
-              :text="[
-                message.text +
-                  (message.loading
-                    ? '<small>sending...</small>'
-                    : message.failed
-                    ? '<small>failed. <a class=delete><i class=material-icons>cancel</i></a> <a class=retry><i class=material-icons>settings_backup_restore</i></a></small>'
-                    : '')
-              ]"
-              :name="message.from.substring(0, 6) + '...'"
-              :avatar="$store.getters.avatar(message.from)"
-              :sent="
-                message.from === $store.state.myProfile.pubkey ? true : false
-              "
-              :stamp="niceDate(new Date(message.created_at * 1000))"
+              :text="[event.plaintext]"
+              :name="$store.getters.displayName(event.pubkey)"
+              :avatar="$store.getters.avatar(event.pubkey)"
+              :sent="event.pubkey === $store.state.keys.pub"
+              :stamp="niceDate(new Date(event.created_at * 1000))"
               :bg-color="
-                message.from === $store.state.myProfile.pubkey
-                  ? 'primary'
-                  : 'tertiary'
+                event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'
               "
-              @click="ev => clickMessageAction(ev, message.id, message.text)"
             >
             </q-chat-message>
           </div>
@@ -56,7 +53,7 @@
               <q-form
                 class="q-gutter-md"
                 @submit="submitMessage"
-                @reset="resetMessage"
+                @reset="this.text = ''"
               >
                 <div class="row">
                   <div class="col-8">
@@ -139,28 +136,7 @@ export default {
 
   data() {
     return {
-      text: '',
-      reload: 0, // a hack to recompute messages,
-      thumbStyle: {
-        left: '102%',
-        backgroundColor: '#26A69A',
-        width: '10px',
-        opacity: 0.35
-      }
-    }
-  },
-  computed: {
-    messages() {
-      this.$store.state.chatUpdated // hack to recompute
-      this.scroll()
-
-      return (
-        LocalStorage.getItem(`messages.${this.$route.params.pubkey}`).sort(
-          function (a, b) {
-            return a.created_at - b.created_at
-          }
-        ) || []
-      )
+      text: ''
     }
   },
   methods: {
@@ -170,23 +146,7 @@ export default {
       const duration = 350
       scrollArea.setScrollPosition(scrollTarget.scrollHeight, duration)
     },
-    async failed() {
-      var messages = this.$q.localStorage.getItem(
-        `messages.${this.$route.params.pubkey}`
-      )
-      if (messages) {
-        for (var i = 0; i < messages.length; i++) {
-          if (messages[i].loading === true) {
-            messages[i].failed = true
-            messages[i].loading = false
-            this.$q.localStorage.set(
-              `messages.${this.$route.params.pubkey}`,
-              messages
-            )
-          }
-        }
-      }
-    },
+
     async submitMessage() {
       await this.$store.dispatch('sendChatMessage', {
         pubkey: this.$route.params.pubkey,
@@ -194,39 +154,7 @@ export default {
       })
 
       this.text = ''
-      this.$store.commit('chatUpdated')
       this.scroll()
-
-      setTimeout(() => {
-        this.$store.commit('chatUpdated') // another hack if post fails
-        this.failed()
-      }, 2000)
-    },
-    clickMessageAction(ev, id, text) {
-      ev.preventDefault()
-
-      var action = ev.target
-      for (let i = 0; i < 5; i++) {
-        if (action.classList.contains('retry')) {
-          this.$store.dispatch('deleteChatMessage', {
-            pubkey: this.$route.params.pubkey,
-            id
-          })
-          this.text = text
-          this.submitMessage()
-        } else if (action.classList.contains('delete')) {
-          this.$store.dispatch('deleteChatMessage', {
-            pubkey: this.$route.params.pubkey,
-            id
-          })
-          this.$store.commit('chatUpdated')
-        }
-
-        action = action.parentNode
-      }
-    },
-    resetMessage() {
-      this.text = ''
     }
   }
 }

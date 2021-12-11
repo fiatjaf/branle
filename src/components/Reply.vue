@@ -12,7 +12,7 @@
 
         <q-card-section class="col no-shadow q-pb-none">
           <q-item-label
-            >{{ $store.getters.handle(post.pubkey) }}
+            >{{ $store.getters.displayName(post.pubkey) }}
             <small style="color: grey">{{ niceDate(post.created_at) }}</small>
           </q-item-label>
           {{ post.content }}
@@ -25,11 +25,11 @@
           <q-form
             style="width: 100%"
             class="q-gutter-md"
-            @submit="sendReply(replytext, [['e', post.id]])"
+            @submit="sendReply(text, [['e', post.id]])"
             ><q-tooltip> Coming soon </q-tooltip>
             <q-input
               disable
-              v-model="replytext"
+              v-model="text"
               dense
               style="font-size: 20px"
               autogrow
@@ -40,7 +40,7 @@
             <div class="float-right">
               <q-btn
                 disable
-                v-if="replytext.length < 280"
+                v-if="text.length < 280"
                 class="float-left q-mr-md"
                 round
                 unelevated
@@ -56,7 +56,7 @@
                     rounded
                     unelevated
                     dense
-                    @click="replytext = replytext + emoji.item"
+                    @click="text = text + emoji.item"
                     >{{ emoji.item }}</q-btn
                   >
                   <br />
@@ -67,7 +67,7 @@
                     rounded
                     unelevated
                     dense
-                    @click="replytext = replytext + emoji.item"
+                    @click="text = text + emoji.item"
                     >{{ emoji.item }}</q-btn
                   >
                 </q-popup-proxy>
@@ -109,18 +109,16 @@ export default {
   props: ['post'],
   data() {
     return {
-      publishtext: '',
-      replytext: ''
+      text: ''
     }
   },
   methods: {
     sendReply() {
-      console.log(this.post.id)
       this.$store.dispatch('sendPost', {
-        message: this.replytext,
+        message: this.text,
         tags: [['e', this.post.id]]
       })
-      this.replytext = ''
+      this.text = ''
     }
   }
 }

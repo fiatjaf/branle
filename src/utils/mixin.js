@@ -11,7 +11,7 @@ export default {
   },
   methods: {
     toProfile(pubkey) {
-      this.$router.push('/user/' + pubkey)
+      this.$router.push('/' + pubkey)
     },
 
     niceDate(value) {

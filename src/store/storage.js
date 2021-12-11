@@ -4,20 +4,19 @@ export default function (store) {
   store.subscribe(({type, payload}, state) => {
     switch (type) {
       case 'setProfile':
-      case 'relayPush':
-      case 'relaySplice':
-        console.log('storing', state.myProfile)
-        LocalStorage.set('myProfile', state.myProfile)
+        LocalStorage.set('me', state.me)
+      case 'addRelay':
+      case 'removeRelay':
+        LocalStorage.set('relays', state.relays)
         break
-      case 'startFollowing':
-      case 'stopFollowing':
-      case 'addKind0':
-        LocalStorage.set('theirProfile', state.theirProfile)
-        break
-      case 'addKind1':
-      case 'replaceKind1':
-      case 'deleteKind1':
-        LocalStorage.set('kind1', state.kind1)
+      case 'follow':
+      case 'unfollow':
+        LocalStorage.set('following', state.following)
+      case 'addEvent':
+        LocalStorage.set(
+          `events.${payload.kind}`,
+          state.events[`kind${payload.kind}`]
+        )
         break
     }
   })

@@ -1,29 +1,21 @@
 import Identicon from 'identicon.js'
 
 export function disabled(state) {
-  return !state.myProfile
+  return !state.keys.pub
 }
 
-export function handle(state, pubkey) {
+export function displayName(state) {
   return pubkey => {
-    let profile = state.theirProfile[pubkey]
-    if (profile && profile.name) return profile.name
-
-    let kind0 = state.kind0[pubkey]
-    if (kind0 && kind0.name) return profile.name
-
-    return pubkey.slice(0, 20) + '...'
+    let {metadata = {}} = state.events.kind0[pubkey]
+    if (metadata.name) return metadata.name
+    return pubkey.slice(0, 3) + '...' + pubkey.slice(-4)
   }
 }
 
 export function avatar(state) {
   return pubkey => {
-    let profile = state.theirProfile[pubkey]
-    if (profile && profile.picture) return profile.picture
-
-    let kind0 = state.kind0[pubkey]
-    if (kind0 && kind0.picture) return profile.picture
-
+    let {metadata = {}} = state.events.kind0[pubkey]
+    if (metadata.picture) return metadata.picture
     let data = new Identicon(pubkey, 40).toString()
     return 'data:image/png;base64,' + data
   }

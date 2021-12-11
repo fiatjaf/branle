@@ -4,10 +4,6 @@
       <Publish />
     </q-dialog>
 
-    <q-dialog v-model="dialogGenerate" position="top">
-      <Generate />
-    </q-dialog>
-
     <div class="flex-center column">
       <div class="row" style="width: 100%">
         <div
@@ -106,22 +102,6 @@
 
                   <q-item-section>Settings</q-item-section>
                 </q-item>
-
-                <q-item
-                  v-ripple
-                  clickable
-                  :active="$route.name === 'help'"
-                  active-class="my-menu-link"
-                  style="padding: 15px"
-                  :to="'/help'"
-                >
-                  <q-item-section avatar>
-                    <q-icon name="help"></q-icon>
-                  </q-item-section>
-
-                  <q-item-section>Help</q-item-section>
-                </q-item>
-                <br />
               </q-list>
               <q-btn
                 v-if="!$store.getters.disabled"
@@ -151,8 +131,8 @@
                 color="primary"
                 size="md"
                 dense
-                :label="$store.getters.handle($store.state.myProfile.pubkey)"
-                @click="copyToClip($store.state.myProfile.pubkey)"
+                :label="$store.getters.displayName($store.state.keys.pub)"
+                @click="copyPubKey"
               >
                 <q-tooltip> Copy public key </q-tooltip></q-btn
               >
@@ -203,13 +183,11 @@
                   </q-input>
                 </q-form>
               </q-card-section>
-              <q-card-section
-                v-if="Object.keys($store.state.theirProfile).length"
-              >
+              <q-card-section v-if="$store.state.following.length">
                 <h6 class="q-ma-none">Following</h6>
                 <q-list>
                   <q-item
-                    v-for="(_, pubkey) in $store.state.theirProfile"
+                    v-for="(_, pubkey) in $store.state.following"
                     :key="pubkey"
                     v-ripple
                     clickable
@@ -222,7 +200,7 @@
                     </q-item-section>
 
                     <q-item-section>
-                      {{ $store.getters.handle(pubkey) }}
+                      {{ $store.getters.displayName(pubkey) }}
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -234,44 +212,7 @@
     </div>
 
     <q-footer bordered style="bottom: 0%; position: fixed" class="bg-white">
-      <q-banner
-        v-if="showInstallBanner"
-        inline-actions
-        dense
-        class="bg-primary text-white"
-      >
-        <template #avatar>
-          <q-avatar>
-            <img src="/icons/favicon-16x16.png" />
-          </q-avatar>
-        </template>
-        <b> INSTALL NOSTR?</b>
-
-        <template #action>
-          <q-btn
-            flat
-            dense
-            class="q-px-sm"
-            label="Yes"
-            @click="installApp()"
-          ></q-btn>
-          <q-btn
-            flat
-            dense
-            class="q-px-sm"
-            label="Later"
-            @click="showInstallBanner = false"
-          ></q-btn>
-          <q-btn
-            flat
-            dense
-            class="q-px-sm"
-            label="Never"
-            @click="neverInstallApp()"
-          ></q-btn>
-        </template>
-      </q-banner>
-      <center>
+      <div class="text-center">
         <q-tabs class="text-primary small-screen-only">
           <q-route-tab style="width: 20%" name="home" icon="home" to="/" />
 
@@ -287,85 +228,39 @@
             icon="settings"
             to="/settings"
           />
-          <q-route-tab style="width: 20%" name="help" icon="help" to="/help" />
         </q-tabs>
-      </center>
+      </div>
     </q-footer>
   </q-layout>
 </template>
 <script>
-let deferredPrompt
 import {copyToClipboard} from 'quasar'
 import helpersMixin from '../utils/mixin'
+
 export default {
   name: 'MainLayout',
   mixins: [helpersMixin],
 
   data() {
     return {
-      showInstallBanner: null,
       dialogGenerate: false,
       dialogPublish: false,
       addPubKey: ''
     }
   },
-  mounted() {
-    let value = this.$q.localStorage.getItem('neverShowBanner')
-    if (!value) {
-      window.addEventListener('beforeinstallprompt', e => {
-        e.preventDefault()
-        deferredPrompt = e
-        this.showInstallBanner = true
-      })
-    }
-  },
   created: function () {
-    if (this.$store.getters.disabled) {
-      this.$router.push('/help')
-      return
-    }
-
     this.$store.dispatch('launch')
   },
   methods: {
-    installApp() {
-      this.showInstallBanner = false
-      deferredPrompt.prompt()
-      deferredPrompt.userChoice.then(choiceResult => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt')
-        } else {
-          console.log('User dismissed the install prompt')
-        }
-      })
-    },
-    neverInstallApp() {
-      this.showInstallBanner = false
+    async copyPubKey() {
       try {
-        this.$q.localStorage.setItem('neverShowBanner', true)
-      } catch (e) {
-        console.log(e)
-      }
-    },
-    copyToClip(text) {
-      copyToClipboard(text)
-        .then(() => {
-          this.$q.notify({
-            message: 'COPIED'
-          })
+        await copyToClipboard(this.$store.state.keys.pub)
+        this.$q.notify({
+          message: 'COPIED'
         })
-        .catch(() => {
-          this.$q.notify({type: 'negative', message: 'FAILED'})
-        })
-    },
-    addPubFollow() {
-      if (this.addPubKey.trim() !== this.$store.state.myProfile.pubkey) {
-        this.$store.dispatch('startFollowing', this.addPubKey.trim())
-      } else {
-        this.$q.notify({color: 'pink', message: 'You cant follow yourself!'})
+      } catch (err) {
+        this.$q.notify({type: 'negative', message: 'FAILED'})
       }
-
-      this.addPubKey = ''
     }
   }
 }

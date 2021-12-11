@@ -3,17 +3,15 @@
     <div class="row">
       <q-form style="width: 100%" class="q-gutter-md" @submit="sendPost">
         <q-input
-          v-model="publishtext"
+          v-model="text"
           style="font-size: 20px"
           label="Say something"
           maxlength="280"
         >
           <template #before>
-            <q-btn round @click="toProfile($store.state.myProfile.pubkey)">
+            <q-btn round @click="toProfile($store.state.keys.pub)">
               <q-avatar size="42px">
-                <img
-                  :src="$store.getters.avatar($store.state.myProfile.pubkey)"
-                />
+                <img :src="$store.getters.avatar($store.state.keys.pub)" />
               </q-avatar>
             </q-btn>
           </template>
@@ -21,7 +19,7 @@
 
         <div class="float-right">
           <q-btn
-            v-if="publishtext.length < 280"
+            v-if="text.length < 280"
             class="float-left q-mr-md"
             round
             unelevated
@@ -37,7 +35,7 @@
                 rounded
                 unelevated
                 dense
-                @click="publishtext = publishtext + emoji.item"
+                @click="text = text + emoji.item"
                 >{{ emoji.item }}</q-btn
               >
               <br />
@@ -48,7 +46,7 @@
                 rounded
                 unelevated
                 dense
-                @click="publishtext = publishtext + emoji.item"
+                @click="text = text + emoji.item"
                 >{{ emoji.item }}</q-btn
               >
             </q-popup-proxy>
@@ -87,13 +85,13 @@ export default {
 
   data() {
     return {
-      publishtext: ''
+      text: ''
     }
   },
   methods: {
     sendPost() {
-      this.$store.dispatch('sendPost', {message: this.publishtext})
-      this.publishtext = ''
+      this.$store.dispatch('sendPost', {message: this.text})
+      this.text = ''
     }
   }
 }

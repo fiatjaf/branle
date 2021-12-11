@@ -15,33 +15,6 @@
     <br /><br />
 
     <div class="q-mx-auto q-px-md">
-      <q-form class="q-gutter-md" @submit="addPubFollow">
-        <div class="row">
-          <div class="col-9">
-            <q-input
-              v-model="addPubKey"
-              filled
-              type="textarea"
-              autogrow
-              hint="Add a public key to follow"
-            />
-          </div>
-          <div class="col-3">
-            <q-btn
-              unelevated
-              label="Add"
-              type="submit"
-              color="primary"
-              class="q-ml-md q-pa-sm"
-            />
-          </div>
-        </div>
-      </q-form>
-
-      <br />
-      <q-separator />
-      <br />
-
       <q-form class="q-gutter-md" @submit="setProfile">
         <p>
           If your desired handle is available our relay will use open-timestamps

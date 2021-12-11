@@ -23,7 +23,7 @@
           ref="chatScroll"
           :thumb-style="{
             left: '102%',
-            backgroundColor: '#26A69A',
+            backgroundColor: 'red',
             width: '10px',
             opacity: 0.35
           }"

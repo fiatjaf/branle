@@ -18,14 +18,10 @@
               style="font-size: 20px"
             >
               <q-card-section>
-                <img src="~/assets/nostr-logo.png" />
+                <q-img src="/bird.png" fit="scale-down" />
               </q-card-section>
               <q-list class="text-secondary">
-                <q-item
-                  v-if="$store.getters.disabled"
-                  :disabled="$store.getters.disabled"
-                  style="padding: 15px"
-                >
+                <q-item style="padding: 15px">
                   <q-item-section avatar>
                     <q-icon name="home"></q-icon>
                   </q-item-section>
@@ -33,7 +29,6 @@
                   <q-item-section>Home</q-item-section>
                 </q-item>
                 <q-item
-                  v-else
                   v-ripple
                   clickable
                   :active="$route.name === 'home'"
@@ -48,11 +43,7 @@
                   <q-item-section>Home</q-item-section>
                 </q-item>
 
-                <q-item
-                  v-if="$store.getters.disabled"
-                  :disabled="$store.getters.disabled"
-                  style="padding: 15px"
-                >
+                <q-item style="padding: 15px">
                   <q-item-section avatar>
                     <q-icon name="email"></q-icon>
                   </q-item-section>
@@ -61,7 +52,6 @@
                 </q-item>
 
                 <q-item
-                  v-else
                   v-ripple
                   clickable
                   :active="$route.name === 'messages'"
@@ -104,7 +94,6 @@
                 </q-item>
               </q-list>
               <q-btn
-                v-if="!$store.getters.disabled"
                 rounded
                 unelevated
                 style="width: 140px !important; height: 41px !important"
@@ -113,20 +102,8 @@
                 label="Publish"
                 @click="dialogPublish = true"
               ></q-btn>
-              <q-btn
-                v-else
-                rounded
-                unelevated
-                style="width: 200px !important; height: 82px !important"
-                color="primary"
-                size="md"
-                label="Generate or Restore User Account"
-                @click="dialogGenerate = true"
-              ></q-btn>
-              <br /><br />
 
               <q-btn
-                v-if="!$store.getters.disabled"
                 flat
                 color="primary"
                 size="md"
@@ -166,23 +143,6 @@
 
           <div class="col-4 large-screen-only">
             <q-card class="float-left no-shadow">
-              <q-card-section>
-                <q-form @submit="addPubFollow">
-                  <q-input v-model="addPubKey" dense rounded outlined>
-                    <template #append>
-                      <q-btn
-                        round
-                        dense
-                        flat
-                        icon="add"
-                        :disabled="$store.getters.disabled"
-                        @click="addPubFollow"
-                      />
-                    </template>
-                    <q-tooltip> Add public key to follow </q-tooltip>
-                  </q-input>
-                </q-form>
-              </q-card-section>
               <q-card-section v-if="$store.state.following.length">
                 <h6 class="q-ma-none">Following</h6>
                 <q-list>
@@ -267,10 +227,6 @@ export default {
 </script>
 
 <style lang="sass">
-.my-menu-link
-  color: primary
-body.body--dark
-    background: #1d2d2d
 .small-screen-only
   @media (max-width: $breakpoint-xs-max)
     display: block

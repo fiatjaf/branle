@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <Publish v-if="!$store.getters.disabled" />
+    <Publish />
     <Post
       v-for="event in $store.state.events.kind1"
       :key="event.id"

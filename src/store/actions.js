@@ -5,8 +5,8 @@ import {LocalStorage, Notify} from 'quasar'
 import {pool} from '../global'
 
 export function launch(store) {
-  if (!!store.state.keys.pub) {
-    store.commit('setKey') // passing no arguments will cause a new seed to be generated
+  if (!store.state.keys.pub) {
+    store.commit('setKeys') // passing no arguments will cause a new seed to be generated
   }
 
   // now we already have a key

@@ -1,26 +1,27 @@
+import {Buffer} from 'buffer'
 import {LocalStorage} from 'quasar'
 import {getPublicKey} from 'nostr-tools'
-import bip32 from 'bip32'
-import * as bip39 from 'bip39'
+import {
+  generateSeedWords,
+  seedFromWords,
+  privateKeyFromSeed
+} from 'nostr-tools/nip06'
 
-export function setKey(state, {seed, priv, pub} = {}) {
-  if (!seed && !priv && !pub) {
-    // generate
-    let randomBytes = crypto.randomBytes(16)
-    let mnemonic = bip39.entropyToMnemonic(randomBytes.toString('hex'))
-    seed = bip39.mnemonicToSeedSync(mnemonic)
+export function setKeys(state, {mnemonic, priv, pub} = {}) {
+  if (!mnemonic && !priv && !pub) {
+    mnemonic = generateSeedWords()
   }
 
-  if (seed) {
-    let root = bip32.fromSeed(seed)
-    priv = root.privateKey.toString('hex')
+  if (mnemonic) {
+    let seed = seedFromWords(mnemonic)
+    priv = privateKeyFromSeed(seed)
   }
 
   if (priv) {
     pub = getPublicKey(priv)
   }
 
-  state.keys = {seed, priv, pub}
+  state.keys = {mnemonic, priv, pub}
 }
 
 export function setMetadata(state, {name, picture, about}) {

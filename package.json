@@ -2,7 +2,7 @@
   "name": "noves",
   "version": "0.0.1",
   "description": "a twitter-like nostr client",
-  "productName": "Noves",
+  "productName": "noves",
   "author": "fiatjaf <fiatjaf@gmail.com>",
   "private": true,
   "scripts": {
@@ -11,13 +11,12 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
-    "bip32": "^3.0.1",
-    "bip39": "^3.0.4",
     "core-js": "^3.6.5",
     "crypto": "^1.0.1",
     "identicon.js": "^2.3.3",
-    "nostr-tools": "^0.6.5",
+    "nostr-tools": "^0.7.1",
     "quasar": "^2.0.0",
+    "readable-stream": "^3.6.0",
     "stream": "^0.0.2",
     "vuex": "^4.0.1"
   },

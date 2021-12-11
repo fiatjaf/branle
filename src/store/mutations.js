@@ -61,8 +61,13 @@ export function addEvent(state, event) {
     case 4:
       let peerTag = event.tags.find(([tag]) => tag === 'p')
       if (!peerTag) return
-      let peer = event.pubkey === state.key.pub ? peerTag[1] : event.pubkey
+      let peer = event.pubkey === state.keys.pub ? peerTag[1] : event.pubkey
+
+      if (!state.events.kind4[peer]) {
+        state.events.kind4[peer] = []
+      }
       if (state.events.kind4[peer].find(e => e.id === event.id)) return
+
       state.events.kind4[peer].push(event)
       break
   }

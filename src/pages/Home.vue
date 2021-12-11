@@ -1,7 +1,11 @@
 <template>
   <q-page>
     <Publish v-if="!$store.getters.disabled" />
-    <Post v-for="post in $store.state.kind1" :key="post.id" :post="post" />
+    <Post
+      v-for="event in $store.state.events.kind1"
+      :key="event.id"
+      :event="event"
+    />
   </q-page>
 </template>
 
@@ -14,11 +18,6 @@ export default {
 
   data() {
     return {}
-  },
-  created() {
-    this.$store.state.kind1 = this.$store.state.kind1.sort(function (a, b) {
-      return b.created_at - a.created_at
-    })
   }
 }
 </script>

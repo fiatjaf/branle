@@ -4450,10 +4450,10 @@ normalize-url@^6.0.1:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-6.1.0.tgz#40d0885b535deffe3f3147bec877d05fe4c5668a"
   integrity sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==
 
-nostr-tools@^0.6.0:
-  version "0.6.0"
-  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.6.0.tgz#03f6ac3bd72ed7ead9b2472b655228ebc011bb92"
-  integrity sha512-XBi+tuRQo9prL8n1Wxu3/O1NYGc4tQaIExaLfebj3eg0um8xDnKzgpmbRL+dTXqaZmWKnTtTAbZvea2uluXIPw==
+nostr-tools@^0.6.5:
+  version "0.6.5"
+  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.6.5.tgz#0724f32e674e633bfe3916ee469f3c62ae691bd7"
+  integrity sha512-Yj1P34TbVSw+3MqHsfSpt1kCsS9p/VM/rr9WxebfvQliKztCPbXG+I6Wq0bTlI4kDkKXx8VNSy30xDMpdOeyww==
   dependencies:
     "@noble/secp256k1" "^1.3.0"
     buffer "^6.0.3"

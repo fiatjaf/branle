@@ -16,7 +16,7 @@
     "core-js": "^3.6.5",
     "crypto": "^1.0.1",
     "identicon.js": "^2.3.3",
-    "nostr-tools": "^0.6.0",
+    "nostr-tools": "^0.6.5",
     "quasar": "^2.0.0",
     "stream": "^0.0.2",
     "vuex": "^4.0.1"

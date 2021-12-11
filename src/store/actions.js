@@ -32,12 +32,12 @@ export function launch(store) {
     })
   })
 
-  store.dispatch('restartHomeFeed')
+  store.dispatch('mainFeed')
 }
 
 var homeSubscription = pool
 
-export function restartHomeFeed(store) {
+export function mainFeed(store) {
   homeSubscription = homeSubscription.sub({
     filter: [
       {

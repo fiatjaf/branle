@@ -4,7 +4,7 @@
       <q-card-section class="no-shadow" horizontal>
         <q-card-section class="no-shadow q-pb-none">
           <q-avatar class="no-shadow">
-            <img :src="$store.getters.avatar(post.pubkey)" />
+            <img :src="$store.getters.avatar(event.pubkey)" />
           </q-avatar>
         </q-card-section>
 
@@ -12,20 +12,17 @@
 
         <q-card-section class="col no-shadow q-pb-none">
           <q-item-label
-            >{{ $store.getters.displayName(post.pubkey) }}
-            <small style="color: grey">{{ niceDate(post.created_at) }}</small>
+            >{{ $store.getters.displayName(event.pubkey) }}
+            <small style="color: grey">{{ niceDate(event.created_at) }}</small>
           </q-item-label>
-          {{ post.content }}
+          {{ event.content }}
           <div></div>
         </q-card-section>
       </q-card-section>
 
       <q-card-section class="no-shadow q-pa-none q-pl-xl">
         <div class="row" style="width: 100%">
-          <q-form
-            style="width: 100%"
-            class="q-gutter-md"
-            @submit="sendReply(text, [['e', post.id]])"
+          <q-form style="width: 100%" class="q-gutter-md" @submit="sendReply"
             ><q-tooltip> Coming soon </q-tooltip>
             <q-input
               disable
@@ -106,7 +103,7 @@ import helpersMixin from '../utils/mixin'
 export default {
   mixins: [helpersMixin],
 
-  props: ['post'],
+  props: ['event'],
   data() {
     return {
       text: ''
@@ -116,7 +113,7 @@ export default {
     sendReply() {
       this.$store.dispatch('sendPost', {
         message: this.text,
-        tags: [['e', this.post.id]]
+        tags: [['e', this.event.id]]
       })
       this.text = ''
     }

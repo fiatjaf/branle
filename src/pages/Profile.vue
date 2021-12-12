@@ -1,7 +1,6 @@
 <template>
   <q-page>
     <q-btn
-      v-go-back.single
       flat
       color="white"
       icon="arrow_back"
@@ -69,7 +68,7 @@
 
     <Post v-for="post in posts" :key="post.id" :post="post" />
 
-    <q-dialog v-model="dialogReply" position="top">
+    <q-dialog v-model="dialogReply">
       <Reply :post="dialogReply" />
     </q-dialog>
     <q-infinite-scroll v-if="posts.length > 20" :offset="250">

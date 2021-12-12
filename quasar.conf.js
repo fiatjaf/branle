@@ -25,7 +25,7 @@ module.exports = configure(function (ctx) {
     boot: ['global-components'],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
-    css: [],
+    css: ['add-tailwind.css'],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [

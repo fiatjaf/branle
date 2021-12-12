@@ -4,7 +4,6 @@
       <strong class="text-h6 q-pa-lg">Chat</strong>
     </div>
     <q-btn
-      v-go-back.single
       flat
       color="white"
       icon="arrow_back"

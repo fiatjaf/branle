@@ -1,5 +1,5 @@
 <template>
-  <q-card class="my-card q-mt-md" flat style="border: none; width: 90%">
+  <q-card class="border-none">
     <q-card-section class="no-shadow" vertical>
       <q-card-section class="no-shadow" horizontal>
         <q-card-section class="no-shadow q-pb-none">
@@ -21,11 +21,9 @@
       </q-card-section>
 
       <q-card-section class="no-shadow q-pa-none q-pl-xl">
-        <div class="row" style="width: 100%">
-          <q-form style="width: 100%" class="q-gutter-md" @submit="sendReply"
-            ><q-tooltip> Coming soon </q-tooltip>
+        <div>
+          <q-form class="q-gutter-md" @submit="sendReply">
             <q-input
-              disable
               v-model="text"
               dense
               style="font-size: 20px"
@@ -34,59 +32,12 @@
             >
             </q-input>
 
-            <div class="float-right">
+            <div class="flex justify-end">
               <q-btn
-                disable
-                v-if="text.length < 280"
-                class="float-left q-mr-md"
-                round
-                unelevated
-                color="primary"
-                icon="insert_emoticon"
-                size="sm"
-              >
-                <q-popup-proxy>
-                  <q-btn
-                    v-for="emoji in emojis1"
-                    :key="emoji.item"
-                    flat
-                    rounded
-                    unelevated
-                    dense
-                    @click="text = text + emoji.item"
-                    >{{ emoji.item }}</q-btn
-                  >
-                  <br />
-                  <q-btn
-                    v-for="emoji in emojis2"
-                    :key="emoji.item"
-                    flat
-                    rounded
-                    unelevated
-                    dense
-                    @click="text = text + emoji.item"
-                    >{{ emoji.item }}</q-btn
-                  >
-                </q-popup-proxy>
-              </q-btn>
-              <q-btn
-                v-else
-                disable
-                class="float-left q-mr-md"
-                round
-                unelevated
-                color="primary"
-                icon="insert_emoticon"
-                size="sm"
-              />
-
-              <q-btn
-                disable
                 label="Reply"
                 rounded
                 unelevated
                 type="submit"
-                class="float-right"
                 color="primary"
               />
             </div>

@@ -1,6 +1,6 @@
 <template>
-  <q-card class="my-card" flat style="border: none">
-    <q-dialog v-model="dialogReply" position="top">
+  <q-card flat>
+    <q-dialog v-model="dialogReply">
       <Reply :event="event" />
     </q-dialog>
 

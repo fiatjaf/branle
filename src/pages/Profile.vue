@@ -40,7 +40,7 @@
         flat
         icon="cancel"
         size="sm"
-        @click="unFollow($route.params.pubkey)"
+        @click="unfollow"
       />
       <q-btn
         v-if="!isFollowing"
@@ -51,7 +51,7 @@
         flat
         icon="add_circle"
         size="sm"
-        @click="addPubFollow($route.params.pubkey)"
+        @click="follow"
       />
 
       <q-btn
@@ -66,12 +66,9 @@
       />
     </div>
 
-    <Post v-for="post in posts" :key="post.id" :post="post" />
+    <Post v-for="event in events" :key="event.id" :event="event" />
 
-    <q-dialog v-model="dialogReply">
-      <Reply :post="dialogReply" />
-    </q-dialog>
-    <q-infinite-scroll v-if="posts.length > 20" :offset="250">
+    <q-infinite-scroll v-if="events.length > 20" :offset="250">
       <template #loading>
         <div class="row justify-center q-my-md">
           <q-spinner-dots color="primary" size="40px" />
@@ -91,9 +88,8 @@ export default {
 
   data() {
     return {
-      posts: [],
-      dialogReply: null,
-      postsSet: new Set(),
+      events: [],
+      eventsSet: new Set(),
       sub: null
     }
   },
@@ -106,8 +102,8 @@ export default {
 
   watch: {
     '$route.params.pubkey'() {
-      this.posts = []
-      this.postsSet = new Set()
+      this.events = []
+      this.eventsSet = new Set()
 
       this.sub = pool.sub({
         filter: {
@@ -115,9 +111,18 @@ export default {
           kind: 1
         },
         cb: event => {
-          if (this.postsSet.has(event.id)) return
-          this.postsSet.add(event.id)
-          this.posts.push(event)
+          if (this.eventsSet.has(event.id)) return
+          this.eventsSet.add(event.id)
+
+          // manual sorting
+          // newer events first
+          for (let i = 0; i < this.events.length; i++) {
+            if (event.created_at > this.events[i].created_at) {
+              // the new event is newer than the current index,
+              // so we add it at the previous index
+              this.events.splice(i - 1, 0, event)
+            }
+          }
         }
       })
     }
@@ -128,12 +133,11 @@ export default {
   },
 
   methods: {
-    unFollow() {
+    unfollow() {
       this.$store.commit('unfollow', this.$route.params.pubkey)
-      this.$router.push('/')
     },
 
-    addPubFollow() {
+    follow() {
       this.$store.commit('follow', this.$route.params.pubkey)
     }
   }

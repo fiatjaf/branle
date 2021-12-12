@@ -38,7 +38,7 @@
               :name="$store.getters.displayName(event.pubkey)"
               :avatar="$store.getters.avatar(event.pubkey)"
               :sent="event.pubkey === $store.state.keys.pub"
-              :stamp="niceDate(new Date(event.created_at * 1000))"
+              :stamp="niceDate(new Date(event.created_at))"
               :bg-color="
                 event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'
               "

@@ -1,7 +1,7 @@
 <template>
   <q-card flat>
     <q-dialog v-model="dialogReply">
-      <Reply :event="event" />
+      <Reply :event="event" :dialog="dialogReply" />
     </q-dialog>
 
     <q-card-section class="no-shadow" horizontal>
@@ -19,7 +19,7 @@
           <q-item-label
             >{{ $store.getters.displayName(event.pubkey) }}
             <small style="color: grey">
-              {{ niceDate(event.created_at * 1000) }}
+              {{ niceDate(event.created_at) }}
             </small>
           </q-item-label>
           {{ event.content }}

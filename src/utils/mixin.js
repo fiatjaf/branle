@@ -7,7 +7,7 @@ export default {
     },
 
     niceDate(value) {
-      return date.formatDate(value, 'YYYY MMM D h:mm A')
+      return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
     }
   }
 }

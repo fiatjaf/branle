@@ -50,30 +50,27 @@ export function unfollow(state, key) {
   delete state.following[key]
 }
 
-export function addEvent(state, event) {
-  switch (event.kind) {
-    case 0:
-      state.events.kind0[event.pubkey] = event
-      break
-    case 1:
-      if (state.events.kind1.find(e => e.id === event.id)) return
-      state.events.kind1.push(event)
-      break
-    case 4:
-      let peerTag = event.tags.find(([tag]) => tag === 'p')
-      if (!peerTag) return
-      let peer = event.pubkey === state.keys.pub ? peerTag[1] : event.pubkey
-
-      if (!state.events.kind4[peer]) {
-        state.events.kind4[peer] = []
-      }
-      if (state.events.kind4[peer].find(e => e.id === event.id)) return
-
-      state.events.kind4[peer].push(event)
-      break
+export function addProfileToCache(state, event) {
+  if (event.pubkey in state.profilesCache) {
+    // was here already, remove from LRU (will readd next)
+    state.profilesCacheLRU.splice(
+      state.profilesCacheLRU.indexOf(event.pubkey),
+      0
+    )
+  } else {
+    try {
+      state.profilesCache[event.pubkey] = JSON.parse(event.content)
+    } catch (err) {
+      return
+    }
   }
-}
 
-export function chatUpdated(state) {
-  state.chatUpdated++
+  // adding to LRU
+  state.profilesCacheLRU.push(event.pubkey)
+
+  // removing older stuff if necessary
+  if (state.profilesCacheLRU.length > 150) {
+    let oldest = state.profilesCacheLRU.shift()
+    delete state.profilesCache[oldest]
+  }
 }

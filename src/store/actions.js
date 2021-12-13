@@ -1,8 +1,9 @@
 import {getEventHash} from 'nostr-tools'
 import {encrypt, decrypt} from 'nostr-tools/nip04'
-import {LocalStorage, Notify} from 'quasar'
+import {Notify} from 'quasar'
 
-import {pool} from '../global'
+import {pool} from '../pool'
+import {db, dbGetProfile} from '../db'
 
 export function launch(store) {
   if (!store.state.keys.pub) {
@@ -10,15 +11,16 @@ export function launch(store) {
   }
 
   // now we already have a key
-  if (!!store.state.keys.priv) {
+  if (store.state.keys.priv) {
     pool.setPrivateKey(store.state.keys.priv)
   }
 
   // add default relays
   if (Object.keys(store.state.relays).length === 0) {
-    store.commit('addRelay', 'wss://freedom-relay.herokuapp.com/ws')
+    store.commit('addRelay', 'wss://nostr-pub.wellorder.net')
     store.commit('addRelay', 'wss://relayer.fiatjaf.com')
-    store.commit('addRelay', 'wss://nostr-relay.freeberty.net')
+    // store.commit('addRelay', 'wss://nostr-relay.freeberty.net')
+    // store.commit('addRelay', 'wss://freedom-relay.herokuapp.com/ws')
   }
 
   // setup pool
@@ -32,32 +34,57 @@ export function launch(store) {
     })
   })
 
-  store.dispatch('mainFeed')
+  store.dispatch('restartMainSubscription')
 }
 
-var homeSubscription = pool
+var mainSub = pool
 
-export function mainFeed(store) {
-  homeSubscription = homeSubscription.sub({
+export function restartMainSubscription(store) {
+  mainSub = mainSub.sub({
     filter: [
+      // profiles of people we follow
       {
-        authors: store.state.following.length ? store.state.following : null
+        kind: 0,
+        authors: store.state.following.concat(store.state.keys.pub)
       },
+
+      // notes from people we follow and our own
       {
-        author: store.state.keys.pub
+        kind: 1,
+        authors: store.state.following.concat(store.state.keys.pub)
       },
+
+      // relay recommendations from people we follow
       {
+        kind: 2,
+        authors: store.state.following
+      },
+
+      // posts mentioning us
+      {
+        kind: 1,
         '#p': store.state.keys.pub
+      },
+
+      // direct messages to us
+      {
+        kind: 4,
+        '#p': store.state.keys.pub
+      },
+
+      // our own direct messages to other people
+      {
+        kind: 4,
+        authors: [store.state.keys.pub]
       }
     ],
     cb: (event, relay) => {
       switch (event.kind) {
         case 0:
-          try {
-            event.metadata = JSON.parse(event.content)
-          } catch (err) {}
           break
         case 1:
+          break
+        case 2:
           break
         case 4:
           // a direct encrypted message
@@ -90,7 +117,7 @@ export function mainFeed(store) {
           break
       }
 
-      store.commit('addEvent', event)
+      store.dispatch('addEvent', event)
     }
   })
 }
@@ -109,7 +136,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
   event.id = await getEventHash(event)
   pool.publish(event)
 
-  store.commit('addEvent', event)
+  store.dispatch('addEvent', event)
 }
 
 export async function setMetadata(store, metadata) {
@@ -146,4 +173,34 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
   event.id = await getEventHash(event)
 
   pool.publish(event)
+}
+
+export async function addEvent(store, event) {
+  event._id = event.id
+  db.put(event)
+
+  switch (event.kind) {
+    case 0:
+      store.commit('addProfileToCache', event)
+      break
+    case 1:
+      break
+    case 2:
+      break
+    case 3:
+      break
+    case 4:
+      break
+  }
+}
+
+export async function useProfile(store, pubkey) {
+  if (pubkey in store.state.profilesCache) {
+    // we don't fetch again, but we do commit this so the LRU gets updated
+    store.commit('addProfileToCache', store.state.profilesCache[pubkey])
+  }
+
+  // fetch from db and add to cache
+  const event = await dbGetProfile(pubkey)
+  store.commit('addProfileToCache', event)
 }

@@ -86,6 +86,7 @@ module.exports = configure(function (ctx) {
         cfg.resolve.fallback = cfg.resolve.fallback || {}
         cfg.resolve.fallback.buffer = require.resolve('buffer/')
         cfg.resolve.fallback.stream = require.resolve('readable-stream')
+        cfg.resolve.fallback.crypto = false
       }
     },
 

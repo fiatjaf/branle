@@ -1,23 +1,29 @@
 <template>
   <q-page>
     <Publish />
-    <Post
-      v-for="event in $store.state.events.kind1"
-      :key="event.id"
-      :event="event"
-    />
+    <Post v-for="event in homeFeed" :key="event.id" :event="event" />
   </q-page>
 </template>
 
 <script>
 import helpersMixin from '../utils/mixin'
+import {dbGetHomeFeedNotes} from '../db'
 
 export default {
   name: 'Home',
   mixins: [helpersMixin],
 
   data() {
-    return {}
+    return {
+      homeFeed: []
+    }
+  },
+
+  async mounted() {
+    this.homeFeed = await dbGetHomeFeedNotes(
+      this.$store.state.following.concat(this.$store.state.keys.pub),
+      100
+    )
   }
 }
 </script>

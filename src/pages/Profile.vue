@@ -80,7 +80,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {pool} from '../global'
+import {pool} from '../pool'
 
 export default {
   name: 'Profile',
@@ -100,28 +100,46 @@ export default {
     }
   },
 
+  mounted() {
+    this.$store.dispatch('useProfile')
+  },
+
   watch: {
     '$route.params.pubkey'() {
       this.events = []
       this.eventsSet = new Set()
 
       this.sub = pool.sub({
-        filter: {
-          author: this.$route.params.pubkey,
-          kind: 1
-        },
-        cb: event => {
-          if (this.eventsSet.has(event.id)) return
-          this.eventsSet.add(event.id)
+        filter: [
+          {
+            authors: [this.$route.params.pubkey],
+            kind: 0
+          },
+          {
+            authors: [this.$route.params.pubkey],
+            kind: 1
+          }
+        ],
+        cb: async event => {
+          switch (event.kind) {
+            case 0:
+              await this.$store.dispatch('addEvent')
+              break
 
-          // manual sorting
-          // newer events first
-          for (let i = 0; i < this.events.length; i++) {
-            if (event.created_at > this.events[i].created_at) {
-              // the new event is newer than the current index,
-              // so we add it at the previous index
-              this.events.splice(i - 1, 0, event)
-            }
+            case 1:
+              if (this.eventsSet.has(event.id)) return
+              this.eventsSet.add(event.id)
+
+              // manual sorting
+              // newer events first
+              for (let i = 0; i < this.events.length; i++) {
+                if (event.created_at > this.events[i].created_at) {
+                  // the new event is newer than the current index,
+                  // so we add it at the previous index
+                  this.events.splice(i - 1, 0, event)
+                }
+              }
+              break
           }
         }
       })

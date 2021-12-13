@@ -131,8 +131,10 @@
 </template>
 
 <script>
-import helpersMixin from '../utils/mixin'
 import {copyToClipboard} from 'quasar'
+
+import helpersMixin from '../utils/mixin'
+import {db} from '../db'
 
 export default {
   name: 'Settings',
@@ -175,8 +177,9 @@ export default {
       this.$store.commit('removeRelay', this.removingRelay)
       this.removingRelay = ''
     },
-    hardReset() {
+    async hardReset() {
       this.$q.localStorage.clear()
+      await db.destroy()
       window.location.reload()
     }
   }

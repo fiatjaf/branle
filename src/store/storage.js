@@ -17,12 +17,6 @@ export default function (store) {
       case 'unfollow':
         LocalStorage.set('following', state.following)
         break
-      case 'addEvent':
-        LocalStorage.set(
-          `events.${payload.kind}`,
-          state.events[`kind${payload.kind}`]
-        )
-        break
     }
   })
 }

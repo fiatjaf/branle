@@ -57,7 +57,10 @@ import helpersMixin from '../utils/mixin'
 export default {
   mixins: [helpersMixin],
 
-  props: ['event', 'dialog'],
+  props: {
+    event: {type: Object, required: true},
+    dialog: {type: Object, default: null}
+  },
   data() {
     return {
       text: ''

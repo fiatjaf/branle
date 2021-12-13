@@ -1,3 +1,5 @@
+/* global emit */
+
 import PouchDB from 'pouchdb-core'
 import PouchDBAdapterIDB from 'pouchdb-adapter-idb'
 import PouchDBMapReduce from 'pouchdb-mapreduce'
@@ -73,7 +75,7 @@ export async function dbGetHomeFeedNotes(
   return result.rows.map(r => r.doc)
 }
 
-export async function dbGetMentions(ourPubKey, limit = 20, offset = 0) {
+export async function dbGetMentions(ourPubKey, limit = 20, skip = 0) {
   let result = await db.query('main/mentions', {
     include_docs: true,
     descending: true,
@@ -85,7 +87,7 @@ export async function dbGetMentions(ourPubKey, limit = 20, offset = 0) {
   return result.rows.map(r => r.doc)
 }
 
-export async function dbGetMessages(peerPubKey, limit = 50, offset = 0) {
+export async function dbGetMessages(peerPubKey, limit = 50, skip = 0) {
   let result = await db.query('main/messages', {
     include_docs: true,
     descending: true,
@@ -105,16 +107,14 @@ export async function dbGetProfile(pubkey) {
   switch (result.rows.length) {
     case 0:
       return null
-      break
     case 1:
       return result.rows[0].doc
-      break
-    default:
+    default: {
       let sorted = result.rows.sort(
         (a, b) => b.doc.created_at - a.doc.created_at
       )
       sorted.slice(1).forEach(row => db.remove(row.doc))
       return sorted[0].doc
-      break
+    }
   }
 }

@@ -100,10 +100,6 @@ export default {
     }
   },
 
-  mounted() {
-    this.$store.dispatch('useProfile')
-  },
-
   watch: {
     '$route.params.pubkey'() {
       this.events = []
@@ -144,6 +140,10 @@ export default {
         }
       })
     }
+  },
+
+  mounted() {
+    this.$store.dispatch('useProfile')
   },
 
   beforeUnmount() {

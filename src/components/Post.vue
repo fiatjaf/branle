@@ -34,7 +34,7 @@ import helpersMixin from '../utils/mixin'
 
 export default {
   mixins: [helpersMixin],
-  props: ['event'],
+  props: {event: {type: Object, required: true}},
   data() {
     return {
       dialogReply: false

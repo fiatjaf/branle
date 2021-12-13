@@ -1,5 +1,3 @@
-import {Buffer} from 'buffer'
-import {LocalStorage} from 'quasar'
 import {getPublicKey} from 'nostr-tools'
 import {
   generateSeedWords,

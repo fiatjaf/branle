@@ -92,24 +92,24 @@
         <q-card-section>
           <p>Seed Words:</p>
           <q-input
+            v-model="$store.state.keys.mnemonic"
             class="mb-2"
             readonly
-            v-model="$store.state.keys.mnemonic"
             filled
           />
           <p>Private Key:</p>
           <q-input
+            v-model="$store.state.keys.priv"
             class="mb-2"
             readonly
-            v-model="$store.state.keys.priv"
             filled
           />
           <p>Public Key:</p>
-          <q-input readonly v-model="$store.state.keys.pub" filled> </q-input>
+          <q-input v-model="$store.state.keys.pub" readonly filled> </q-input>
         </q-card-section>
 
         <q-card-actions align="right" class="text-primary">
-          <q-btn flat label="Close" v-close-popup />
+          <q-btn v-close-popup flat label="Close" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -122,7 +122,7 @@
         </q-card-section>
 
         <q-card-actions align="right" class="text-primary">
-          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn v-close-popup flat label="Cancel" />
           <q-btn flat label="Yes, delete storage" @click="hardReset" />
         </q-card-actions>
       </q-card>

@@ -52,7 +52,7 @@
               <q-form
                 class="q-gutter-md"
                 @submit="submitMessage"
-                @reset="this.text = ''"
+                @reset="text = ''"
               >
                 <div class="row">
                   <div class="col-8">
@@ -126,7 +126,6 @@
 </template>
 
 <script>
-import {LocalStorage} from 'quasar'
 import helpersMixin from '../utils/mixin'
 
 export default {

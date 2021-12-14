@@ -1,6 +1,6 @@
 <template>
-  <q-page>
-    <div class="text-lg">Encrypted Messages</div>
+  <q-page class="px-4 py-6">
+    <div class="text-xl">Encrypted Messages</div>
     <q-btn
       flat
       color="white"
@@ -17,7 +17,7 @@
     <div class="q-mx-auto q-px-md">
       <q-list>
         <q-item
-          v-for="(_, followedKey) in $store.state.following"
+          v-for="followedKey in $store.state.following"
           :key="followedKey"
           v-ripple
           clickable

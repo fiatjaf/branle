@@ -15,8 +15,8 @@ export const db = new PouchDB('nostr-events')
 db.put({
   _id: '_design/main',
   views: {
-    map: {
-      profiles: function (event) {
+    profiles: {
+      map: function (event) {
         if (event.kind === 0) {
           emit(event.pubkey)
         }
@@ -54,6 +54,9 @@ db.put({
       }.toString()
     }
   }
+}).catch(err => {
+  if (err.name === 'conflict') return
+  console.error(err)
 })
 
 db.viewCleanup()

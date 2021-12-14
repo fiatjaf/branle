@@ -40,86 +40,89 @@ export function launch(store) {
 var mainSub = pool
 
 export function restartMainSubscription(store) {
-  mainSub = mainSub.sub({
-    filter: [
-      // profiles of people we follow
-      {
-        kind: 0,
-        authors: store.state.following.concat(store.state.keys.pub)
-      },
+  mainSub = mainSub.sub(
+    {
+      filter: [
+        // profiles of people we follow
+        {
+          kind: 0,
+          authors: store.state.following.concat(store.state.keys.pub)
+        },
 
-      // notes from people we follow and our own
-      {
-        kind: 1,
-        authors: store.state.following.concat(store.state.keys.pub)
-      },
+        // notes from people we follow and our own
+        {
+          kind: 1,
+          authors: store.state.following.concat(store.state.keys.pub)
+        },
 
-      // relay recommendations from people we follow
-      {
-        kind: 2,
-        authors: store.state.following
-      },
+        // relay recommendations from people we follow
+        {
+          kind: 2,
+          authors: store.state.following
+        },
 
-      // posts mentioning us
-      {
-        kind: 1,
-        '#p': store.state.keys.pub
-      },
+        // posts mentioning us
+        {
+          kind: 1,
+          '#p': store.state.keys.pub
+        },
 
-      // direct messages to us
-      {
-        kind: 4,
-        '#p': store.state.keys.pub
-      },
+        // direct messages to us
+        {
+          kind: 4,
+          '#p': store.state.keys.pub
+        },
 
-      // our own direct messages to other people
-      {
-        kind: 4,
-        authors: [store.state.keys.pub]
+        // our own direct messages to other people
+        {
+          kind: 4,
+          authors: [store.state.keys.pub]
+        }
+      ],
+      cb: (event, relay) => {
+        switch (event.kind) {
+          case 0:
+            break
+          case 1:
+            break
+          case 2:
+            break
+          case 4:
+            // a direct encrypted message
+            if (
+              event.tags.find(
+                ([tag, value]) => tag === 'p' && value === store.state.keys.pub
+              )
+            ) {
+              // it is addressed to us
+              // decrypt it
+              let [ciphertext, iv] = event.content.split('?iv=')
+              event.plaintext = decrypt(
+                store.state.keys.priv,
+                event.pubkey,
+                ciphertext,
+                iv
+              )
+            } else if (event.pubkey === store.state.keys.pub) {
+              // it is coming from us
+              let [_, target] = event.tags.find(([tag]) => tag === 'p')
+              // decrypt it
+              let [ciphertext, iv] = event.content.split('?iv=')
+              event.plaintext = decrypt(
+                store.state.keys.priv,
+                target,
+                ciphertext,
+                iv
+              )
+            }
+            break
+        }
+
+        store.dispatch('addEvent', event)
       }
-    ],
-    cb: (event, relay) => {
-      switch (event.kind) {
-        case 0:
-          break
-        case 1:
-          break
-        case 2:
-          break
-        case 4:
-          // a direct encrypted message
-          if (
-            event.tags.find(
-              ([tag, value]) => tag === 'p' && value === store.state.keys.pub
-            )
-          ) {
-            // it is addressed to us
-            // decrypt it
-            let [ciphertext, iv] = event.content.split('?iv=')
-            event.plaintext = decrypt(
-              store.state.keys.priv,
-              event.pubkey,
-              ciphertext,
-              iv
-            )
-          } else if (event.pubkey === store.state.keys.pub) {
-            // it is coming from us
-            let [_, target] = event.tags.find(([tag]) => tag === 'p')
-            // decrypt it
-            let [ciphertext, iv] = event.content.split('?iv=')
-            event.plaintext = decrypt(
-              store.state.keys.priv,
-              target,
-              ciphertext,
-              iv
-            )
-          }
-          break
-      }
-
-      store.dispatch('addEvent', event)
-    }
-  })
+    },
+    'main-channel'
+  )
 }
 
 export async function sendPost(store, {message, tags = [], kind = 1}) {
@@ -140,7 +143,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 }
 
 export async function setMetadata(store, metadata) {
-  store.commit('setProfile', metadata)
+  store.commit('setMetadata', metadata)
 
   var event = {
     pubkey: store.state.keys.pub,
@@ -177,7 +180,10 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
 
 export async function addEvent(store, event) {
   event._id = event.id
-  db.put(event)
+  db.put(event).catch(err => {
+    if (err.name === 'conflict') return
+    console.error(err)
+  })
 
   switch (event.kind) {
     case 0:
@@ -202,5 +208,7 @@ export async function useProfile(store, pubkey) {
 
   // fetch from db and add to cache
   const event = await dbGetProfile(pubkey)
-  store.commit('addProfileToCache', event)
+  if (event) {
+    store.commit('addProfileToCache', event)
+  }
 }

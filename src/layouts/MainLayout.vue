@@ -10,7 +10,7 @@
           <q-card-section class="flex justify-center">
             <q-img src="/bird.png" fit="scale-down" width="80px" />
           </q-card-section>
-          <q-list class="text-secondary">
+          <q-list>
             <q-item
               v-ripple
               clickable
@@ -19,10 +19,14 @@
               :to="'/'"
             >
               <q-item-section avatar>
-                <q-icon name="home"></q-icon>
+                <q-icon name="home" color="secondary" />
               </q-item-section>
 
-              <q-item-section>Home</q-item-section>
+              <q-item-section
+                :class="{'text-secondary': $route.name === 'home'}"
+              >
+                Home
+              </q-item-section>
             </q-item>
 
             <q-item
@@ -33,10 +37,14 @@
               :to="'/messages'"
             >
               <q-item-section avatar>
-                <q-icon name="email"></q-icon>
+                <q-icon name="email" color="secondary" />
               </q-item-section>
 
-              <q-item-section>Messages</q-item-section>
+              <q-item-section
+                :class="{'text-secondary': $route.name === 'messages'}"
+              >
+                Messages
+              </q-item-section>
             </q-item>
 
             <q-item
@@ -58,10 +66,14 @@
               :to="'/settings'"
             >
               <q-item-section avatar>
-                <q-icon name="settings"></q-icon>
+                <q-icon name="settings" color="secondary" />
               </q-item-section>
 
-              <q-item-section>Settings</q-item-section>
+              <q-item-section
+                :class="{'text-secondary': $route.name === 'settings'}"
+              >
+                Settings
+              </q-item-section>
             </q-item>
           </q-list>
 
@@ -77,9 +89,18 @@
             ></q-btn>
           </div>
 
-          <div class="break-all text-sm font-mono my-5 text-secondary">
-            {{ $store.state.keys.pub }}
-          </div>
+          <div class="text-lg mt-4 mb-1">My Public Key</div>
+          <q-input v-model="$store.state.keys.pub" readonly filled>
+            <template #append>
+              <q-btn
+                label="Copy"
+                type="submit"
+                color="primary"
+                class="ml-3"
+                @click="copyPubKey"
+              />
+            </template>
+          </q-input>
         </q-card>
       </div>
 
@@ -94,12 +115,32 @@
       </div>
 
       <div class="hidden lg:flex w-1/4">
-        <q-card>
-          <q-card-section v-if="$store.state.following.length">
-            <h6 class="q-ma-none">Following</h6>
+        <q-card class="no-shadow px-4 py-6">
+          <q-card-section>
+            <q-form class="mb-6" @submit="searchProfile">
+              <div>
+                <q-input
+                  v-model="searchingProfile"
+                  filled
+                  label="Search a Profile"
+                  clearable
+                >
+                  <template #append>
+                    <q-btn
+                      icon="search"
+                      type="submit"
+                      color="primary"
+                      class="ml-3"
+                      @click="searchProfile"
+                    />
+                  </template>
+                </q-input>
+              </div>
+            </q-form>
+            <div class="text-lg">Following</div>
             <q-list>
               <q-item
-                v-for="(_, pubkey) in $store.state.following"
+                v-for="pubkey in $store.state.following"
                 :key="pubkey"
                 v-ripple
                 clickable
@@ -134,7 +175,7 @@ export default {
     return {
       dialogGenerate: false,
       dialogPublish: false,
-      addPubKey: ''
+      searchingProfile: ''
     }
   },
   created: function () {
@@ -149,6 +190,13 @@ export default {
         })
       } catch (err) {
         this.$q.notify({type: 'negative', message: 'FAILED'})
+      }
+    },
+
+    async searchProfile() {
+      if (this.searchingProfile.match(/[a-f0-9A-F]{64}/)) {
+        this.toProfile(this.searchingProfile)
+        this.searchingProfile = ''
       }
     }
   }

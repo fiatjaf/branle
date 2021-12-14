@@ -1,6 +1,6 @@
 <template>
-  <q-page>
-    <div class="text-lg">Settings</div>
+  <q-page class="px-4 py-6">
+    <div class="text-xl">Settings</div>
 
     <q-form class="my-8 q-gutter-md" @submit="setMetadata">
       <div class="text-lg p-4">Profile</div>
@@ -105,7 +105,7 @@
             filled
           />
           <p>Public Key:</p>
-          <q-input v-model="$store.state.keys.pub" readonly filled> </q-input>
+          <q-input v-model="$store.state.keys.pub" readonly filled />
         </q-card-section>
 
         <q-card-actions align="right" class="text-primary">
@@ -131,7 +131,7 @@
 </template>
 
 <script>
-import {copyToClipboard} from 'quasar'
+import {LocalStorage, copyToClipboard} from 'quasar'
 
 import helpersMixin from '../utils/mixin'
 import {db} from '../db'
@@ -178,7 +178,7 @@ export default {
       this.removingRelay = ''
     },
     async hardReset() {
-      this.$q.localStorage.clear()
+      LocalStorage.clear()
       await db.destroy()
       window.location.reload()
     }

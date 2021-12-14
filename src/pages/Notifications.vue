@@ -1,6 +1,6 @@
 <template>
-  <q-page>
-    <h6 class="q-ma-none">Notifications</h6>
+  <q-page class="px-4 py-6">
+    <div class="text-xl">Notifications</div>
   </q-page>
 </template>
 

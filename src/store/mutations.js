@@ -38,9 +38,8 @@ export function removeRelay(state, url) {
 }
 
 export function follow(state, key) {
-  if (state.following.includes(key)) {
-    return
-  }
+  if (state.keys.pub === key) return
+  if (state.following.includes(key)) return
   state.following.push(key)
 }
 
@@ -70,5 +69,10 @@ export function addProfileToCache(state, event) {
   if (state.profilesCacheLRU.length > 150) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
+  }
+
+  // if it's our own profile, also save metadata to state.me (and thus to localStorage)
+  if (state.keys.pub === event.pubkey && Object.keys(state.me).length === 0) {
+    state.me = JSON.parse(event.content)
   }
 }

@@ -3,7 +3,11 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      {path: '', component: () => import('pages/Home.vue'), name: 'home'},
+      {
+        path: '/',
+        component: () => import('pages/Home.vue'),
+        name: 'home'
+      },
       {
         path: '/settings',
         component: () => import('pages/Settings.vue'),
@@ -14,14 +18,20 @@ const routes = [
         component: () => import('pages/Messages.vue'),
         name: 'messages'
       },
-      {path: '/messages/:pubkey', component: () => import('pages/Chat.vue')},
+      {
+        path: '/messages/:pubkey',
+        component: () => import('pages/Chat.vue'),
+        name: 'chat'
+      },
       {
         path: '/notifications',
-        component: () => import('pages/Notifications.vue')
+        component: () => import('pages/Notifications.vue'),
+        name: 'notifications'
       },
       {
         path: '/:pubkey',
-        component: () => import('pages/Profile.vue')
+        component: () => import('pages/Profile.vue'),
+        name: 'profile'
       }
     ]
   },

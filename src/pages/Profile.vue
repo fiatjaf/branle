@@ -9,7 +9,7 @@
         <img round :src="$store.getters.avatar($route.params.pubkey)" />
       </q-avatar>
       <div class="ml-4">
-        <p class="mb-1 break-all font-mono w-96 text-xs">
+        <p class="mb-1 break-all w-96 text-xs font-mono text-secondary">
           {{ $route.params.pubkey }}
         </p>
         <p class="text-slate-600 text-base">
@@ -98,7 +98,7 @@ export default {
   },
 
   mounted() {
-    this.$store.dispatch('useProfile')
+    this.$store.dispatch('useProfile', this.$route.params.pubkey)
     this.listen()
   },
 

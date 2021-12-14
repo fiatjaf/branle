@@ -1,87 +1,64 @@
 <template>
-  <q-page>
-    <div class="text-center">
-      <strong class="text-h6 q-pa-lg">Chat</strong>
+  <q-page class="px-4 py-6 relative">
+    <div class="text-xl">
+      Chat with
+      <span class="text-secondary">
+        {{ $store.getters.displayName($route.params.pubkey) }}
+      </span>
     </div>
-    <q-btn
-      flat
-      color="white"
-      icon="arrow_back"
-      label="back"
-      class="small-screen-only fixed-top-left"
-    />
-    <div class="row">
-      <br />
-      <br />
 
-      <div
-        class="q-pa-md q-pt-xl column row flex justify-end no-wrap"
-        style="width: 100%; height: 90vh; overflow: hidden"
+    <q-separator class="my-6" />
+
+    <div class="flex-col justify-end absolute left-5 bottom-12 right-5">
+      <q-scroll-area
+        ref="chatScroll"
+        :thumb-style="{
+          left: '102%',
+          backgroundColor: 'red',
+          width: '10px',
+          opacity: 0.35
+        }"
       >
-        <q-scroll-area
-          ref="chatScroll"
-          :thumb-style="{
-            left: '102%',
-            backgroundColor: 'red',
-            width: '10px',
-            opacity: 0.35
-          }"
-          style="height: 100%; max-width: 100%"
-        >
-          <div
-            v-for="event in $store.state.events.kind4[$route.params.pubkey] ||
-            []"
-            :key="event.id"
+        <div v-for="event in messages" :key="event.id">
+          <q-chat-message
+            :text="[event.plaintext]"
+            :name="$store.getters.displayName(event.pubkey)"
+            :avatar="$store.getters.avatar(event.pubkey)"
+            :sent="event.pubkey === $store.state.keys.pub"
+            :stamp="niceDate(new Date(event.created_at))"
+            :bg-color="
+              event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'
+            "
           >
-            <q-chat-message
-              :text="[event.plaintext]"
-              :name="$store.getters.displayName(event.pubkey)"
-              :avatar="$store.getters.avatar(event.pubkey)"
-              :sent="event.pubkey === $store.state.keys.pub"
-              :stamp="niceDate(new Date(event.created_at))"
-              :bg-color="
-                event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'
-              "
-            >
-            </q-chat-message>
-          </div>
-        </q-scroll-area>
-        <div class="bg-dark q-mb-xl">
-          <q-toolbar>
-            <q-toolbar-title>
-              <q-form
-                class="q-gutter-md"
-                @submit="submitMessage"
-                @reset="text = ''"
-              >
-                <div class="row">
-                  <div class="col-8">
-                    <q-input
-                      v-model="text"
-                      filled
-                      type="text"
-                      hint="500 char message"
-                    ></q-input>
-                  </div>
+          </q-chat-message>
+        </div>
+      </q-scroll-area>
+      <q-toolbar>
+        <q-toolbar-title>
+          <q-form @submit="submitMessage" @reset="text = ''">
+            <div class="flex w-full">
+              <q-input v-model="text" class="w-full" filled>
+                <template #append>
                   <q-btn
                     unelevated
-                    class="q-ma-sm"
-                    label="send"
+                    class="mx-4"
+                    label="Send"
                     type="submit"
-                    color="primary"
+                    color="secondary"
                   />
-                </div>
-              </q-form>
-            </q-toolbar-title>
-          </q-toolbar>
-        </div>
-      </div>
+                </template>
+              </q-input>
+            </div>
+          </q-form>
+        </q-toolbar-title>
+      </q-toolbar>
     </div>
   </q-page>
 </template>
 
 <script>
 import helpersMixin from '../utils/mixin'
+import {dbGetMessages} from '../db'
 
 export default {
   name: 'Chat',
@@ -89,10 +66,27 @@ export default {
 
   data() {
     return {
+      messages: [],
       text: ''
     }
   },
+
+  watch: {
+    '$route.params.pubkey'(curr, prev) {
+      if (curr && curr !== prev) this.restart()
+    }
+  },
+
+  async mounted() {
+    this.$store.dispatch('useProfile', this.$route.params.pubkey)
+    this.restart()
+  },
+
   methods: {
+    async restart() {
+      this.messages = await dbGetMessages(this.$route.params.pubkey, 100)
+    },
+
     async scroll() {
       const scrollArea = this.$refs.chatScroll
       const scrollTarget = scrollArea.getScrollTarget()
@@ -112,18 +106,3 @@ export default {
   }
 }
 </script>
-
-<style>
-small {
-  margin-top: 0.2rem;
-  font-size: 0.8rem;
-  text-align: right;
-  display: block;
-}
-.delete {
-  cursor: pointer;
-}
-.retry {
-  cursor: pointer;
-}
-</style>

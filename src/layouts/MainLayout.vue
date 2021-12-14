@@ -10,67 +10,61 @@
           <q-card-section class="flex justify-center">
             <q-img src="/bird.png" fit="scale-down" width="80px" />
           </q-card-section>
-          <q-list>
-            <q-item
-              v-ripple
-              clickable
-              :active="$route.name === 'home'"
-              active-class="my-menu-link"
-              :to="'/'"
-            >
+          <q-list class="text-slate-700">
+            <q-item v-ripple clickable :to="'/'" active-class="">
               <q-item-section avatar>
                 <q-icon name="home" color="secondary" />
               </q-item-section>
 
               <q-item-section
-                :class="{'text-secondary': $route.name === 'home'}"
+                :class="{
+                  'text-primary': $route.name === 'home'
+                }"
               >
                 Home
               </q-item-section>
             </q-item>
 
-            <q-item
-              v-ripple
-              clickable
-              :active="$route.name === 'messages'"
-              active-class="my-menu-link"
-              :to="'/messages'"
-            >
+            <q-item v-ripple clickable :to="'/messages'" active-class="">
               <q-item-section avatar>
                 <q-icon name="email" color="secondary" />
               </q-item-section>
 
               <q-item-section
-                :class="{'text-secondary': $route.name === 'messages'}"
+                :class="{'text-primary': $route.name === 'messages'}"
               >
                 Messages
               </q-item-section>
             </q-item>
 
             <q-item
-              v-if="$store.getters.disabled"
-              :disabled="$store.getters.disabled"
-            >
-              <q-item-section avatar>
-                <q-icon name="settings"></q-icon>
-              </q-item-section>
-
-              <q-item-section>Settings</q-item-section>
-            </q-item>
-            <q-item
-              v-else
               v-ripple
               clickable
-              :active="$route.name === 'settings'"
-              active-class="my-menu-link"
-              :to="'/settings'"
+              :to="'/' + $store.state.keys.pub"
+              active-class=""
             >
+              <q-item-section avatar>
+                <q-icon name="person" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{
+                  'text-primary':
+                    $route.name === 'profile' &&
+                    $route.params.pubkey === $store.state.keys.pub
+                }"
+              >
+                Profile
+              </q-item-section>
+            </q-item>
+
+            <q-item v-ripple clickable :to="'/settings'" active-class="">
               <q-item-section avatar>
                 <q-icon name="settings" color="secondary" />
               </q-item-section>
 
               <q-item-section
-                :class="{'text-secondary': $route.name === 'settings'}"
+                :class="{'text-primary': $route.name === 'settings'}"
               >
                 Settings
               </q-item-section>
@@ -88,19 +82,6 @@
               @click="dialogPublish = true"
             ></q-btn>
           </div>
-
-          <div class="text-lg mt-4 mb-1">My Public Key</div>
-          <q-input v-model="$store.state.keys.pub" readonly filled>
-            <template #append>
-              <q-btn
-                label="Copy"
-                type="submit"
-                color="primary"
-                class="ml-3"
-                @click="copyPubKey"
-              />
-            </template>
-          </q-input>
         </q-card>
       </div>
 
@@ -164,7 +145,6 @@
   </q-layout>
 </template>
 <script>
-import {copyToClipboard} from 'quasar'
 import helpersMixin from '../utils/mixin'
 
 export default {
@@ -182,17 +162,6 @@ export default {
     this.$store.dispatch('launch')
   },
   methods: {
-    async copyPubKey() {
-      try {
-        await copyToClipboard(this.$store.state.keys.pub)
-        this.$q.notify({
-          message: 'COPIED'
-        })
-      } catch (err) {
-        this.$q.notify({type: 'negative', message: 'FAILED'})
-      }
-    },
-
     async searchProfile() {
       if (this.searchingProfile.match(/[a-f0-9A-F]{64}/)) {
         this.toProfile(this.searchingProfile)

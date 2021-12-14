@@ -1,4 +1,5 @@
 import {getPublicKey} from 'nostr-tools'
+import {normalizeRelayURL} from 'nostr-tools/relay'
 import {
   generateSeedWords,
   seedFromWords,
@@ -27,6 +28,13 @@ export function setMetadata(state, {name, picture, about}) {
 }
 
 export function addRelay(state, url) {
+  try {
+    normalizeRelayURL(url)
+    new URL(url)
+  } catch (err) {
+    return
+  }
+
   state.relays[url] = {
     read: true,
     write: true
@@ -35,6 +43,12 @@ export function addRelay(state, url) {
 
 export function removeRelay(state, url) {
   delete state.relays[url]
+}
+
+export function setRelayOpt(state, {url, opt, value}) {
+  if (url in state.relays) {
+    state.relays[url][opt] = value
+  }
 }
 
 export function follow(state, key) {

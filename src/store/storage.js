@@ -11,6 +11,7 @@ export default function (store) {
         break
       case 'addRelay':
       case 'removeRelay':
+      case 'setRelayOpt':
         LocalStorage.set('relays', state.relays)
         break
       case 'follow':

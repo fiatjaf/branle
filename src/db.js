@@ -64,11 +64,7 @@ db.compact()
 
 // db queries
 // ~
-export async function dbGetHomeFeedNotes(
-  fromPubKeys = [],
-  limit = 50,
-  skip = 0
-) {
+export async function dbGetHomeFeedNotes(limit = 50, skip = 0) {
   let result = await db.query('main/homefeed', {
     include_docs: true,
     descending: true,
@@ -76,6 +72,21 @@ export async function dbGetHomeFeedNotes(
     skip
   })
   return result.rows.map(r => r.doc)
+}
+
+export function onNewHomeFeedNote(onNewEvent = () => {}) {
+  // listen for changes
+  let changes = db.changes({
+    live: true,
+    since: 'now',
+    include_docs: true,
+    filter: '_view',
+    view: 'main/homefeed'
+  })
+
+  changes.on('change', change => onNewEvent(change.doc))
+
+  return changes
 }
 
 export async function dbGetMentions(ourPubKey, limit = 20, skip = 0) {

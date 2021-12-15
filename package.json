@@ -13,7 +13,7 @@
     "core-js": "^3.6.5",
     "crypto": "^1.0.1",
     "identicon.js": "^2.3.3",
-    "nostr-tools": "^0.9.1",
+    "nostr-tools": "^0.10.3",
     "pouchdb-adapter-idb": "6",
     "pouchdb-core": "6",
     "pouchdb-mapreduce": "6",

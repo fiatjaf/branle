@@ -7,7 +7,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbGetHomeFeedNotes} from '../db'
+import {dbGetHomeFeedNotes, onNewHomeFeedNote} from '../db'
 
 export default {
   name: 'Home',
@@ -15,15 +15,20 @@ export default {
 
   data() {
     return {
+      listener: null,
       homeFeed: []
     }
   },
 
   async mounted() {
-    this.homeFeed = await dbGetHomeFeedNotes(
-      this.$store.state.following.concat(this.$store.state.keys.pub),
-      100
-    )
+    this.homeFeed = await dbGetHomeFeedNotes(100, 0)
+    this.listener = onNewHomeFeedNote(event => {
+      this.homeFeed.unshift(event)
+    })
+  },
+
+  async beforeUnmount() {
+    if (this.listener) this.listener.cancel()
   }
 }
 </script>

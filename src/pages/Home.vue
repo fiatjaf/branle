@@ -1,7 +1,14 @@
 <template>
   <q-page>
     <Publish />
-    <Post v-for="event in homeFeed" :key="event.id" :event="event" />
+    <q-infinite-scroll :disable="reachedEnd" :offset="150" @load="loadMore">
+      <Post v-for="event in homeFeed" :key="event.id" :event="event" />
+      <template #loading>
+        <div class="flex justify-center items-center p-8">
+          <q-spinner-dots color="secondary" size="40px" />
+        </div>
+      </template>
+    </q-infinite-scroll>
   </q-page>
 </template>
 
@@ -16,12 +23,13 @@ export default {
   data() {
     return {
       listener: null,
+      reachedEnd: false,
       homeFeed: []
     }
   },
 
   async mounted() {
-    this.homeFeed = await dbGetHomeFeedNotes(100, 0)
+    this.homeFeed = await dbGetHomeFeedNotes(50)
     this.listener = onNewHomeFeedNote(event => {
       this.homeFeed.unshift(event)
     })
@@ -29,6 +37,24 @@ export default {
 
   async beforeUnmount() {
     if (this.listener) this.listener.cancel()
+  },
+
+  methods: {
+    async loadMore(_, done) {
+      if (this.homeFeed.length > 0) {
+        let newNotes = await dbGetHomeFeedNotes(
+          50,
+          this.homeFeed[this.homeFeed.length - 1].created_at - 1
+        )
+
+        if (newNotes.length === 0) {
+          this.reachedEnd = true
+        }
+
+        this.homeFeed = this.homeFeed.concat(newNotes)
+      }
+      done()
+    }
   }
 }
 </script>

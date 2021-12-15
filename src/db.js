@@ -64,12 +64,15 @@ db.compact()
 
 // db queries
 // ~
-export async function dbGetHomeFeedNotes(limit = 50, skip = 0) {
+export async function dbGetHomeFeedNotes(
+  limit = 50,
+  since = Math.round(Date.now() / 1000)
+) {
   let result = await db.query('main/homefeed', {
     include_docs: true,
     descending: true,
     limit,
-    skip
+    startkey: since
   })
   return result.rows.map(r => r.doc)
 }

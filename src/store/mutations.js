@@ -58,7 +58,8 @@ export function follow(state, key) {
 }
 
 export function unfollow(state, key) {
-  delete state.following[key]
+  let idx = state.following.indexOf(key)
+  if (idx >= 0) state.following.splice(idx, 1)
 }
 
 export function addProfileToCache(state, event) {

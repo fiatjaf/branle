@@ -119,7 +119,7 @@
               </div>
             </q-form>
             <div class="text-lg">Following</div>
-            <q-list>
+            <q-list v-if="$store.state.following.length">
               <q-item
                 v-for="pubkey in $store.state.following"
                 :key="pubkey"
@@ -138,6 +138,9 @@
                 </q-item-section>
               </q-item>
             </q-list>
+            <div v-else class="my-3">
+              When you follow someone they will show up here.
+            </div>
           </q-card-section>
         </q-card>
       </div>

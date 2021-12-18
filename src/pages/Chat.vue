@@ -1,5 +1,5 @@
 <template>
-  <q-page class="px-4 py-6 relative">
+  <q-page class="px-4 pt-6 relative">
     <div class="text-xl">
       Chat with
       <span class="text-secondary">
@@ -9,15 +9,13 @@
 
     <q-separator class="my-6" />
 
-    <div class="flex-col justify-end absolute left-5 bottom-12 right-5">
-      <q-scroll-area
+    <div class="flex-col justify-end absolute left-5 bottom-5 right-5">
+      <q-infinite-scroll
         ref="chatScroll"
-        :thumb-style="{
-          left: '102%',
-          backgroundColor: 'red',
-          width: '10px',
-          opacity: 0.35
-        }"
+        reverse
+        :disable="reachedEnd"
+        :offset="250"
+        @load="loadMore"
       >
         <div v-for="event in messages" :key="event.id">
           <q-chat-message
@@ -32,33 +30,30 @@
           >
           </q-chat-message>
         </div>
-      </q-scroll-area>
-      <q-toolbar>
-        <q-toolbar-title>
-          <q-form @submit="submitMessage" @reset="text = ''">
-            <div class="flex w-full">
-              <q-input v-model="text" class="w-full" filled>
-                <template #append>
-                  <q-btn
-                    unelevated
-                    class="mx-4"
-                    label="Send"
-                    type="submit"
-                    color="secondary"
-                  />
-                </template>
-              </q-input>
-            </div>
-          </q-form>
-        </q-toolbar-title>
-      </q-toolbar>
+      </q-infinite-scroll>
+      <q-form @submit="submitMessage" @reset="text = ''">
+        <div class="flex w-full mt-4">
+          <q-input v-model="text" class="w-full" filled>
+            <template #append>
+              <q-btn
+                unelevated
+                class="mx-4"
+                label="Send"
+                type="submit"
+                color="secondary"
+                @click="submitMessage"
+              />
+            </template>
+          </q-input>
+        </div>
+      </q-form>
     </div>
   </q-page>
 </template>
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbGetMessages} from '../db'
+import {dbGetMessages, onNewMessage} from '../db'
 
 export default {
   name: 'Chat',
@@ -66,7 +61,9 @@ export default {
 
   data() {
     return {
+      listener: null,
       messages: [],
+      reachedEnd: false,
       text: ''
     }
   },
@@ -82,16 +79,22 @@ export default {
     this.restart()
   },
 
+  async beforeUnmount() {
+    if (this.listener) this.listener.cancel()
+  },
+
   methods: {
     async restart() {
+      if (this.listener) this.listener.cancel()
       this.messages = await dbGetMessages(this.$route.params.pubkey, 100)
+      this.listener = onNewMessage(this.$route.params.pubkey, event => {
+        this.messages.push(event)
+        this.scroll()
+      })
     },
 
-    async scroll() {
-      const scrollArea = this.$refs.chatScroll
-      const scrollTarget = scrollArea.getScrollTarget()
-      const duration = 350
-      scrollArea.setScrollPosition(scrollTarget.scrollHeight, duration)
+    scroll() {
+      this.$refs.chatScroll.scroll({top: 10000, left: 0, behavior: 'smooth'})
     },
 
     async submitMessage() {
@@ -101,7 +104,24 @@ export default {
       })
 
       this.text = ''
-      this.scroll()
+    },
+
+    async loadMore(_, done) {
+      if (this.messages.length === 0) {
+        this.reachedEnd = true
+        done()
+        return
+      }
+
+      let newMessages = await dbGetMessages(
+        100,
+        this.messages[0].created_at - 1
+      )
+      if (newMessages.length === 0) {
+        this.reachedEnd = true
+      }
+      this.messages = newMessages.concat(this.messages)
+      done()
     }
   }
 }

@@ -92,24 +92,45 @@ export function onNewHomeFeedNote(onNewEvent = () => {}) {
   return changes
 }
 
+export async function dbGetMessages(peerPubKey, limit = 50, since) {
+  let result = await db.query('main/messages', {
+    include_docs: true,
+    descending: false,
+    startkey: [peerPubKey, since],
+    endkey: [peerPubKey, {}],
+    limit
+  })
+  return result.rows.map(r => r.doc)
+}
+
+export function onNewMessage(peerPubKey, onNewEvent = () => {}) {
+  // listen for changes
+  let changes = db.changes({
+    live: true,
+    since: 'now',
+    include_docs: true,
+    filter: '_view',
+    view: 'main/messages'
+  })
+
+  changes.on('change', change => {
+    if (
+      change.doc.pubkey === peerPubKey ||
+      change.doc.tags.find(([t, v]) => t === 'p' && v === peerPubKey)
+    ) {
+      onNewEvent(change.doc)
+    }
+  })
+
+  return changes
+}
+
 export async function dbGetMentions(ourPubKey, limit = 20, skip = 0) {
   let result = await db.query('main/mentions', {
     include_docs: true,
     descending: true,
     startkey: [ourPubKey, {}],
     endkey: [ourPubKey],
-    limit,
-    skip
-  })
-  return result.rows.map(r => r.doc)
-}
-
-export async function dbGetMessages(peerPubKey, limit = 50, skip = 0) {
-  let result = await db.query('main/messages', {
-    include_docs: true,
-    descending: true,
-    startkey: [peerPubKey, {}],
-    endkey: [peerPubKey],
     limit,
     skip
   })

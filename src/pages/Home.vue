@@ -41,18 +41,20 @@ export default {
 
   methods: {
     async loadMore(_, done) {
-      if (this.homeFeed.length > 0) {
-        let newNotes = await dbGetHomeFeedNotes(
-          50,
-          this.homeFeed[this.homeFeed.length - 1].created_at - 1
-        )
-
-        if (newNotes.length === 0) {
-          this.reachedEnd = true
-        }
-
-        this.homeFeed = this.homeFeed.concat(newNotes)
+      if (this.messages.length === 0) {
+        this.reachedEnd = true
+        done()
+        return
       }
+
+      let newNotes = await dbGetHomeFeedNotes(
+        50,
+        this.homeFeed[this.homeFeed.length - 1].created_at - 1
+      )
+      if (newNotes.length === 0) {
+        this.reachedEnd = true
+      }
+      this.homeFeed = this.homeFeed.concat(newNotes)
       done()
     }
   }

@@ -2,9 +2,7 @@
   <q-page class="px-4 py-6">
     <div class="text-xl">Encrypted Chat</div>
 
-    <q-separator class="my-6" />
-
-    <q-list>
+    <q-list v-if="$store.state.following.length" class="my-4">
       <q-item
         v-for="followedKey in $store.state.following"
         :key="followedKey"
@@ -18,11 +16,15 @@
           </q-avatar>
         </q-item-section>
 
-        <q-item-section>{{
-          $store.getters.displayName(followedKey)
-        }}</q-item-section>
+        <q-item-section>
+          {{ $store.getters.displayName(followedKey) }}
+        </q-item-section>
       </q-item>
     </q-list>
+
+    <div v-else class="m-8 text-base">
+      <p>Start following some people to initiate chats.</p>
+    </div>
   </q-page>
 </template>
 

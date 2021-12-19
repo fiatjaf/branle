@@ -52,7 +52,7 @@ db.upsert('_design/main', current => {
               var tag = event.tags[i]
               if (tag[0] === 'p') {
                 emit([tag[1], event.created_at])
-                return
+                break
               }
             }
             emit([event.pubkey, event.created_at])

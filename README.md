@@ -1,4 +1,4 @@
-# Noves (noves)
+# branle
 
 a twitter-like nostr client forked off from https://github.com/arcbtc/nostr.
 

@@ -9,5 +9,7 @@ export default function () {
 
     profilesCache: {}, // { [pubkey]: {name, about, picture, ...} }
     profilesCacheLRU: [], // [ pubkeys... ]
+
+    notifications: {}
   }
 }

@@ -92,3 +92,7 @@ export function addProfileToCache(state, event) {
     state.me = JSON.parse(event.content)
   }
 }
+
+export function addNotification(state, event) {
+  state.notifications[event.id] = true
+}

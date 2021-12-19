@@ -190,6 +190,11 @@ export async function addEvent(store, event) {
       store.dispatch('useProfile', event.pubkey)
       break
     case 1:
+      if (
+        event.tags.find(([t, v]) => t === 'p' && v === store.state.keys.pub)
+      ) {
+        store.dispatch('addNotification', event)
+      }
       break
     case 2:
       break

@@ -25,6 +25,27 @@
               </q-item-section>
             </q-item>
 
+            <q-item v-ripple clickable :to="'/notifications'" active-class="">
+              <q-item-section avatar>
+                <q-icon name="notifications" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{'text-primary': $route.name === 'notifications'}"
+              >
+                Notifications
+
+                <q-badge
+                  v-if="Object.keys($store.state.notifications).length"
+                  color="primary"
+                  floating
+                  transparent
+                >
+                  {{ Object.keys($store.state.notifications).length }}
+                </q-badge>
+              </q-item-section>
+            </q-item>
+
             <q-item v-ripple clickable :to="'/messages'" active-class="">
               <q-item-section avatar>
                 <q-icon name="email" color="secondary" />
@@ -85,7 +106,7 @@
         </q-card>
       </div>
 
-      <div class="w-full sm:w-3/4 lg:w-2/4">
+      <div class="w-full sm:w-3/4 lg:w-2/4 pl-4">
         <q-page-container>
           <router-view />
         </q-page-container>

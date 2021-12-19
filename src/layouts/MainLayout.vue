@@ -86,13 +86,9 @@
       </div>
 
       <div class="w-full sm:w-3/4 lg:w-2/4">
-        <q-card flat bordered class="no-border-radius">
-          <q-card-section>
-            <q-page-container>
-              <router-view />
-            </q-page-container>
-          </q-card-section>
-        </q-card>
+        <q-page-container>
+          <router-view />
+        </q-page-container>
       </div>
 
       <div class="hidden lg:flex w-1/4">

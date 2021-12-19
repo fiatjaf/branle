@@ -124,7 +124,7 @@
                 @click="toProfile(pubkey)"
               >
                 <q-item-section avatar>
-                  <q-avatar round>
+                  <q-avatar rounded>
                     <img :src="$store.getters.avatar(pubkey)" />
                   </q-avatar>
                 </q-item-section>

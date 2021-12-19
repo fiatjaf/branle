@@ -1,4 +1,3 @@
-import {getEventHash} from 'nostr-tools'
 import {encrypt, decrypt} from 'nostr-tools/nip04'
 import {Notify} from 'quasar'
 
@@ -34,7 +33,11 @@ export function launch(store) {
     })
   })
 
+  // start listening for nostr events
   store.dispatch('restartMainSubscription')
+
+  // preload our own profile from the db
+  store.dispatch('useProfile', store.state.keys.pub)
 }
 
 var mainSub = pool
@@ -135,8 +138,6 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
     tags,
     content: message
   }
-
-  event.id = await getEventHash(event)
   pool.publish(event)
 
   store.dispatch('addEvent', event)
@@ -153,7 +154,6 @@ export async function setMetadata(store, metadata) {
     content: JSON.stringify(metadata)
   }
 
-  event.id = await getEventHash(event)
   pool.publish(event)
 }
 
@@ -173,13 +173,12 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
   if (replyTo) {
     event.tags.push(['e', replyTo])
   }
-  event.id = await getEventHash(event)
-
   pool.publish(event)
 }
 
 export async function addEvent(store, event) {
   event._id = event.id
+
   db.put(event).catch(err => {
     if (err.name === 'conflict') return
     console.error(err)
@@ -187,7 +186,8 @@ export async function addEvent(store, event) {
 
   switch (event.kind) {
     case 0:
-      store.commit('addProfileToCache', event)
+      // this will reset the profile cache for this URL
+      store.dispatch('useProfile', event.pubkey)
       break
     case 1:
       break

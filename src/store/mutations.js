@@ -69,12 +69,13 @@ export function addProfileToCache(state, event) {
       state.profilesCacheLRU.indexOf(event.pubkey),
       0
     )
-  } else {
-    try {
-      state.profilesCache[event.pubkey] = JSON.parse(event.content)
-    } catch (err) {
-      return
-    }
+  }
+
+  // replace the event in cache
+  try {
+    state.profilesCache[event.pubkey] = JSON.parse(event.content)
+  } catch (err) {
+    return
   }
 
   // adding to LRU

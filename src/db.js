@@ -9,7 +9,10 @@ PouchDB.plugin(PouchDBAdapterIDB).plugin(PouchDBMapReduce).plugin(PouchDBUpsert)
 
 // instantiate db (every doc will be an event, that's it)
 // ~
-export const db = new PouchDB('nostr-events')
+export const db = new PouchDB('nostr-events', {
+  auto_compaction: true,
+  revs_limit: 1
+})
 
 // db schema (views)
 // ~
@@ -63,7 +66,6 @@ db.upsert('_design/main', current => {
   }
 }).then(() => {
   db.viewCleanup().then(r => console.log('view cleanup done', r))
-  db.compact().then(r => console.log('compaction done', r))
 })
 
 // db queries
@@ -191,9 +193,17 @@ export async function dbGetProfile(pubkey) {
       return result.rows[0].doc
     default: {
       let sorted = result.rows.sort(
-        (a, b) => b.doc.created_at - a.doc.created_at
+        (a, b) => (b.doc?.created_at || 0) - (a.doc?.created_at || 0)
       )
-      sorted.slice(1).forEach(row => db.remove(row.doc))
+      sorted
+        .slice(1)
+        .filter(row => row.doc)
+        .forEach(row =>
+          db
+            .remove(row.doc)
+            .then(x => console.log('deleted', x))
+            .catch(e => console.log('failed to delete', e))
+        )
       return sorted[0].doc
     }
   }

@@ -23,7 +23,13 @@
         type="text"
         label="Picture URL"
         maxlength="150"
-      />
+      >
+        <template #after>
+          <q-avatar v-if="metadata.picture" rounded class="mx-3">
+            <img :src="metadata.picture" />
+          </q-avatar>
+        </template>
+      </q-input>
       <q-btn label="Save" type="submit" color="primary" />
     </q-form>
     <q-separator />
@@ -36,7 +42,7 @@
               <q-btn
                 round
                 flat
-                color="red-10"
+                color="primary"
                 icon="cancel"
                 size="xs"
                 @click="removeRelay(url)"

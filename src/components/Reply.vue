@@ -3,8 +3,8 @@
     <q-card-section class="no-shadow" vertical>
       <q-card-section class="no-shadow" horizontal>
         <q-card-section class="no-shadow q-pb-none">
-          <q-avatar>
-            <q-img :src="$store.getters.avatar(event.pubkey)" />
+          <q-avatar rounded>
+            <img :src="$store.getters.avatar(event.pubkey)" />
           </q-avatar>
         </q-card-section>
 

@@ -5,8 +5,8 @@
     </div>
 
     <div class="flex justify-left items-center mt-4">
-      <q-avatar round>
-        <img round :src="$store.getters.avatar($route.params.pubkey)" />
+      <q-avatar rounded>
+        <img :src="$store.getters.avatar($route.params.pubkey)" />
       </q-avatar>
       <div class="ml-4">
         <p class="mb-1 break-all w-96 text-xs font-mono text-secondary">

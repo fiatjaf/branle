@@ -28,7 +28,6 @@
             <q-input
               v-model="text"
               dense
-              style="font-size: 20px"
               autogrow
               label="Reply to this note"
               maxlength="280"

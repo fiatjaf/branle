@@ -98,7 +98,7 @@
     </div>
 
     <q-dialog v-model="keysDialog">
-      <q-card style="min-width: 350px">
+      <q-card class="px-2">
         <q-card-section>
           <div class="text-h6">Your keys <q-icon name="vpn_key" /></div>
           <p>

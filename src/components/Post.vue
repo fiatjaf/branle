@@ -13,12 +13,11 @@
         </q-btn>
       </q-card-section>
 
-      <q-separator vertical style="display: none" />
       <q-card-section class="col no-shadow">
-        <q-card-section class="q-pa-none" @click="dialogReply = true">
+        <q-card-section @click="dialogReply = true">
           <q-item-label
             >{{ $store.getters.displayName(event.pubkey) }}
-            <small style="color: grey">
+            <small>
               {{ niceDate(event.created_at) }}
             </small>
           </q-item-label>

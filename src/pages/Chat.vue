@@ -9,28 +9,13 @@
 
     <q-separator class="my-6" />
 
-    <div class="flex-col justify-end absolute left-5 bottom-5 right-5">
-      <q-infinite-scroll
-        ref="chatScroll"
-        reverse
-        :disable="reachedEnd"
-        :offset="250"
-        @load="loadMore"
-      >
+    <div class="flex flex-col justify-end absolute left-5 bottom-5 right-5">
+      <div ref="chatScroll" class="overflow-y-auto">
         <div v-for="event in messages" :key="event.id">
-          <q-chat-message
-            :text="[event.plaintext]"
-            :name="$store.getters.displayName(event.pubkey)"
-            :avatar="$store.getters.avatar(event.pubkey)"
-            :sent="event.pubkey === $store.state.keys.pub"
-            :stamp="niceDate(new Date(event.created_at))"
-            :bg-color="
-              event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'
-            "
-          >
-          </q-chat-message>
+          <Balloon :event="event" />
         </div>
-      </q-infinite-scroll>
+      </div>
+
       <q-form @submit="submitMessage" @reset="text = ''">
         <div class="flex w-full mt-4">
           <q-input v-model="text" class="w-full" filled>
@@ -52,7 +37,10 @@
 </template>
 
 <script>
+import {debounce} from 'quasar'
+
 import helpersMixin from '../utils/mixin'
+import {getElementFullHeight, isElementFullyScrolled} from '../utils/helpers'
 import {dbGetMessages, onNewMessage} from '../db'
 
 export default {
@@ -63,7 +51,7 @@ export default {
     return {
       listener: null,
       messages: [],
-      reachedEnd: false,
+      canLoadMore: false,
       text: ''
     }
   },
@@ -74,27 +62,86 @@ export default {
     }
   },
 
+  created() {
+    this.debouncedHandleScroll = debounce(this.handleScroll, 500)
+  },
+
   async mounted() {
+    // set chat scroll area height
+    let otherElementsTotalSize =
+      getElementFullHeight(this.$refs.chatScroll.parentNode.previousSibling) +
+      getElementFullHeight(
+        this.$refs.chatScroll.parentNode.previousSibling.previousSibling
+      ) +
+      getElementFullHeight(this.$refs.chatScroll.nextSibling)
+    let extraMarginAtTheTop = 40
+    this.$refs.chatScroll.style.height = `calc(100vh - ${
+      otherElementsTotalSize + extraMarginAtTheTop
+    }px)`
+
+    // load peer profile if it exists
     this.$store.dispatch('useProfile', this.$route.params.pubkey)
+
+    // load saved messages and start listening for new ones
     this.restart()
+
+    // listen for scroll events (all quasar helpers fail miserably, let's do it manually)
+    this.$refs.chatScroll.addEventListener('scroll', this.debouncedHandleScroll)
   },
 
   async beforeUnmount() {
     if (this.listener) this.listener.cancel()
+    this.$refs.chatScroll.removeEventListener(
+      'scroll',
+      this.debouncedHandleScroll
+    )
   },
 
   methods: {
     async restart() {
       if (this.listener) this.listener.cancel()
       this.messages = await dbGetMessages(this.$route.params.pubkey, 100)
-      this.listener = onNewMessage(this.$route.params.pubkey, event => {
-        this.messages.push(event)
-        this.scroll()
+
+      if (this.messages.length > 0) {
+        await this.scrollToBottom()
+        this.canLoadMore = true
+      }
+
+      this.listener = onNewMessage(this.$route.params.pubkey, async event => {
+        let last = this.messages[this.messages.length - 1]
+        if (
+          last.pubkey === event.pubkey &&
+          last.created_at + 120 >= event.created_at
+        ) {
+          last.combination = last.combination || [last]
+          last.combination.push(event)
+        } else {
+          this.messages.push(event)
+        }
+
+        if (isElementFullyScrolled(this.$refs.chatScroll)) {
+          await this.scrollToBottom()
+        }
       })
     },
 
-    scroll() {
-      this.$refs.chatScroll.scroll({top: 10000, left: 0, behavior: 'smooth'})
+    handleScroll(ev) {
+      if (!this.canLoadMore) return
+
+      if (this.$refs.chatScroll.scrollTop === 0) this.loadMore()
+    },
+
+    async scrollToBottom() {
+      return new Promise(resolve =>
+        setTimeout(() => {
+          this.$refs.chatScroll.scroll({
+            top: this.$refs.chatScroll.scrollHeight + 1000,
+            left: 0,
+            behavior: 'smooth'
+          })
+          resolve()
+        }, 10)
+      )
     },
 
     async submitMessage() {
@@ -106,22 +153,39 @@ export default {
       this.text = ''
     },
 
-    async loadMore(_, done) {
+    async loadMore() {
       if (this.messages.length === 0) {
-        this.reachedEnd = true
-        done()
+        this.canLoadMore = false
         return
       }
 
       let newMessages = await dbGetMessages(
+        this.$route.params.pubkey,
         100,
         this.messages[0].created_at - 1
       )
+
       if (newMessages.length === 0) {
-        this.reachedEnd = true
+        this.canLoadMore = false
+      } else {
+        // scroll down such that we stay at the same place we were (instead of
+        // staying at the top of the scrolled screen where the new messages will be)
+        let currentScrollBottom =
+          this.$refs.chatScroll.scrollHeight -
+          this.$refs.chatScroll.scrollTop -
+          this.$refs.chatScroll.clientHeight
+
+        setTimeout(() => {
+          let newScrollTop =
+            this.$refs.chatScroll.scrollHeight -
+            currentScrollBottom -
+            this.$refs.chatScroll.clientHeight
+
+          this.$refs.chatScroll.scroll(0, newScrollTop)
+        }, 100)
       }
+
       this.messages = newMessages.concat(this.messages)
-      done()
     }
   }
 }

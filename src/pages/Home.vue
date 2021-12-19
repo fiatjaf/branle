@@ -3,11 +3,6 @@
     <Publish />
     <q-infinite-scroll :disable="reachedEnd" :offset="150" @load="loadMore">
       <Post v-for="event in homeFeed" :key="event.id" :event="event" />
-      <template #loading>
-        <div class="flex justify-center items-center p-8">
-          <q-spinner-dots color="secondary" size="40px" />
-        </div>
-      </template>
     </q-infinite-scroll>
   </q-page>
 </template>
@@ -30,6 +25,10 @@ export default {
 
   async mounted() {
     this.homeFeed = await dbGetHomeFeedNotes(50)
+    if (this.homeFeed.length > 0) {
+      this.reachedEnd = false
+    }
+
     this.listener = onNewHomeFeedNote(event => {
       this.homeFeed.unshift(event)
     })
@@ -41,7 +40,7 @@ export default {
 
   methods: {
     async loadMore(_, done) {
-      if (this.messages.length === 0) {
+      if (this.homeFeed.length === 0) {
         this.reachedEnd = true
         done()
         return

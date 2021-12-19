@@ -92,15 +92,35 @@ export function onNewHomeFeedNote(onNewEvent = () => {}) {
   return changes
 }
 
-export async function dbGetMessages(peerPubKey, limit = 50, since) {
+export async function dbGetMessages(
+  peerPubKey,
+  limit = 50,
+  since = Math.round(Date.now() / 1000)
+) {
   let result = await db.query('main/messages', {
     include_docs: true,
-    descending: false,
+    descending: true,
     startkey: [peerPubKey, since],
-    endkey: [peerPubKey, {}],
+    endkey: [peerPubKey, 0],
     limit
   })
-  return result.rows.map(r => r.doc)
+  return result.rows
+    .map(r => r.doc)
+    .reverse()
+    .reduce((acc, event) => {
+      if (!acc.length) return [event]
+      let last = acc[acc.length - 1]
+      if (
+        last.pubkey === event.pubkey &&
+        last.created_at + 120 >= event.created_at
+      ) {
+        last.combination = last.combination || [last]
+        last.combination.push(event)
+      } else {
+        acc.push(event)
+      }
+      return acc
+    }, [])
 }
 
 export function onNewMessage(peerPubKey, onNewEvent = () => {}) {

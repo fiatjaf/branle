@@ -15,12 +15,12 @@ const routes = [
       },
       {
         path: '/messages',
-        component: () => import('pages/Messages.vue'),
+        component: () => import('pages/Chats.vue'),
         name: 'messages'
       },
       {
         path: '/messages/:pubkey',
-        component: () => import('pages/Chat.vue'),
+        component: () => import('pages/Messages.vue'),
         name: 'chat'
       },
       {

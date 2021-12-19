@@ -2,33 +2,40 @@
   <q-page class="px-4 py-6">
     <div class="text-xl">Encrypted Chat</div>
 
-    <q-list v-if="$store.state.following.length" class="my-4">
+    <q-list v-if="chats.length" class="my-4">
       <q-item
-        v-for="followedKey in $store.state.following"
-        :key="followedKey"
+        v-for="chat in chats"
+        :key="chat.peer"
         v-ripple
         clickable
-        :to="'/messages/' + followedKey"
+        :to="'/messages/' + chat.peer"
       >
         <q-item-section avatar>
           <q-avatar round>
-            <img :src="$store.getters.avatar(followedKey)" />
+            <img :src="$store.getters.avatar(chat.peer)" />
           </q-avatar>
         </q-item-section>
-
         <q-item-section>
-          {{ $store.getters.displayName(followedKey) }}
+          {{ $store.getters.displayName(chat.peer) }}
+        </q-item-section>
+        <q-item-section side>
+          {{ niceDate(chat.lastMessage) }}
         </q-item-section>
       </q-item>
     </q-list>
 
     <div v-else class="m-8 text-base">
-      <p>Start following some people to initiate chats.</p>
+      <p>
+        Start a chat by clicking at the
+        <q-icon unelevated color="primary" name="message" size="md" /> icon on
+        someone's profile page.
+      </p>
     </div>
   </q-page>
 </template>
 
 <script>
+import {dbGetChats} from '../db'
 import helpersMixin from '../utils/mixin'
 
 export default {
@@ -37,9 +44,12 @@ export default {
 
   data() {
     return {
-      pubkey: '',
-      text: ''
+      chats: []
     }
+  },
+
+  async mounted() {
+    this.chats = await dbGetChats(this.$store.state.keys.pub)
   }
 }
 </script>

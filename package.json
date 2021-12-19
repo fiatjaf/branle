@@ -16,6 +16,7 @@
     "pouchdb-adapter-idb": "6",
     "pouchdb-core": "6",
     "pouchdb-mapreduce": "6",
+    "pouchdb-upsert": "^2.2.0",
     "quasar": "^2.0.0",
     "readable-stream": "^3.6.0",
     "stream": "^0.0.2",

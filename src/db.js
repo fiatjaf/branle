@@ -1,10 +1,11 @@
 /* global emit */
 
 import PouchDB from 'pouchdb-core'
-import PouchDBAdapterIDB from 'pouchdb-adapter-idb'
+import PouchDBUpsert from 'pouchdb-upsert'
 import PouchDBMapReduce from 'pouchdb-mapreduce'
+import PouchDBAdapterIDB from 'pouchdb-adapter-idb'
 
-PouchDB.plugin(PouchDBAdapterIDB).plugin(PouchDBMapReduce)
+PouchDB.plugin(PouchDBAdapterIDB).plugin(PouchDBMapReduce).plugin(PouchDBUpsert)
 
 // instantiate db (every doc will be an event, that's it)
 // ~
@@ -12,55 +13,58 @@ export const db = new PouchDB('nostr-events')
 
 // db schema (views)
 // ~
-db.put({
-  _id: '_design/main',
-  views: {
-    profiles: {
-      map: function (event) {
-        if (event.kind === 0) {
-          emit(event.pubkey)
-        }
-      }.toString()
-    },
-    homefeed: {
-      map: function (event) {
-        if (event.kind === 1) {
-          emit(event.created_at)
-        }
-      }.toString()
-    },
-    mentions: {
-      map: function (event) {
-        if (event.kind === 1) {
-          for (var i = 0; i < event.tags.length; i++) {
-            var tag = event.tags[i]
-            if (tag[0] === 'p') emit([tag[1], event.created_at])
-            if (tag[0] === 'e') emit([tag[1], event.created_at])
+const DESIGN_VERSION = 1
+db.upsert('_design/main', current => {
+  if (current.version >= DESIGN_VERSION) return false
+
+  return {
+    version: DESIGN_VERSION,
+    views: {
+      profiles: {
+        map: function (event) {
+          if (event.kind === 0) {
+            emit(event.pubkey)
           }
-        }
-      }.toString()
-    },
-    messages: {
-      map: function (event) {
-        if (event.kind === 4) {
-          for (var i = 0; i < event.tags.length; i++) {
-            var tag = event.tags[i]
-            if (tag[0] === 'p') {
-              emit([tag[1], event.created_at])
+        }.toString()
+      },
+      homefeed: {
+        map: function (event) {
+          if (event.kind === 1) {
+            emit(event.created_at)
+          }
+        }.toString()
+      },
+      mentions: {
+        map: function (event) {
+          if (event.kind === 1) {
+            for (var i = 0; i < event.tags.length; i++) {
+              var tag = event.tags[i]
+              if (tag[0] === 'p') emit([tag[1], event.created_at])
+              if (tag[0] === 'e') emit([tag[1], event.created_at])
             }
           }
-          emit([event.pubkey, event.created_at])
-        }
-      }.toString()
+        }.toString()
+      },
+      messages: {
+        map: function (event) {
+          if (event.kind === 4) {
+            for (var i = 0; i < event.tags.length; i++) {
+              var tag = event.tags[i]
+              if (tag[0] === 'p') {
+                emit([tag[1], event.created_at])
+                return
+              }
+            }
+            emit([event.pubkey, event.created_at])
+          }
+        }.toString()
+      }
     }
   }
-}).catch(err => {
-  if (err.name === 'conflict') return
-  console.error(err)
+}).then(() => {
+  db.viewCleanup().then(r => console.log('view cleanup done', r))
+  db.compact().then(r => console.log('compaction done', r))
 })
-
-db.viewCleanup()
-db.compact()
 
 // db queries
 // ~
@@ -90,6 +94,24 @@ export function onNewHomeFeedNote(onNewEvent = () => {}) {
   changes.on('change', change => onNewEvent(change.doc))
 
   return changes
+}
+
+export async function dbGetChats(ourPubKey) {
+  let result = await db.query('main/messages')
+
+  let chats = result.rows
+    .map(r => r.key)
+    .reduce((acc, [peer, date]) => {
+      acc[peer] = acc[peer] || 0
+      if (date > acc[peer]) acc[peer] = date
+      return acc
+    }, {})
+
+  delete chats[ourPubKey]
+
+  return Object.entries(chats)
+    .sort((a, b) => b[1] - a[1])
+    .map(([peer, lastMessage]) => ({peer, lastMessage}))
 }
 
 export async function dbGetMessages(

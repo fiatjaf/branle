@@ -5531,7 +5531,7 @@ pouchdb-merge@6.4.3:
   resolved "https://registry.yarnpkg.com/pouchdb-merge/-/pouchdb-merge-6.4.3.tgz#4ef901f4aaa27be6aec0108998a127fe55bb0628"
   integrity sha512-UuSpex/V1kNr1aXcmg+TQlOdjzMWc08AX/Ja6jrPq9J42M97UFF+7Ijx3JllxDK0j6QJZrvhpvjFzsRhFC4+zw==
 
-pouchdb-promise@6.4.3:
+pouchdb-promise@6.4.3, pouchdb-promise@^6.1.2:
   version "6.4.3"
   resolved "https://registry.yarnpkg.com/pouchdb-promise/-/pouchdb-promise-6.4.3.tgz#74516f4acf74957b54debd0fb2c0e5b5a68ca7b3"
   integrity sha512-ruJaSFXwzsxRHQfwNHjQfsj58LBOY1RzGzde4PM5CWINZwFjCQAhZwfMrch2o/0oZT6d+Xtt0HTWhq35p3b0qw==
@@ -5545,6 +5545,13 @@ pouchdb-selector-core@6.4.3:
   dependencies:
     pouchdb-collate "6.4.3"
     pouchdb-utils "6.4.3"
+
+pouchdb-upsert@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/pouchdb-upsert/-/pouchdb-upsert-2.2.0.tgz#42b15e420848f3b294c35060589fdb51cf7f7f5f"
+  integrity sha1-QrFeQghI87KUw1BgWJ/bUc9/f18=
+  dependencies:
+    pouchdb-promise "^6.1.2"
 
 pouchdb-utils@6.4.3:
   version "6.4.3"

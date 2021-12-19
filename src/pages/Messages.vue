@@ -108,15 +108,19 @@ export default {
       }
 
       this.listener = onNewMessage(this.$route.params.pubkey, async event => {
-        let last = this.messages[this.messages.length - 1]
-        if (
-          last.pubkey === event.pubkey &&
-          last.created_at + 120 >= event.created_at
-        ) {
-          last.combination = last.combination || [last]
-          last.combination.push(event)
-        } else {
+        if (this.messages.length === 0) {
           this.messages.push(event)
+        } else {
+          let last = this.messages[this.messages.length - 1]
+          if (
+            last.pubkey === event.pubkey &&
+            last.created_at + 120 >= event.created_at
+          ) {
+            last.combination = last.combination || [last]
+            last.combination.push(event)
+          } else {
+            this.messages.push(event)
+          }
         }
 
         if (isElementFullyScrolled(this.$refs.chatScroll)) {

@@ -116,7 +116,7 @@ export async function dbGetHomeFeedNotes(
   return result.rows.map(r => r.doc)
 }
 
-export function onNewHomeFeedNote(onNewEvent = () => {}) {
+export function onNewHomeFeedNote(callback = () => {}) {
   // listen for changes
   let changes = db.changes({
     live: true,
@@ -126,7 +126,7 @@ export function onNewHomeFeedNote(onNewEvent = () => {}) {
     view: 'main/homefeed'
   })
 
-  changes.on('change', change => onNewEvent(change.doc))
+  changes.on('change', change => callback(change.doc))
 
   return changes
 }
@@ -180,7 +180,7 @@ export async function dbGetMessages(
     }, [])
 }
 
-export function onNewMessage(peerPubKey, onNewEvent = () => {}) {
+export function onNewMessage(peerPubKey, callback = () => {}) {
   // listen for changes
   let changes = db.changes({
     live: true,
@@ -195,7 +195,7 @@ export function onNewMessage(peerPubKey, onNewEvent = () => {}) {
       change.doc.pubkey === peerPubKey ||
       change.doc.tags.find(([t, v]) => t === 'p' && v === peerPubKey)
     ) {
-      onNewEvent(change.doc)
+      callback(change.doc)
     }
   })
 
@@ -206,16 +206,44 @@ export async function dbGetEvent(id) {
   return await db.get(id)
 }
 
-export async function dbGetMentions(ourPubKey, limit = 20, skip = 0) {
+export async function dbGetMentions(ourPubKey, limit = 40, since, until) {
   let result = await db.query('main/mentions', {
     include_docs: true,
     descending: true,
-    startkey: [ourPubKey, {}],
-    endkey: [ourPubKey],
-    limit,
-    skip
+    startkey: [ourPubKey, until],
+    endkey: [ourPubKey, since],
+    limit
   })
   return result.rows.map(r => r.doc)
+}
+
+export function onNewMention(ourPubKey, callback = () => {}) {
+  // listen for changes
+  let changes = db.changes({
+    live: true,
+    since: 'now',
+    include_docs: true,
+    filter: '_view',
+    view: 'main/mentions'
+  })
+
+  changes.on('change', change => {
+    if (change.doc.tags.find(([t, v]) => t === 'p' && v === ourPubKey)) {
+      callback(change.doc)
+    }
+  })
+
+  return changes
+}
+
+export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
+  let result = await db.query('main/mentions', {
+    include_docs: false,
+    descending: true,
+    startkey: [ourPubKey, {}],
+    endkey: [ourPubKey, since]
+  })
+  return result.rows.length
 }
 
 export async function dbGetProfile(pubkey) {
@@ -235,7 +263,9 @@ export async function dbGetProfile(pubkey) {
       sorted
         .slice(1)
         .filter(row => row.doc)
-        .forEach(row => db.remove(row.doc))
+        .forEach(row =>
+          db.remove(row.doc).then(() => console.lg('DELETED DOC'))
+        )
       return sorted[0].doc
     }
   }

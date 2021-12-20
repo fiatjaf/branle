@@ -18,6 +18,9 @@ export default function (store) {
       case 'unfollow':
         LocalStorage.set('following', state.following)
         break
+      case 'readNotifications':
+        LocalStorage.set('lastNotificationRead', state.lastNotificationRead)
+        break
     }
   })
 }

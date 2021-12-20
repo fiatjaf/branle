@@ -41,6 +41,11 @@ export default {
       tags.push(['p', this.event.pubkey])
       tags.push(['e', this.event.id])
 
+      let self = tags.findIndex(
+        ([t, v]) => t === 'p' && v === this.$store.state.keys.pub
+      )
+      if (self !== -1) tags.splice(self, 1)
+
       this.$store.dispatch('sendPost', {
         message: this.text,
         tags

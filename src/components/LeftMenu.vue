@@ -33,13 +33,8 @@
           >
             Notifications
 
-            <q-badge
-              v-if="notifications.length"
-              color="primary"
-              floating
-              transparent
-            >
-              {{ notifications.length }}
+            <q-badge v-if="unread" color="primary" floating transparent>
+              {{ unread }}
             </q-badge>
           </q-item-section>
         </q-item>
@@ -103,6 +98,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
+import {dbGetUnreadNotificationsCount, onNewMention} from '../db'
 
 export default {
   name: 'LeftMenu',
@@ -110,9 +106,28 @@ export default {
 
   data() {
     return {
-      notifications: [],
+      unread: 0,
+      listener: null,
       dialogPublish: false
     }
+  },
+
+  async mounted() {
+    this.unread = await dbGetUnreadNotificationsCount(
+      this.$store.state.keys.pub,
+      this.$store.state.lastNotificationRead
+    )
+
+    this.listener = onNewMention(this.$store.state.keys.pub, async event => {
+      this.unread = await dbGetUnreadNotificationsCount(
+        this.$store.state.keys.pub,
+        this.$store.state.lastNotificationRead
+      )
+    })
+  },
+
+  async beforeUnmount() {
+    if (this.listener) this.listener.cancel()
   }
 }
 </script>

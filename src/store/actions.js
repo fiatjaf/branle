@@ -7,6 +7,9 @@ import {dbSave, dbGetProfile} from '../db'
 export function launch(store) {
   if (!store.state.keys.pub) {
     store.commit('setKeys') // passing no arguments will cause a new seed to be generated
+
+    // also initialize the lastNotificationRead value
+    store.commit('readNotifications')
   }
 
   // now we already have a key
@@ -131,14 +134,13 @@ export function restartMainSubscription(store) {
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
 
-  let event = {
+  let event = pool.publish({
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind,
     tags,
     content: message
-  }
-  pool.publish(event)
+  })
 
   store.dispatch('addEvent', event)
 }
@@ -146,15 +148,15 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 export async function setMetadata(store, metadata) {
   store.commit('setMetadata', metadata)
 
-  var event = {
+  let event = pool.publish({
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind: 0,
     tags: [],
     content: JSON.stringify(metadata)
-  }
+  })
 
-  pool.publish(event)
+  store.dispatch('addEvent', event)
 }
 
 export async function sendChatMessage(store, {pubkey, text, replyTo}) {
@@ -173,7 +175,10 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
   if (replyTo) {
     event.tags.push(['e', replyTo])
   }
-  pool.publish(event)
+
+  event = pool.publish(event)
+
+  store.dispatch('addEvent', event)
 }
 
 export async function addEvent(store, event) {

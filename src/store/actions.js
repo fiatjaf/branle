@@ -9,7 +9,7 @@ export function launch(store) {
     store.commit('setKeys') // passing no arguments will cause a new seed to be generated
 
     // also initialize the lastNotificationRead value
-    store.commit('readNotifications')
+    store.commit('haveReadNotifications')
   }
 
   // now we already have a key

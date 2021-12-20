@@ -1,5 +1,5 @@
 <template>
-  <q-layout>
+  <q-layout class="bg-lime-100">
     <div class="flex">
       <LeftMenu />
 
@@ -10,7 +10,7 @@
       </div>
 
       <div class="hidden lg:flex w-1/4">
-        <q-card class="no-shadow px-4 py-6">
+        <q-card class="no-shadow px-4 py-6 bg-inherit">
           <q-card-section>
             <q-form class="mb-6" @submit="searchProfile">
               <div>

@@ -1,5 +1,5 @@
 <template>
-  <q-card class="no-shadow p-8">
+  <q-card class="no-shadow p-6 bg-inherit">
     <q-card-section>
       <q-form @submit="sendPost">
         <q-input v-model="text" dense label="Say something" maxlength="280">

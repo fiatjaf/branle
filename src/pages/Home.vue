@@ -51,14 +51,14 @@ export default {
         return
       }
 
-      let newNotes = await dbGetHomeFeedNotes(
+      let loadedNotes = await dbGetHomeFeedNotes(
         50,
         this.homeFeed[this.homeFeed.length - 1].created_at - 1
       )
-      if (newNotes.length === 0) {
+      if (loadedNotes.length === 0) {
         this.reachedEnd = true
       }
-      this.homeFeed = this.homeFeed.concat(newNotes)
+      this.homeFeed = this.homeFeed.concat(loadedNotes)
       done()
     }
   }

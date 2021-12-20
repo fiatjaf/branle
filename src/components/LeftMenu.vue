@@ -4,7 +4,7 @@
   </q-dialog>
 
   <div class="hidden sm:flex w-1/4 justify-center px-8">
-    <q-card flat no-box-shadow class="text-xl">
+    <q-card flat no-box-shadow class="text-xl bg-inherit">
       <q-card-section class="flex justify-center">
         <q-img src="/bird.png" fit="scale-down" width="80px" />
       </q-card-section>
@@ -108,6 +108,7 @@ export default {
     return {
       unread: 0,
       listener: null,
+      unwatch: null,
       dialogPublish: false
     }
   },
@@ -124,10 +125,21 @@ export default {
         this.$store.state.lastNotificationRead
       )
     })
+
+    this.unwatch = this.$store.watch(
+      state => state.lastNotificationRead,
+      async () => {
+        this.unread = await dbGetUnreadNotificationsCount(
+          this.$store.state.keys.pub,
+          this.$store.state.lastNotificationRead
+        )
+      }
+    )
   },
 
   async beforeUnmount() {
     if (this.listener) this.listener.cancel()
+    if (this.unwatch) this.unwatch()
   }
 }
 </script>

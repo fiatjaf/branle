@@ -93,6 +93,6 @@ export function addProfileToCache(state, event) {
   }
 }
 
-export function readNotifications(state) {
+export function haveReadNotifications(state) {
   state.lastNotificationRead = Math.round(Date.now() / 1000)
 }

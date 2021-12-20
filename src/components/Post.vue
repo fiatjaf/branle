@@ -1,5 +1,8 @@
 <template>
-  <q-item class="my-3">
+  <q-item
+    :class="highlighted ? 'py-6' : 'py-4'"
+    :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
+  >
     <q-item-section avatar>
       <q-avatar
         class="no-shadow cursor-pointer"
@@ -56,6 +59,7 @@ export default {
   mixins: [helpersMixin],
   props: {
     event: {type: Object, required: true},
+    highlighted: {type: Boolean, default: false},
     standalone: {type: Boolean, default: false}
   },
 

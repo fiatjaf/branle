@@ -6,7 +6,8 @@
   "author": "fiatjaf <fiatjaf@gmail.com>",
   "private": true,
   "scripts": {
-    "lint": "eslint --ext .js,.vue ./"
+    "lint": "eslint --ext .js,.vue ./",
+    "dev": "quasar dev --port 3001"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",

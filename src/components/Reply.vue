@@ -33,12 +33,17 @@ export default {
 
   methods: {
     sendReply() {
+      const tags = this.event.tags.filter(
+        ([t, v]) =>
+          (t === 'p' && v !== this.event.pubkey) ||
+          (t === 'e' && v !== this.event.id)
+      )
+      tags.push(['p', this.event.pubkey])
+      tags.push(['e', this.event.id])
+
       this.$store.dispatch('sendPost', {
         message: this.text,
-        tags: [
-          ['p', this.event.pubkey],
-          ['e', this.event.id]
-        ]
+        tags
       })
       this.text = ''
     }

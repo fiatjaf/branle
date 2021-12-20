@@ -1,3 +1,4 @@
+import relative from 'relative-date'
 import {date} from 'quasar'
 
 export default {
@@ -15,6 +16,10 @@ export default {
     },
 
     niceDate(value) {
+      if (value + 60 * 60 /* an hour */ > Date.now() / 1000) {
+        return relative(value * 1000)
+      }
+
       return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
     }
   }

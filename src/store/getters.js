@@ -1,9 +1,13 @@
 import Identicon from 'identicon.js'
 
+export function hasName(state) {
+  return pubkey => !!state.profilesCache[pubkey]
+}
+
 export function displayName(state) {
   return pubkey => {
-    let {name = pubkey.slice(0, 3) + '...' + pubkey.slice(-4)} =
-      state.profilesCache[pubkey] || {}
+    let pubShort = pubkey.slice(0, 3) + '...' + pubkey.slice(-4)
+    let {name = pubShort} = state.profilesCache[pubkey] || {}
     return name
   }
 }

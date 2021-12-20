@@ -5,7 +5,7 @@
         <q-input v-model="text" dense label="Say something" maxlength="280">
           <template #before>
             <q-btn round class="mr-3" @click="toProfile($store.state.keys.pub)">
-              <q-avatar rounded size="42px">
+              <q-avatar round size="42px">
                 <img :src="$store.getters.avatar($store.state.keys.pub)" />
               </q-avatar>
             </q-btn>

@@ -35,7 +35,10 @@
             </span>
           </div>
         </div>
-        <div class="text-slate-500 cursor-pointer hover:underline text-xs">
+        <div
+          class="text-slate-500 cursor-pointer hover:underline text-xs"
+          @click="toEvent(event.id)"
+        >
           {{ niceDate(event.created_at) }}
         </div>
       </q-item-label>

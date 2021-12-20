@@ -68,6 +68,39 @@ db.upsert('_design/main', current => {
   db.viewCleanup().then(r => console.log('view cleanup done', r))
 })
 
+// general function for saving an event, with granular logic for each kind
+//
+export async function dbSave(event) {
+  switch (event.kind) {
+    case 0: {
+      // first check if we don't have a newer metadata for this user
+      let current = await dbGetProfile(event.pubkey)
+      if (current.created_at >= event.created_at) {
+        return
+      }
+      break
+    }
+    case 1:
+      break
+    case 2:
+      break
+    case 3:
+      break
+    case 4:
+      break
+  }
+
+  event._id = event.id
+
+  try {
+    await db.put(event)
+  } catch (err) {
+    if (err.name !== 'conflict') {
+      console.error('unexpected error saving event', event, err)
+    }
+  }
+}
+
 // db queries
 // ~
 export async function dbGetHomeFeedNotes(
@@ -202,12 +235,7 @@ export async function dbGetProfile(pubkey) {
       sorted
         .slice(1)
         .filter(row => row.doc)
-        .forEach(row =>
-          db
-            .remove(row.doc)
-            .then(x => console.log('deleted', x))
-            .catch(e => console.log('failed to delete', e))
-        )
+        .forEach(row => db.remove(row.doc))
       return sorted[0].doc
     }
   }

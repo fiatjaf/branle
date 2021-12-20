@@ -2,7 +2,7 @@ import {encrypt, decrypt} from 'nostr-tools/nip04'
 import {Notify} from 'quasar'
 
 import {pool} from '../pool'
-import {db, dbGetProfile} from '../db'
+import {dbSave, dbGetProfile} from '../db'
 
 export function launch(store) {
   if (!store.state.keys.pub) {
@@ -177,24 +177,15 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
 }
 
 export async function addEvent(store, event) {
-  event._id = event.id
+  await dbSave(event)
 
-  db.put(event).catch(err => {
-    if (err.name === 'conflict') return
-    console.error(err)
-  })
-
+  // do things after the event is saved
   switch (event.kind) {
     case 0:
       // this will reset the profile cache for this URL
       store.dispatch('useProfile', event.pubkey)
       break
     case 1:
-      if (
-        event.tags.find(([t, v]) => t === 'p' && v === store.state.keys.pub)
-      ) {
-        store.dispatch('addNotification', event)
-      }
       break
     case 2:
       break

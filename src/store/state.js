@@ -8,8 +8,6 @@ export default function () {
     following: LocalStorage.getItem('following') || [], // [ pubkeys... ]
 
     profilesCache: {}, // { [pubkey]: {name, about, picture, ...} }
-    profilesCacheLRU: [], // [ pubkeys... ]
-
-    notifications: {}
+    profilesCacheLRU: [] // [ pubkeys... ]
   }
 }

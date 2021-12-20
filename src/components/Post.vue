@@ -1,9 +1,5 @@
 <template>
   <q-card flat>
-    <q-dialog v-model="dialogReply">
-      <Reply :event="event" :dialog="dialogReply" />
-    </q-dialog>
-
     <q-card-section class="no-shadow" horizontal>
       <q-card-section class="no-shadow">
         <q-btn round @click="toProfile(event.pubkey)">
@@ -14,7 +10,7 @@
       </q-card-section>
 
       <q-card-section class="col no-shadow">
-        <q-card-section @click="dialogReply = true">
+        <q-card-section @click="toEvent(event.id)">
           <q-item-label
             >{{ $store.getters.displayName(event.pubkey) }}
             <small>
@@ -34,10 +30,9 @@ import helpersMixin from '../utils/mixin'
 export default {
   mixins: [helpersMixin],
   props: {event: {type: Object, required: true}},
+
   data() {
-    return {
-      dialogReply: false
-    }
+    return {}
   }
 }
 </script>

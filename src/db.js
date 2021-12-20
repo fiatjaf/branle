@@ -169,6 +169,10 @@ export function onNewMessage(peerPubKey, onNewEvent = () => {}) {
   return changes
 }
 
+export async function dbGetEvent(id) {
+  return await db.get(id)
+}
+
 export async function dbGetMentions(ourPubKey, limit = 20, skip = 0) {
   let result = await db.query('main/mentions', {
     include_docs: true,

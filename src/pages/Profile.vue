@@ -58,14 +58,6 @@
       <div class="text-lg mx-4">Notes</div>
       <Post v-for="event in events" :key="event.id" :event="event" />
     </div>
-
-    <q-infinite-scroll v-if="events.length > 20" :offset="250">
-      <template #loading>
-        <div class="row justify-center q-my-md">
-          <q-spinner-dots color="primary" size="40px" />
-        </div>
-      </template>
-    </q-infinite-scroll>
   </q-page>
 </template>
 

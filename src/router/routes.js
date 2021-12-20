@@ -24,6 +24,11 @@ const routes = [
         name: 'chat'
       },
       {
+        path: '/event/:eventId',
+        component: () => import('pages/Event.vue'),
+        name: 'event'
+      },
+      {
         path: '/notifications',
         component: () => import('pages/Notifications.vue'),
         name: 'notifications'

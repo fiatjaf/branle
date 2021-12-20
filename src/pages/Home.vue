@@ -2,7 +2,12 @@
   <q-page>
     <Publish />
     <q-infinite-scroll :disable="reachedEnd" :offset="150" @load="loadMore">
-      <Post v-for="event in homeFeed" :key="event.id" :event="event" />
+      <Post
+        v-for="event in homeFeed"
+        :key="event.id"
+        :event="event"
+        standalone
+      />
     </q-infinite-scroll>
   </q-page>
 </template>

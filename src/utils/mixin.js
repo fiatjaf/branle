@@ -11,8 +11,8 @@ export default {
       this.$router.push('/event/' + id)
     },
 
-    pubShort(pubkey) {
-      return pubkey.slice(0, 3) + '...' + pubkey.slice(-4)
+    shorten(str) {
+      return str.slice(0, 3) + '…' + str.slice(-4)
     },
 
     niceDate(value) {

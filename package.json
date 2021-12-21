@@ -7,7 +7,9 @@
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
-    "dev": "quasar dev --port 3001"
+    "dev": "quasar dev --port 3001",
+    "build": "quasar build",
+    "publish": "netlify deploy --dir=dist/spa/ --prod"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",

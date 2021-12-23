@@ -36,6 +36,7 @@
         round
         unelevated
         flat
+        color="secondary"
         icon="cancel"
         size="xl"
         @click="unfollow"

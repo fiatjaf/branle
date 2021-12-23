@@ -134,7 +134,7 @@ export function restartMainSubscription(store) {
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
 
-  let event = pool.publish({
+  let event = await pool.publish({
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind,
@@ -148,7 +148,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 export async function setMetadata(store, metadata) {
   store.commit('setMetadata', metadata)
 
-  let event = pool.publish({
+  let event = await pool.publish({
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind: 0,
@@ -176,7 +176,7 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
     event.tags.push(['e', replyTo])
   }
 
-  event = pool.publish(event)
+  event = await pool.publish(event)
 
   store.dispatch('addEvent', event)
 }

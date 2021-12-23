@@ -6,9 +6,6 @@ export default function (store) {
       case 'setKeys':
         LocalStorage.set('keys', state.keys)
         break
-      case 'setProfile':
-        LocalStorage.set('me', state.me)
-        break
       case 'addRelay':
       case 'removeRelay':
       case 'setRelayOpt':

@@ -23,10 +23,6 @@ export function setKeys(state, {mnemonic, priv, pub} = {}) {
   state.keys = {mnemonic, priv, pub}
 }
 
-export function setMetadata(state, {name, picture, about}) {
-  state.me = {name, picture, about}
-}
-
 export function addRelay(state, url) {
   try {
     normalizeRelayURL(url)
@@ -79,17 +75,16 @@ export function addProfileToCache(state, event) {
   }
 
   // adding to LRU
-  state.profilesCacheLRU.push(event.pubkey)
+  if (event.pubkey === state.keys.pub) {
+    // if it's our own profile, we'll never remove from the cache
+  } else {
+    state.profilesCacheLRU.push(event.pubkey)
+  }
 
   // removing older stuff if necessary
   if (state.profilesCacheLRU.length > 150) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
-  }
-
-  // if it's our own profile, also save metadata to state.me (and thus to localStorage)
-  if (state.keys.pub === event.pubkey && Object.keys(state.me).length === 0) {
-    state.me = JSON.parse(event.content)
   }
 }
 

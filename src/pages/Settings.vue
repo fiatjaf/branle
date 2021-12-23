@@ -152,8 +152,10 @@ import {db} from '../db'
 export default {
   name: 'Settings',
   mixins: [helpersMixin],
+
   data() {
-    const {name, picture, about} = this.$store.state.me
+    const {name, picture, about} =
+      this.$store.state.profilesCache[this.$store.state.keys.pub] || {}
 
     return {
       keysDialog: false,
@@ -162,9 +164,27 @@ export default {
         name,
         picture,
         about
-      }
+      },
+      unsubscribe: null
     }
   },
+
+  mounted() {
+    this.unsubscribe = this.$store.subscribe((mutation, state) => {
+      if (mutation.type !== 'addProfileToCache') return
+
+      const {name, picture, about} = state.profilesCache[state.keys.pub] || {}
+
+      if (!this.metadata.name && name) this.metadata.name = name
+      if (!this.metadata.picture && picture) this.metadata.picture = picture
+      if (!this.metadata.about && about) this.metadata.about = about
+    })
+  },
+
+  beforeUnmount() {
+    if (this.unsubscribe) this.unsubscribe()
+  },
+
   methods: {
     setMetadata() {
       this.$store.dispatch('setMetadata', this.metadata)

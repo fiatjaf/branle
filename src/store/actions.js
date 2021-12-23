@@ -146,8 +146,6 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 }
 
 export async function setMetadata(store, metadata) {
-  store.commit('setMetadata', metadata)
-
   let event = await pool.publish({
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),

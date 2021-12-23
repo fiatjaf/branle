@@ -75,7 +75,8 @@ export async function dbSave(event) {
     case 0: {
       // first check if we don't have a newer metadata for this user
       let current = await dbGetProfile(event.pubkey)
-      if (current.created_at >= event.created_at) {
+      if (current && current.created_at >= event.created_at) {
+        // don't save
         return
       }
       break
@@ -268,9 +269,7 @@ export async function dbGetProfile(pubkey) {
       sorted
         .slice(1)
         .filter(row => row.doc)
-        .forEach(row =>
-          db.remove(row.doc).then(() => console.lg('DELETED DOC'))
-        )
+        .forEach(row => db.remove(row.doc))
       return sorted[0].doc
     }
   }

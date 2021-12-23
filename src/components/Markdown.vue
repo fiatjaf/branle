@@ -1,5 +1,6 @@
 <template>
   <div ref="src" class="hidden"><slot /></div>
+  <div ref="append" class="hidden"><slot name="append" /></div>
   <div v-html="html" />
 </template>
 
@@ -39,7 +40,8 @@ export default {
 
   methods: {
     render() {
-      this.html = md.render(this.$refs.src.innerHTML)
+      this.html =
+        md.render(this.$refs.src.innerHTML) + this.$refs.append.innerHTML
     }
   }
 }
@@ -49,5 +51,9 @@ export default {
 a {
   text-decoration: underline;
   color: #448195;
+}
+
+p {
+  display: inline;
 }
 </style>

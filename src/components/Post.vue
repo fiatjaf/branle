@@ -52,12 +52,30 @@
         </div>
       </q-item-label>
       <q-item-label
-        class="break-all pt-1 pl-1 text-base font-sans"
+        class="break-all pt-1 pl-1 text-base font-sans flex"
         :class="{'cursor-pointer': item}"
         @mousedown="startClicking"
         @mouseup="finishClicking"
       >
-        <Markdown>{{ event.content }}</Markdown>
+        <Markdown>
+          {{ trimmedContent }}
+          <template #append>
+            <q-icon
+              v-if="hasMore"
+              name="more_horiz"
+              color="primary"
+              class="
+                bg-white
+                drop-shadow
+                border-1
+                px-2
+                py-1
+                ml-1
+                -translate-y-1
+              "
+            />
+          </template>
+        </Markdown>
       </q-item-label>
     </q-item-section>
   </q-item>
@@ -90,6 +108,19 @@ export default {
         }
       }
       return null
+    },
+
+    trimmedContent() {
+      if (this.event.content.length > 280) {
+        return this.event.content.slice(0, 270)
+      }
+
+      return this.event.content
+    },
+
+    hasMore() {
+      if (this.event.content.length > 270) return true
+      return false
     }
   },
 
@@ -101,7 +132,9 @@ export default {
       }, 300)
     },
 
-    finishClicking() {
+    finishClicking(ev) {
+      if (ev.target.tagName === 'A') return
+
       if (this.clicking) this.toEvent(this.event.id)
     }
   }

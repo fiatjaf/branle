@@ -1,12 +1,16 @@
 <template>
-  <q-page>
+  <q-page class="px-4 pt-6">
+    <div class="text-xl">Home</div>
+
     <Publish />
+
     <q-infinite-scroll :disable="reachedEnd" :offset="150" @load="loadMore">
       <Post
         v-for="event in homeFeed"
         :key="event.id"
         :event="event"
         standalone
+        item
       />
     </q-infinite-scroll>
   </q-page>

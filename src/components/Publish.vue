@@ -1,11 +1,11 @@
 <template>
-  <q-card class="no-shadow p-6 bg-inherit">
+  <q-card class="no-shadow py-6 bg-inherit">
     <q-card-section>
       <q-form @submit="sendPost">
         <q-input v-model="text" dense label="Say something" maxlength="280">
           <template #before>
-            <q-btn round class="mr-3" @click="toProfile($store.state.keys.pub)">
-              <q-avatar round size="42px">
+            <q-btn round class="mr-4" @click="toProfile($store.state.keys.pub)">
+              <q-avatar round size="70px">
                 <img :src="$store.getters.avatar($store.state.keys.pub)" />
               </q-avatar>
             </q-btn>

@@ -1,6 +1,12 @@
 <template>
   <q-item
-    :class="highlighted ? 'py-6' : 'py-4'"
+    :class="{
+      'transition-colors': true,
+      'py-4': !highlighted,
+      'hover:bg-white/50': !highlighted && item,
+      'py-6': highlighted,
+      'bg-white/70': highlighted
+    }"
     :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
   >
     <q-item-section avatar>
@@ -45,7 +51,12 @@
           {{ niceDate(event.created_at) }}
         </div>
       </q-item-label>
-      <q-item-label class="break-all pt-1 pl-1 text-base font-sans">
+      <q-item-label
+        class="break-all pt-1 pl-1 text-base font-sans"
+        :class="{'cursor-pointer': item}"
+        @mousedown="startClicking"
+        @mouseup="finishClicking"
+      >
         {{ event.content }}
       </q-item-label>
     </q-item-section>
@@ -60,11 +71,14 @@ export default {
   props: {
     event: {type: Object, required: true},
     highlighted: {type: Boolean, default: false},
-    standalone: {type: Boolean, default: false}
+    standalone: {type: Boolean, default: false},
+    item: {type: Boolean, default: false}
   },
 
   data() {
-    return {}
+    return {
+      clicking: false
+    }
   },
 
   computed: {
@@ -76,6 +90,19 @@ export default {
         }
       }
       return null
+    }
+  },
+
+  methods: {
+    startClicking() {
+      this.clicking = true
+      setTimeout(() => {
+        this.clicking = false
+      }, 300)
+    },
+
+    finishClicking() {
+      if (this.clicking) this.toEvent(this.event.id)
     }
   }
 }

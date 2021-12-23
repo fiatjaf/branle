@@ -56,7 +56,13 @@
 
     <div>
       <div class="text-lg mx-4">Notes</div>
-      <Post v-for="event in events" :key="event.id" :event="event" standalone />
+      <Post
+        v-for="event in events"
+        :key="event.id"
+        :event="event"
+        standalone
+        item
+      />
     </div>
   </q-page>
 </template>

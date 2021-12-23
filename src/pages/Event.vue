@@ -15,7 +15,7 @@
 
     <div v-if="related.length">
       <div class="text-lg mx-4">Related</div>
-      <Post v-for="rel in related" :key="rel.id" :event="rel" />
+      <Post v-for="rel in related" :key="rel.id" :event="rel" item />
     </div>
   </q-page>
 </template>

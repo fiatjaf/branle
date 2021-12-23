@@ -203,7 +203,12 @@ export function onNewMessage(peerPubKey, callback = () => {}) {
 }
 
 export async function dbGetEvent(id) {
-  return await db.get(id)
+  try {
+    return await db.get(id)
+  } catch (err) {
+    if (err.name === 'not_found') return null
+    else throw err
+  }
 }
 
 export async function dbGetMentions(ourPubKey, limit = 40, since, until) {

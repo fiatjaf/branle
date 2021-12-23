@@ -57,7 +57,7 @@
         @mousedown="startClicking"
         @mouseup="finishClicking"
       >
-        {{ event.content }}
+        <Markdown>{{ event.content }}</Markdown>
       </q-item-label>
     </q-item-section>
   </q-item>

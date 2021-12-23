@@ -18,6 +18,7 @@
 import helpersMixin from '../utils/mixin'
 
 export default {
+  name: 'Balloon',
   mixins: [helpersMixin],
   props: {event: {type: Object, required: true}},
   data() {

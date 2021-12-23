@@ -12,9 +12,11 @@
         <p class="mb-1 break-all w-96 text-xs font-mono text-secondary">
           {{ $route.params.pubkey }}
         </p>
-        <p class="text-slate-600 text-base">
-          {{ $store.getters.profileDescription($route.params.pubkey) }}
-        </p>
+        <div class="text-slate-600 text-base">
+          <Markdown>
+            {{ $store.getters.profileDescription($route.params.pubkey) }}
+          </Markdown>
+        </div>
       </div>
     </div>
 

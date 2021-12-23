@@ -30,7 +30,7 @@
           </div>
         </div>
         <div class="text-xl my-4 font-sans break-all">
-          {{ event.content }}
+          <Markdown>{{ event.content }}</Markdown>
         </div>
         <div class="flex justify-end">
           <q-btn

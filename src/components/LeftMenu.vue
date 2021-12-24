@@ -6,10 +6,15 @@
   <div class="hidden sm:flex w-1/4 justify-center px-8">
     <q-card flat no-box-shadow class="text-xl bg-inherit">
       <q-card-section class="flex justify-center">
-        <q-img src="/bird.png" fit="scale-down" width="80px" />
+        <q-img
+          src="/bird.png"
+          fit="scale-down"
+          width="80px"
+          @click="$router.push('/')"
+        />
       </q-card-section>
       <q-list class="text-slate-700">
-        <q-item v-ripple clickable :to="'/'" active-class="">
+        <q-item v-ripple clickable to="/" active-class="">
           <q-item-section avatar>
             <q-icon name="home" color="secondary" />
           </q-item-section>
@@ -23,7 +28,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item v-ripple clickable :to="'/notifications'" active-class="">
+        <q-item v-ripple clickable to="/notifications" active-class="">
           <q-item-section avatar>
             <q-icon name="notifications" color="secondary" />
           </q-item-section>
@@ -39,7 +44,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item v-ripple clickable :to="'/messages'" active-class="">
+        <q-item v-ripple clickable to="/messages" active-class="">
           <q-item-section avatar>
             <q-icon name="email" color="secondary" />
           </q-item-section>
@@ -70,7 +75,27 @@
           </q-item-section>
         </q-item>
 
-        <q-item v-ripple clickable :to="'/settings'" active-class="">
+        <q-item
+          v-ripple
+          clickable
+          to="/follow"
+          active-class=""
+          class="lg:hidden"
+        >
+          <q-item-section avatar>
+            <q-icon name="manage_search" color="secondary" />
+          </q-item-section>
+
+          <q-item-section
+            :class="{
+              'text-primary': $route.name === 'follow'
+            }"
+          >
+            Search and Follows
+          </q-item-section>
+        </q-item>
+
+        <q-item v-ripple clickable to="/settings" active-class="">
           <q-item-section avatar>
             <q-icon name="settings" color="secondary" />
           </q-item-section>

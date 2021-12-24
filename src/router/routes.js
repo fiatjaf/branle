@@ -9,6 +9,11 @@ const routes = [
         name: 'home'
       },
       {
+        path: '/follow',
+        component: () => import('pages/SearchFollow.vue'),
+        name: 'follow'
+      },
+      {
         path: '/settings',
         component: () => import('pages/Settings.vue'),
         name: 'settings'

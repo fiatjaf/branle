@@ -129,14 +129,16 @@ export default {
     async listen() {
       this.event = await dbGetEvent(this.$route.params.eventId)
       if (this.event) {
+        this.$store.dispatch('useProfile', this.event.pubkey)
         this.listenAncestors()
       } else {
         this.eventSub = pool.sub(
           {
             filter: {id: this.$route.params.eventId},
             cb: async event => {
-              this.event = event
               this.eventSub.unsub()
+              this.event = event
+              this.$store.dispatch('useProfile', this.event.pubkey)
               this.listenAncestors()
             }
           },

@@ -1,8 +1,4 @@
 <template>
-  <q-dialog v-model="dialogPublish">
-    <Publish />
-  </q-dialog>
-
   <div class="hidden sm:flex w-1/4 justify-center px-8">
     <q-card flat no-box-shadow class="text-xl bg-inherit">
       <q-card-section class="flex justify-center">
@@ -105,18 +101,6 @@
           </q-item-section>
         </q-item>
       </q-list>
-
-      <div class="flex justify-center">
-        <q-btn
-          rounded
-          unelevated
-          color="primary"
-          size="md"
-          label="Publish"
-          class="mx-2 my-4 py-2 px-4 w-full"
-          @click="dialogPublish = true"
-        ></q-btn>
-      </div>
     </q-card>
   </div>
 </template>
@@ -134,7 +118,6 @@ export default {
       unread: 0,
       listener: null,
       unwatch: null,
-      dialogPublish: false
     }
   },
 

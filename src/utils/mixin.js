@@ -3,6 +3,14 @@ import {date} from 'quasar'
 
 export default {
   methods: {
+    json(o) {
+      return JSON.stringify(o)
+    },
+
+    log(o) {
+      return console.log(o)
+    },
+
     toProfile(pubkey) {
       this.$router.push('/' + pubkey)
     },
@@ -21,6 +29,8 @@ export default {
       }
 
       return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
-    }
+    },
+
+    plaintext(event) {}
   }
 }

@@ -116,8 +116,8 @@ export default {
             last.pubkey === event.pubkey &&
             last.created_at + 120 >= event.created_at
           ) {
-            last.combination = last.combination || [last]
-            last.combination.push(event)
+            last.appended = last.appended || []
+            last.appended.push(event)
           } else {
             this.messages.push(event)
           }

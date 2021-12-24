@@ -88,6 +88,9 @@ export async function dbSave(event) {
     case 3:
       break
     case 4:
+      // cleanup extra fields if somehow they manage to get in here (they shouldn't)
+      delete event.appended
+      delete event.plaintext
       break
   }
 
@@ -172,8 +175,8 @@ export async function dbGetMessages(
         last.pubkey === event.pubkey &&
         last.created_at + 120 >= event.created_at
       ) {
-        last.combination = last.combination || [last]
-        last.combination.push(event)
+        last.appended = last.appended || []
+        last.appended.push(event)
       } else {
         acc.push(event)
       }

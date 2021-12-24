@@ -1,4 +1,4 @@
-import {encrypt, decrypt} from 'nostr-tools/nip04'
+import {encrypt} from 'nostr-tools/nip04'
 import {Notify} from 'quasar'
 
 import {pool} from '../pool'
@@ -93,34 +93,9 @@ export function restartMainSubscription(store) {
             break
           case 2:
             break
+          case 3:
+            break
           case 4:
-            // a direct encrypted message
-            if (
-              event.tags.find(
-                ([tag, value]) => tag === 'p' && value === store.state.keys.pub
-              )
-            ) {
-              // it is addressed to us
-              // decrypt it
-              let [ciphertext, iv] = event.content.split('?iv=')
-              event.plaintext = decrypt(
-                store.state.keys.priv,
-                event.pubkey,
-                ciphertext,
-                iv
-              )
-            } else if (event.pubkey === store.state.keys.pub) {
-              // it is coming from us
-              let [_, target] = event.tags.find(([tag]) => tag === 'p')
-              // decrypt it
-              let [ciphertext, iv] = event.content.split('?iv=')
-              event.plaintext = decrypt(
-                store.state.keys.priv,
-                target,
-                ciphertext,
-                iv
-              )
-            }
             break
         }
 

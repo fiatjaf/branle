@@ -57,6 +57,7 @@ export default {
 
     // will mark notifications as read after 5 seconds in the page
     if (
+      this.notifications.length > 0 &&
       this.notifications[0].created_at > this.$store.state.lastNotificationRead
     ) {
       this.reading = true

@@ -4,7 +4,7 @@ import {date} from 'quasar'
 export default {
   methods: {
     json(o) {
-      return JSON.stringify(o)
+      return JSON.stringify(o, null, 2)
     },
 
     log(o) {
@@ -29,8 +29,6 @@ export default {
       }
 
       return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
-    },
-
-    plaintext(event) {}
+    }
   }
 }

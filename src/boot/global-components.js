@@ -1,3 +1,4 @@
+import RawEventData from '../components/RawEventData.vue'
 import LeftMenu from '../components/LeftMenu.vue'
 import Markdown from '../components/Markdown.vue'
 import Publish from '../components/Publish.vue'
@@ -8,6 +9,7 @@ import Reply from '../components/Reply.vue'
 import Post from '../components/Post.vue'
 
 export default ({app}) => {
+  app.component('RawEventData', RawEventData)
   app.component('LeftMenu', LeftMenu)
   app.component('Markdown', Markdown)
   app.component('Publish', Publish)

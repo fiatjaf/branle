@@ -1,4 +1,8 @@
 <template>
+  <q-dialog v-model="metadataDialog">
+    <RawEventData :event="event" />
+  </q-dialog>
+
   <q-chat-message
     :class="{invisible}"
     :text="text"
@@ -7,6 +11,7 @@
     :sent="event.pubkey === $store.state.keys.pub"
     :stamp="niceDate(new Date(event.created_at))"
     :bg-color="event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'"
+    @click="click"
   />
 </template>
 
@@ -22,6 +27,7 @@ export default {
 
   data() {
     return {
+      metadataDialog: false,
       invisible: true
     }
   },
@@ -63,6 +69,14 @@ export default {
         // decrypt it
         let [ciphertext, iv] = event.content.split('?iv=')
         return decrypt(this.$store.state.keys.priv, target, ciphertext, iv)
+      }
+    },
+
+    click(e) {
+      if (e.target.classList.contains('q-message-stamp')) {
+        this.metadataDialog = true
+      } else if (e.target.classList.contains('q-message-avatar')) {
+        this.$router.push(this.toProfile(this.event.pubkey))
       }
     }
   }

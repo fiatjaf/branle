@@ -1,4 +1,8 @@
 <template>
+  <q-dialog v-model="metadataDialog">
+    <RawEventData :event="event" />
+  </q-dialog>
+
   <q-item
     :class="{
       'transition-colors': true,
@@ -44,11 +48,20 @@
             </span>
           </div>
         </div>
-        <div
-          class="text-slate-500 cursor-pointer hover:underline text-xs"
-          @click="toEvent(event.id)"
-        >
-          {{ niceDate(event.created_at) }}
+        <div class="flex">
+          <div @click="metadataDialog = true">
+            <q-icon
+              size="xs"
+              name="info"
+              class="text-slate-500 cursor-pointer mr-4"
+            />
+          </div>
+          <div
+            class="text-slate-500 cursor-pointer hover:underline text-xs"
+            @click="toEvent(event.id)"
+          >
+            {{ niceDate(event.created_at) }}
+          </div>
         </div>
       </q-item-label>
       <q-item-label
@@ -95,6 +108,7 @@ export default {
 
   data() {
     return {
+      metadataDialog: false,
       clicking: false
     }
   },

@@ -71,8 +71,11 @@
     </q-tabs>
 
     <q-dialog v-model="initializeKeys" persistent>
-      <q-card class="p-8 bg-white">
+      <q-card class="px-4 py-2">
         <q-card-section class="text-base">
+          <div class="text-lg text-bold tracking-wide leading-relaxed py-2">
+            Initial Key Setup
+          </div>
           <p>
             Type your mnemonic seed from a previous Nostr account or generate a
             new one.

@@ -104,9 +104,11 @@
     </div>
 
     <q-dialog v-model="keysDialog">
-      <q-card class="px-2">
+      <q-card class="px-4 py-2">
         <q-card-section>
-          <div class="text-h6">Your keys <q-icon name="vpn_key" /></div>
+          <div class="text-lg text-bold tracking-wide leading-relaxed py-2">
+            Your keys <q-icon name="vpn_key" />
+          </div>
           <p>
             Make sure you back up your private key! <br />
             <small

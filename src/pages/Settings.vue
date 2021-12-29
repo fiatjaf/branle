@@ -145,6 +145,7 @@
 
 <script>
 import {LocalStorage} from 'quasar'
+import {nextTick} from 'vue'
 
 import helpersMixin from '../utils/mixin'
 import {db} from '../db'
@@ -170,14 +171,34 @@ export default {
   },
 
   mounted() {
+    if (this.$route.params.showKeys) this.keysDialog = true
+
     this.unsubscribe = this.$store.subscribe((mutation, state) => {
-      if (mutation.type !== 'addProfileToCache') return
+      switch (mutation.type) {
+        case 'addProfileToCache': {
+          const {name, picture, about} =
+            state.profilesCache[state.keys.pub] || {}
 
-      const {name, picture, about} = state.profilesCache[state.keys.pub] || {}
+          nextTick(() => {
+            setTimeout(() => {
+              if (!this.metadata.name && name) this.metadata.name = name
+              if (!this.metadata.picture && picture)
+                this.metadata.picture = picture
+              if (!this.metadata.about && about) this.metadata.about = about
+            }, 1)
+          })
 
-      if (!this.metadata.name && name) this.metadata.name = name
-      if (!this.metadata.picture && picture) this.metadata.picture = picture
-      if (!this.metadata.about && about) this.metadata.about = about
+          break
+        }
+        case 'setKeys': {
+          nextTick(() => {
+            setTimeout(() => {
+              this.keysDialog = true
+            }, 1)
+          })
+          break
+        }
+      }
     })
   },
 

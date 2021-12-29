@@ -34,6 +34,7 @@
         </div>
         <div class="flex justify-end">
           <q-btn
+            :disable="!$store.state.keys.priv"
             round
             unelevated
             flat

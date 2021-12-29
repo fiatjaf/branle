@@ -18,7 +18,7 @@ export const db = new PouchDB('nostr-events', {
 // ~
 const DESIGN_VERSION = 1
 db.upsert('_design/main', current => {
-  if (current.version >= DESIGN_VERSION) return false
+  if (current && current.version >= DESIGN_VERSION) return false
 
   return {
     version: DESIGN_VERSION,
@@ -65,8 +65,20 @@ db.upsert('_design/main', current => {
     }
   }
 }).then(() => {
+  // cleanup old views after a design doc change
   db.viewCleanup().then(r => console.log('view cleanup done', r))
 })
+
+// delete old events after the first 1000 (this is slow, so do it after a while)
+//
+setTimeout(async () => {
+  let result = await db.query('main/homefeed', {
+    descending: true,
+    skip: 1000,
+    include_docs: true
+  })
+  result.rows.forEach(row => db.remove(row.doc))
+}, 1000 * 60 * 15 /* 15 minutes */)
 
 // general function for saving an event, with granular logic for each kind
 //

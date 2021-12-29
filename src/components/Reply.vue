@@ -10,7 +10,14 @@
     </q-input>
 
     <div class="flex justify-end mt-2">
-      <q-btn label="Reply" rounded unelevated type="submit" color="primary" />
+      <q-btn
+        :disable="!$store.state.keys.priv"
+        label="Reply"
+        rounded
+        unelevated
+        type="submit"
+        color="primary"
+      />
     </div>
   </q-form>
 </template>

@@ -40,7 +40,13 @@
           </q-item-section>
         </q-item>
 
-        <q-item v-ripple clickable to="/messages" active-class="">
+        <q-item
+          v-if="!!$store.state.keys.priv"
+          v-ripple
+          clickable
+          to="/messages"
+          active-class=""
+        >
           <q-item-section avatar>
             <q-icon name="email" color="secondary" />
           </q-item-section>
@@ -117,7 +123,7 @@ export default {
     return {
       unread: 0,
       listener: null,
-      unwatch: null,
+      unwatch: null
     }
   },
 

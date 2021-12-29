@@ -25,6 +25,7 @@
       class="flex justify-end"
     >
       <q-btn
+        :disable="!$store.state.keys.priv"
         round
         flat
         :to="'/messages/' + $route.params.pubkey"
@@ -35,6 +36,7 @@
       />
       <q-btn
         v-if="isFollowing"
+        :disable="!$store.state.keys.priv"
         round
         unelevated
         flat
@@ -45,6 +47,7 @@
       />
       <q-btn
         v-if="!isFollowing"
+        :disable="!$store.state.keys.priv"
         round
         unelevated
         color="primary"

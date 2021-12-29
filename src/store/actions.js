@@ -4,6 +4,13 @@ import {Notify} from 'quasar'
 import {pool} from '../pool'
 import {dbSave, dbGetProfile} from '../db'
 
+export function initKeys(store, keys) {
+  store.commit('setKeys', keys)
+
+  // also initialize the lastNotificationRead value
+  store.commit('haveReadNotifications')
+}
+
 export function launch(store) {
   if (!store.state.keys.pub) {
     store.commit('setKeys') // passing no arguments will cause a new seed to be generated

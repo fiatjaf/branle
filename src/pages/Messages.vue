@@ -2,7 +2,10 @@
   <q-page class="px-4 pt-6 relative">
     <div class="text-xl">
       Chat with
-      <span class="text-secondary">
+      <span
+        class="text-secondary cursor-pointer"
+        @click="toProfile($route.params.pubkey)"
+      >
         {{ $store.getters.displayName($route.params.pubkey) }}
       </span>
     </div>

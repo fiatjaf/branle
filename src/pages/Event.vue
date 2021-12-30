@@ -10,7 +10,6 @@
 
     <div v-if="ancestors.length">
       <Thread :events="ancestors" />
-      <q-separator class="mb-2" />
     </div>
 
     <div ref="main" class="py-4 px-1">
@@ -138,6 +137,7 @@ export default {
     },
 
     stop() {
+      this.replying = false
       if (this.ancestorsSub) this.ancestorsSub.unsub()
       if (this.childrenSub) this.childrenSub.unsub()
       if (this.eventSub) this.eventSub.unsub()
@@ -190,11 +190,11 @@ export default {
             // filter just tagged event ids from tags
             let taggedEvents = event.tags.filter(([t, v]) => t === 'e' && v)
 
-            let thread = this.childrenThreads.find(threadEvents =>
-              threadEvents.find(tevt =>
-                taggedEvents.find(tag => tevt.id === tag)
-              )
-            )
+            let thread = this.childrenThreads.find(threadEvents => {
+              return threadEvents.find(tevt => {
+                return taggedEvents.find(([_, v]) => tevt.id === v)
+              })
+            })
             if (thread) {
               // this is a member of an existing thread
               thread.push(event)

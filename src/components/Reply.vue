@@ -59,7 +59,7 @@ export default {
       }
 
       // add the first and the last event ids
-      let first = usableTags.find(([t, v]) => t === 'p')
+      let first = usableTags.find(([t, v]) => t === 'e')
       if (first) {
         let [_, v] = first
         tags.push(['e', v])

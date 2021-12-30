@@ -1,4 +1,8 @@
 <template>
+  <q-dialog v-model="metadataDialog">
+    <RawEventData :event="event" />
+  </q-dialog>
+
   <q-page class="px-4 py-6">
     <div class="text-xl text-center">Event</div>
 
@@ -32,7 +36,19 @@
         <div class="text-xl my-4 font-sans break-all">
           <Markdown>{{ event.content }}</Markdown>
         </div>
-        <div class="flex justify-end">
+        <div class="flex items-center justify-between w-full">
+          <q-icon
+            size="xs"
+            name="info"
+            class="text-slate-300 cursor-pointer mr-1"
+            @click="metadataDialog = true"
+          />
+          <div
+            class="text-slate-500 cursor-pointer hover:underline"
+            @click="toEvent(event.id)"
+          >
+            {{ niceDate(event.created_at) }}
+          </div>
           <q-btn
             :disable="!$store.state.keys.priv"
             round
@@ -43,12 +59,6 @@
             size="lg"
             @click="replying = !replying"
           />
-        </div>
-        <div
-          class="text-slate-500 cursor-pointer hover:underline"
-          @click="toEvent(event.id)"
-        >
-          {{ niceDate(event.created_at) }}
         </div>
         <div v-if="replying" class="mt-4">
           <Reply v-if="event" :event="event" />
@@ -81,6 +91,7 @@ export default {
 
   data() {
     return {
+      metadataDialog: false,
       replying: false,
       userHasActed: false,
       ancestors: [],
@@ -96,22 +107,19 @@ export default {
 
   watch: {
     '$route.params.eventId'(curr, prev) {
-      if (curr && curr !== prev) this.listen()
+      if (curr && curr !== prev) {
+        this.stop()
+        this.start()
+      }
     }
   },
 
   mounted() {
-    this.listen()
-    window.addEventListener('scroll', this.detectedUserActivity)
-    window.addEventListener('click', this.detectedUserActivity)
+    this.start()
   },
 
   beforeUnmount() {
-    if (this.ancestorsSub) this.ancestorsSub.unsub()
-    if (this.childrenSub) this.childrenSub.unsub()
-    if (this.eventSub) this.eventSub.unsub()
-    window.removeEventListener('scroll', this.detectedUserActivity)
-    window.removeEventListener('click', this.detectedUserActivity)
+    this.stop()
   },
 
   updated() {
@@ -123,6 +131,20 @@ export default {
   },
 
   methods: {
+    start() {
+      this.listen()
+      window.addEventListener('scroll', this.detectedUserActivity)
+      window.addEventListener('click', this.detectedUserActivity)
+    },
+
+    stop() {
+      if (this.ancestorsSub) this.ancestorsSub.unsub()
+      if (this.childrenSub) this.childrenSub.unsub()
+      if (this.eventSub) this.eventSub.unsub()
+      window.removeEventListener('scroll', this.detectedUserActivity)
+      window.removeEventListener('click', this.detectedUserActivity)
+    },
+
     detectedUserActivity() {
       this.userHasActed = true
     },

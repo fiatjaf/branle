@@ -48,14 +48,13 @@
             </span>
           </div>
         </div>
-        <div class="flex">
-          <div @click="metadataDialog = true">
-            <q-icon
-              size="xs"
-              name="info"
-              class="text-slate-500 cursor-pointer mr-4"
-            />
-          </div>
+        <div class="flex items-center">
+          <q-icon
+            size="xs"
+            name="info"
+            class="text-slate-300 cursor-pointer mr-2"
+            @click="metadataDialog = true"
+          />
           <div
             class="text-slate-500 cursor-pointer hover:underline text-xs"
             @click="toEvent(event.id)"

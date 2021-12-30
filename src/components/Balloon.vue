@@ -4,6 +4,8 @@
   </q-dialog>
 
   <q-chat-message
+    class="text-base font-sans break-words text-justify"
+    style="hyphens: auto !important"
     :class="{invisible}"
     :text="text"
     :name="$store.getters.displayName(event.pubkey)"

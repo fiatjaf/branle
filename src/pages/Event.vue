@@ -32,7 +32,10 @@
             {{ shorten(event.pubkey) }}
           </div>
         </div>
-        <div class="text-xl my-4 font-sans break-all">
+        <div
+          class="text-xl my-4 font-sans break-words text-justify"
+          style="hyphens: auto !important"
+        >
           <Markdown>{{ event.content }}</Markdown>
         </div>
         <div class="flex items-center justify-between w-full">

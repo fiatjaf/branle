@@ -64,8 +64,9 @@
         </div>
       </q-item-label>
       <q-item-label
-        class="break-all pt-1 pl-1 text-base font-sans flex"
+        class="pt-1 pl-1 text-base font-sans flex break-words text-justify"
         :class="{'cursor-pointer': item}"
+        style="hyphens: auto !important"
         @mousedown="startClicking"
         @mouseup="finishClicking"
       >
@@ -132,7 +133,7 @@ export default {
     },
 
     hasMore() {
-      if (this.event.content.length > 270) return true
+      if (this.event.content.length > 280) return true
       return false
     }
   },

@@ -90,6 +90,7 @@
             <q-input
               v-model="key"
               autogrow
+              autofocus
               label="BIP39 Seed Words, private key or public key"
               class="text-lg"
             />

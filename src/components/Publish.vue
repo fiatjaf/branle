@@ -2,7 +2,14 @@
   <q-card class="no-shadow py-6 bg-inherit">
     <q-card-section>
       <q-form @submit="sendPost">
-        <q-input v-model="text" dense label="Say something" maxlength="280">
+        <q-input
+          v-model="text"
+          dense
+          autogrow
+          autofocus
+          label="Say something"
+          maxlength="280"
+        >
           <template #before>
             <q-avatar
               round

@@ -21,7 +21,7 @@
 
       <q-form @submit="submitMessage" @reset="text = ''">
         <div class="flex w-full mt-4">
-          <q-input v-model="text" class="w-full" filled>
+          <q-input v-model="text" autofocus class="w-full" filled>
             <template #append>
               <q-btn
                 unelevated

@@ -1,6 +1,6 @@
 <template>
   <q-dialog v-model="metadataDialog">
-    <RawEventData :event="event" />
+    <RawEventData :event="sequence" />
   </q-dialog>
 
   <q-chat-message
@@ -35,11 +35,12 @@ export default {
   },
 
   computed: {
+    sequence() {
+      return [this.event].concat(this.event.appended).filter(x => x)
+    },
+
     text() {
-      return [this.event]
-        .concat(this.event.appended)
-        .filter(x => x)
-        .map(event => this.getPlaintext(event))
+      return this.sequence.map(event => this.getPlaintext(event))
     }
   },
 

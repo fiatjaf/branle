@@ -16,7 +16,7 @@ export const db = new PouchDB('nostr-events', {
 
 // db schema (views)
 // ~
-const DESIGN_VERSION = 1
+const DESIGN_VERSION = 3
 db.upsert('_design/main', current => {
   if (current && current.version >= DESIGN_VERSION) return false
 
@@ -61,6 +61,37 @@ db.upsert('_design/main', current => {
             emit([event.pubkey, event.created_at])
           }
         }.toString()
+      },
+      contactlists: {
+        map: function (event) {
+          if (event.kind === 3) {
+            emit(event.pubkey)
+          }
+        }.toString()
+      },
+      followers: {
+        map: function (event) {
+          if (event.kind === 3) {
+            for (let i = 0; i < event.tags.length; i++) {
+              var tag = event.tags[i]
+              if (tag.length >= 2 && tag[0] === 'p') {
+                emit(tag[1], event.pubkey)
+              }
+            }
+          }
+        }.toString()
+      },
+      petnames: {
+        map: function (event) {
+          if (event.kind === 3) {
+            for (let i = 0; i < event.tags.length; i++) {
+              var tag = event.tags[i]
+              if (tag.length >= 4 && tag[0] === 'p') {
+                emit(tag[1], [event.pubkey, tag[3]])
+              }
+            }
+          }
+        }.toString()
       }
     }
   }
@@ -97,13 +128,21 @@ export async function dbSave(event) {
       break
     case 2:
       break
-    case 3:
+    case 3: {
+      // first check if we don't have a newer contact list for this user
+      let current = await dbGetContactList(event.pubkey)
+      if (current && current.created_at >= event.created_at) {
+        // don't save
+        return
+      }
       break
-    case 4:
+    }
+    case 4: {
       // cleanup extra fields if somehow they manage to get in here (they shouldn't)
       delete event.appended
       delete event.plaintext
       break
+    }
   }
 
   event._id = event.id
@@ -269,6 +308,29 @@ export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
 
 export async function dbGetProfile(pubkey) {
   let result = await db.query('main/profiles', {
+    include_docs: true,
+    key: pubkey
+  })
+  switch (result.rows.length) {
+    case 0:
+      return null
+    case 1:
+      return result.rows[0].doc
+    default: {
+      let sorted = result.rows.sort(
+        (a, b) => (b.doc?.created_at || 0) - (a.doc?.created_at || 0)
+      )
+      sorted
+        .slice(1)
+        .filter(row => row.doc)
+        .forEach(row => db.remove(row.doc))
+      return sorted[0].doc
+    }
+  }
+}
+
+export async function dbGetContactList(pubkey) {
+  let result = await db.query('main/contactlists', {
     include_docs: true,
     key: pubkey
   })

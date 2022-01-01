@@ -1,8 +1,8 @@
 import {encrypt} from 'nostr-tools/nip04'
-import {Notify} from 'quasar'
+import {Notify, LocalStorage} from 'quasar'
 
 import {pool} from '../pool'
-import {dbSave, dbGetProfile} from '../db'
+import {dbSave, dbGetProfile, dbGetContactList} from '../db'
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)
@@ -11,7 +11,7 @@ export function initKeys(store, keys) {
   store.commit('haveReadNotifications')
 }
 
-export function launch(store) {
+export async function launch(store) {
   if (!store.state.keys.pub) {
     store.commit('setKeys') // passing no arguments will cause a new seed to be generated
 
@@ -24,17 +24,32 @@ export function launch(store) {
     pool.setPrivateKey(store.state.keys.priv)
   }
 
-  // add default relays
-  if (Object.keys(store.state.relays).length === 0) {
-    store.commit('addRelay', 'wss://nostr-pub.wellorder.net')
-    store.commit('addRelay', 'wss://relayer.fiatjaf.com')
-    // store.commit('addRelay', 'wss://nostr-relay.freeberty.net')
-    // store.commit('addRelay', 'wss://freedom-relay.herokuapp.com/ws')
+  // translate localStorage into a kind3 event -- or load relays and following from event
+  let contactList = await dbGetContactList(store.state.keys.pub)
+  var {relays, following} = store.state
+  if (contactList) {
+    try {
+      relays = JSON.parse(contactList.content)
+    } catch (err) {
+      /***/
+    }
+    following = contactList.tags
+      .filter(([t, v]) => t === 'p' && v)
+      .map(([_, v]) => v)
+  } else {
+    // get stuff from localstorage and save to store -- which will trigger the eventize
+    // plugin to create and publish a contactlist event
+    relays = LocalStorage.getItem('relays') || relays
+    following = LocalStorage.getItem('following') || following
   }
+
+  // update store state
+  store.commit('setFollowing', following)
+  store.commit('setRelays', relays)
 
   // setup pool
   for (let url in store.state.relays) {
-    pool.addRelay(url)
+    pool.addRelay(url, store.state.relays[url])
   }
   pool.onNotice((notice, relay) => {
     Notify.create({
@@ -43,11 +58,11 @@ export function launch(store) {
     })
   })
 
+  // preload our own profile from the db
+  await store.dispatch('useProfile', store.state.keys.pub)
+
   // start listening for nostr events
   store.dispatch('restartMainSubscription')
-
-  // preload our own profile from the db
-  store.dispatch('useProfile', store.state.keys.pub)
 }
 
 var mainSub = pool
@@ -56,9 +71,15 @@ export function restartMainSubscription(store) {
   mainSub = mainSub.sub(
     {
       filter: [
-        // profiles of people we follow
+        // profiles of people we follow (and ourselves)
         {
           kind: 0,
+          authors: store.state.following.concat(store.state.keys.pub)
+        },
+
+        // contact lists of people we follow (and ourselves)
+        {
+          kind: 3,
           authors: store.state.following.concat(store.state.keys.pub)
         },
 
@@ -92,7 +113,7 @@ export function restartMainSubscription(store) {
           authors: [store.state.keys.pub]
         }
       ],
-      cb: (event, relay) => {
+      cb: async (event, relay) => {
         switch (event.kind) {
           case 0:
             break
@@ -100,8 +121,31 @@ export function restartMainSubscription(store) {
             break
           case 2:
             break
-          case 3:
+          case 3: {
+            if (event.pubkey === store.state.keys.pub) {
+              // we got a new contact list from ourselves
+              // we must update our local relays and following lists
+              // if we don't have any local lists yet
+              let local = await dbGetContactList(store.state.keys.pub)
+              if (!local || local.created_at < event.created_at) {
+                var relays, following
+                try {
+                  relays = JSON.parse(event.content)
+                  store.commit('setRelays', relays)
+                } catch (err) {
+                  /***/
+                }
+
+                following = event.tags
+                  .filter(([t, v]) => t === 'p' && v)
+                  .map(([_, v]) => v)
+                store.commit('setFollowing', following)
+
+                following.forEach(f => store.dispatch('useProfile', f))
+              }
+            }
             break
+          }
           case 4:
             break
         }
@@ -175,6 +219,8 @@ export async function addEvent(store, event) {
     case 2:
       break
     case 3:
+      // this will reset the profile cache for this URL
+      store.dispatch('useProfile', event.pubkey)
       break
     case 4:
       break
@@ -185,11 +231,56 @@ export async function useProfile(store, pubkey) {
   if (pubkey in store.state.profilesCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
     store.commit('addProfileToCache', store.state.profilesCache[pubkey])
+  } else {
+    // fetch from db and add to cache
+    let event = await dbGetProfile(pubkey)
+    if (event) {
+      store.commit('addProfileToCache', event)
+    }
   }
 
-  // fetch from db and add to cache
-  const event = await dbGetProfile(pubkey)
-  if (event) {
-    store.commit('addProfileToCache', event)
+  if (pubkey in store.state.contactListCache) {
+    // we don't fetch again, but we do commit this so the LRU gets updated
+    store.commit('addContactListToCache', store.state.contactListCache[pubkey])
+  } else {
+    // fetch from db and add to cache
+    let event = await dbGetContactList(pubkey)
+    if (event) {
+      store.commit('addContactListToCache', event)
+    }
   }
+}
+
+export async function publishContactList(store) {
+  // extend the existing tags
+  let event = await dbGetContactList(store.state.keys.pub)
+  var tags = event?.tags || []
+
+  // remove contacts that we're not following anymore
+  tags = tags.filter(
+    ([t, v]) => t === 'p' && store.state.following.find(f => f === v)
+  )
+
+  // now we merely add to the existing event because it might contain more data in the
+  // tags that we don't want to replace
+  store.state.following.forEach(pubkey => {
+    if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
+      tags.push(['p', pubkey])
+    }
+  })
+
+  event = await pool.publish({
+    pubkey: store.state.keys.pub,
+    created_at: Math.floor(Date.now() / 1000),
+    kind: 3,
+    tags,
+    content: JSON.stringify(store.state.relays)
+  })
+
+  await store.dispatch('addEvent', event)
+
+  Notify.create({
+    message: 'Updated and published list of followed keys and relays.',
+    color: 'blue'
+  })
 }

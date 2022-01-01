@@ -230,34 +230,36 @@ export default {
     listenAncestors() {
       this.ancestors = []
       this.ancestorsSet = new Set()
-      this.ancestorsSub = pool.sub(
-        {
-          filter: this.event.tags
-            .filter(([t, _]) => t === 'e')
-            .map(([_, v]) => ({id: v})),
-          cb: async event => {
-            if (this.ancestorsSet.has(event.id)) return
-            this.ancestorsSet.add(event.id)
 
-            // manual sorting
-            // older events first
-            for (let i = 0; i < this.ancestors.length; i++) {
-              if (event.created_at < this.ancestors[i].created_at) {
-                // the new event is older than the current index,
-                // so we add it at the previous index
-                this.ancestors.splice(i - 1, 0, event)
-                return
+      let eventTags = this.event.tags.filter(([t, _]) => t === 'e')
+      if (eventTags.length) {
+        this.ancestorsSub = pool.sub(
+          {
+            filter: eventTags.map(([_, v]) => ({id: v})),
+            cb: async event => {
+              if (this.ancestorsSet.has(event.id)) return
+              this.ancestorsSet.add(event.id)
+
+              // manual sorting
+              // older events first
+              for (let i = 0; i < this.ancestors.length; i++) {
+                if (event.created_at < this.ancestors[i].created_at) {
+                  // the new event is older than the current index,
+                  // so we add it at the previous index
+                  this.ancestors.splice(i - 1, 0, event)
+                  return
+                }
               }
+
+              // the newer event is the newest, add to end
+              this.ancestors.push(event)
+
+              return
             }
-
-            // the newer event is the newest, add to end
-            this.ancestors.push(event)
-
-            return
-          }
-        },
-        'event-ancestors'
-      )
+          },
+          'event-ancestors'
+        )
+      }
     }
   }
 }

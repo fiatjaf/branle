@@ -75,12 +75,6 @@ module.exports = configure(function (ctx) {
         cfg.plugins.push(
           new webpack.ProvidePlugin({Buffer: ['buffer', 'Buffer']})
         )
-        cfg.plugins.push(
-          new webpack.IgnorePlugin({
-            resourceRegExp: /^\.\/wordlists\/(?!english)/,
-            contextRegExp: /bip39\/src$/
-          })
-        )
         cfg.resolve.alias = cfg.resolve.alias || {}
         cfg.resolve.alias.stream = 'readable-stream'
         cfg.resolve.fallback = cfg.resolve.fallback || {}

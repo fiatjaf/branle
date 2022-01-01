@@ -1,8 +1,8 @@
 import {getPublicKey} from 'nostr-tools'
 import {normalizeRelayURL} from 'nostr-tools/relay'
 import {
-  generateSeedWords,
   seedFromWords,
+  generateSeedWords,
   privateKeyFromSeed
 } from 'nostr-tools/nip06'
 
@@ -21,6 +21,10 @@ export function setKeys(state, {mnemonic, priv, pub} = {}) {
   }
 
   state.keys = {mnemonic, priv, pub}
+}
+
+export function setRelays(state, relays) {
+  state.relays = relays
 }
 
 export function addRelay(state, url) {
@@ -45,6 +49,10 @@ export function setRelayOpt(state, {url, opt, value}) {
   if (url in state.relays) {
     state.relays[url][opt] = value
   }
+}
+
+export function setFollowing(state, following) {
+  state.following = following
 }
 
 export function follow(state, key) {
@@ -85,6 +93,36 @@ export function addProfileToCache(state, event) {
   if (state.profilesCacheLRU.length > 150) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
+  }
+}
+
+export function addContactListToCache(state, event) {
+  if (event.pubkey in state.contactListCache) {
+    // was here already, remove from LRU (will readd next)
+    state.contactListCacheLRU.splice(
+      state.contactListCacheLRU.indexOf(event.pubkey),
+      0
+    )
+  }
+
+  // replace the event in cache
+  try {
+    state.contactListCache[event.pubkey] = JSON.parse(event.content)
+  } catch (err) {
+    return
+  }
+
+  // adding to LRU
+  if (event.pubkey === state.keys.pub) {
+    // if it's our own contact list, we'll never remove from the cache
+  } else {
+    state.contactListCacheLRU.push(event.pubkey)
+  }
+
+  // removing older stuff if necessary
+  if (state.contactListCacheLRU.length > 150) {
+    let oldest = state.contactListCacheLRU.shift()
+    delete state.contactListCache[oldest]
   }
 }
 

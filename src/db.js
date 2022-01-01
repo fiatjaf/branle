@@ -296,12 +296,39 @@ export function onNewMention(ourPubKey, callback = () => {}) {
   return changes
 }
 
+export function onNewAnyMessage(callback = () => {}) {
+  // listen for changes
+  let changes = db.changes({
+    live: true,
+    since: 'now',
+    include_docs: true,
+    filter: '_view',
+    view: 'main/messages'
+  })
+
+  changes.on('change', change => {
+    callback(change.doc)
+  })
+
+  return changes
+}
+
 export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
   let result = await db.query('main/mentions', {
     include_docs: false,
     descending: true,
     startkey: [ourPubKey, {}],
     endkey: [ourPubKey, since]
+  })
+  return result.rows.length
+}
+
+export async function dbGetUnreadMessages(pubkey, since) {
+  let result = await db.query('main/messages', {
+    include_docs: false,
+    descending: true,
+    startkey: [pubkey, {}],
+    endkey: [pubkey, since]
   })
   return result.rows.length
 }

@@ -104,6 +104,7 @@ export default {
     async restart() {
       if (this.listener) this.listener.cancel()
 
+      this.$store.commit('haveReadMessage', this.$route.params.pubkey)
       this.$store.dispatch('useProfile', this.$route.params.pubkey)
       this.messages = await dbGetMessages(this.$route.params.pubkey, 100)
 
@@ -131,6 +132,8 @@ export default {
         if (isElementFullyScrolled(this.$refs.chatScroll)) {
           await this.scrollToBottom()
         }
+
+        this.$store.commit('haveReadMessage', this.$route.params.pubkey)
       })
     },
 

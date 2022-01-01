@@ -1,7 +1,134 @@
 <template>
   <q-layout class="bg-lime-100/70">
     <div class="flex">
-      <LeftMenu />
+      <div class="hidden sm:flex w-1/4 justify-center px-8">
+        <q-card flat no-box-shadow class="text-xl bg-inherit">
+          <q-card-section class="flex justify-center">
+            <q-img
+              src="/bird.png"
+              fit="scale-down"
+              width="80px"
+              @click="$router.push('/')"
+            />
+          </q-card-section>
+          <q-list class="text-slate-700">
+            <q-item v-ripple clickable to="/" active-class="">
+              <q-item-section avatar>
+                <q-icon name="home" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{
+                  'text-primary': $route.name === 'home'
+                }"
+              >
+                Home
+              </q-item-section>
+            </q-item>
+
+            <q-item v-ripple clickable to="/notifications" active-class="">
+              <q-item-section avatar>
+                <q-icon name="notifications" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{'text-primary': $route.name === 'notifications'}"
+              >
+                Notifications
+
+                <q-badge
+                  v-if="$store.state.unreadNotifications"
+                  color="primary"
+                  floating
+                  transparent
+                >
+                  {{ $store.state.unreadNotifications }}
+                </q-badge>
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              v-if="!!$store.state.keys.priv"
+              v-ripple
+              clickable
+              to="/messages"
+              active-class=""
+            >
+              <q-item-section avatar>
+                <q-icon name="email" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{'text-primary': $route.name === 'messages'}"
+              >
+                Messages
+
+                <q-badge
+                  v-if="$store.getters.unreadChats"
+                  color="primary"
+                  floating
+                  transparent
+                >
+                  {{ $store.getters.unreadChats }}
+                </q-badge>
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              v-ripple
+              clickable
+              :to="'/' + $store.state.keys.pub"
+              active-class=""
+            >
+              <q-item-section avatar>
+                <q-icon name="person" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{
+                  'text-primary':
+                    $route.name === 'profile' &&
+                    $route.params.pubkey === $store.state.keys.pub
+                }"
+              >
+                Profile
+              </q-item-section>
+            </q-item>
+
+            <q-item
+              v-ripple
+              clickable
+              to="/follow"
+              active-class=""
+              class="lg:hidden"
+            >
+              <q-item-section avatar>
+                <q-icon name="manage_search" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{
+                  'text-primary': $route.name === 'follow'
+                }"
+              >
+                Search and Follows
+              </q-item-section>
+            </q-item>
+
+            <q-item v-ripple clickable to="/settings" active-class="">
+              <q-item-section avatar>
+                <q-icon name="settings" color="secondary" />
+              </q-item-section>
+
+              <q-item-section
+                :class="{'text-primary': $route.name === 'settings'}"
+              >
+                Settings
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card>
+      </div>
 
       <div class="w-full sm:w-3/4 lg:w-2/4 pl-4">
         <q-page-container>
@@ -38,14 +165,32 @@
         to="/notifications"
         active-class=""
         :class="{'text-primary': $route.name === 'notifications'}"
-      />
+      >
+        <q-badge
+          v-if="$store.state.unreadNotifications"
+          color="primary"
+          floating
+          transparent
+        >
+          {{ $store.state.unreadNotifications }}
+        </q-badge>
+      </q-route-tab>
       <q-route-tab
         v-if="!!$store.state.keys.priv"
         icon="email"
         to="/messages"
         active-class=""
         :class="{'text-primary': $route.name === 'messages'}"
-      />
+      >
+        <q-badge
+          v-if="$store.getters.unreadChats"
+          color="primary"
+          floating
+          transparent
+        >
+          {{ $store.getters.unreadChats }}
+        </q-badge>
+      </q-route-tab>
       <q-route-tab
         icon="person"
         :to="'/' + $store.state.keys.pub"

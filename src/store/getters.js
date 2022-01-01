@@ -27,3 +27,7 @@ export function profileDescription(state) {
     return about
   }
 }
+
+export function unreadChats(state) {
+  return Object.values(state.unreadMessages).filter(v => v).length
+}

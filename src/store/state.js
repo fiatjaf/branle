@@ -18,6 +18,10 @@ export default function () {
     contactListCache: {}, // { [pubkey]: {name, about, picture, ...} }
     contactListCacheLRU: [], // [ pubkeys... ]
 
-    lastNotificationRead: LocalStorage.getItem('lastNotificationRead') || 0
+    lastMessageRead: LocalStorage.getItem('lastMessageRead') || {},
+    unreadMessages: {},
+
+    lastNotificationRead: LocalStorage.getItem('lastNotificationRead') || 0,
+    unreadNotifications: 0
   }
 }

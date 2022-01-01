@@ -14,6 +14,15 @@
           <q-avatar round>
             <img :src="$store.getters.avatar(chat.peer)" />
           </q-avatar>
+
+          <q-badge
+            v-if="$store.state.unreadMessages[chat.peer]"
+            color="primary"
+            floating
+            transparent
+          >
+            {{ $store.state.unreadMessages[chat.peer] }}
+          </q-badge>
         </q-item-section>
         <q-item-section>
           {{ $store.getters.displayName(chat.peer) }}

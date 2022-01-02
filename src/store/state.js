@@ -6,10 +6,10 @@ export default function () {
     relays: {
       // 'wss://nostr.rocks': {read: true, write: true},
       'wss://relayer.fiatjaf.com': {read: true, write: true},
-      'wss://nostrrr.bublina.eu.org': {read: true, write: true},
-      'wss://nostr-pub.wellorder.net': {read: true, write: true},
+      // 'wss://nostrrr.bublina.eu.org': {read: true, write: true},
+      'wss://nostr-pub.wellorder.net': {read: true, write: true}
       // 'wss://nostr-relay.freeberty.net': {read: true, write: true},
-      'wss://freedom-relay.herokuapp.com/ws': {read: true, write: true}
+      // 'wss://freedom-relay.herokuapp.com/ws': {read: true, write: true}
     }, // { [url]: {} }
     following: [], // [ pubkeys... ]
 

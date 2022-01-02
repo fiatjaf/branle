@@ -120,11 +120,7 @@ export default {
           filter: [
             {
               authors: [this.$route.params.pubkey],
-              kind: 0
-            },
-            {
-              authors: [this.$route.params.pubkey],
-              kind: 1
+              kinds: [0, 1, 3]
             }
           ],
           cb: async event => {

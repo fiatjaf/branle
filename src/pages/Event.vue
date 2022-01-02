@@ -160,7 +160,7 @@ export default {
       } else {
         this.eventSub = pool.sub(
           {
-            filter: {id: this.$route.params.eventId},
+            filter: {ids: [this.$route.params.eventId]},
             cb: async event => {
               this.eventSub.unsub()
               this.event = event
@@ -182,8 +182,8 @@ export default {
         {
           filter: [
             {
-              '#e': this.$route.params.eventId,
-              kind: 1
+              '#e': [this.$route.params.eventId],
+              kinds: [1]
             }
           ],
           cb: async event => {
@@ -235,7 +235,12 @@ export default {
       if (eventTags.length) {
         this.ancestorsSub = pool.sub(
           {
-            filter: eventTags.map(([_, v]) => ({id: v})),
+            filter: [
+              {
+                kinds: [1],
+                ids: eventTags.map(([_, v]) => v)
+              }
+            ],
             cb: async event => {
               if (this.ancestorsSet.has(event.id)) return
               this.ancestorsSet.add(event.id)

@@ -4769,11 +4769,12 @@ normalize-url@^6.0.1:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-6.1.0.tgz#40d0885b535deffe3f3147bec877d05fe4c5668a"
   integrity sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==
 
-nostr-tools@^0.15.1:
-  version "0.15.1"
-  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.15.1.tgz#0ebbb4a0d94fafbcd1efd9d819b6fad0cc26513a"
-  integrity sha512-N739JZR9RLuuxqcxbPDlVCT9F2ixycRshBhTTn+UCDo+ar7pFX9p4rZoGO3BVgxUjzBKvkp6CtbvpugSv9Ga3Q==
+nostr-tools@^0.16.1:
+  version "0.16.1"
+  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.16.1.tgz#6e17531a35807424967ce18cc9ff7827be428b78"
+  integrity sha512-hVEiDLj6R6WzgUel7eqQmhTAIZNpVL8nyFrljVVDn/6hAoa/JBXyMjivcwfFfCMw7c0R1bJthVB7wpJDuzJ7Ng==
   dependencies:
+    "@noble/hashes" "^0.5.7"
     "@noble/secp256k1" "^1.3.0"
     browserify-cipher ">=1"
     buffer ">=5"
@@ -4781,7 +4782,6 @@ nostr-tools@^0.15.1:
     dns-packet "^5.2.4"
     micro-bip32 "^0.1.0"
     micro-bip39 "^0.1.3"
-    randombytes ">=2"
     websocket-polyfill "^0.0.3"
 
 npm-run-path@^4.0.1:
@@ -5684,7 +5684,7 @@ quick-lru@^5.1.1:
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
 
-randombytes@>=2, randombytes@^2.1.0:
+randombytes@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.1.0.tgz#df6f84372f0270dc65cdf6291349ab7a473d4f2a"
   integrity sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==

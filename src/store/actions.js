@@ -71,45 +71,21 @@ export function restartMainSubscription(store) {
   mainSub = mainSub.sub(
     {
       filter: [
-        // profiles of people we follow (and ourselves)
+        // notes, profiles and contact lists of people we follow (and ourselves)
         {
-          kind: 0,
+          kinds: [0, 1, 2, 3],
           authors: store.state.following.concat(store.state.keys.pub)
         },
 
-        // contact lists of people we follow (and ourselves)
+        // posts mentioning us and direct messages to us
         {
-          kind: 3,
-          authors: store.state.following.concat(store.state.keys.pub)
-        },
-
-        // notes from people we follow and our own
-        {
-          kind: 1,
-          authors: store.state.following.concat(store.state.keys.pub)
-        },
-
-        // relay recommendations from people we follow
-        {
-          kind: 2,
-          authors: store.state.following
-        },
-
-        // posts mentioning us
-        {
-          kind: 1,
-          '#p': store.state.keys.pub
-        },
-
-        // direct messages to us
-        {
-          kind: 4,
-          '#p': store.state.keys.pub
+          kinds: [1, 4],
+          '#p': [store.state.keys.pub]
         },
 
         // our own direct messages to other people
         {
-          kind: 4,
+          kinds: [4],
           authors: [store.state.keys.pub]
         }
       ],

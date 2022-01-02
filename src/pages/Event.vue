@@ -243,6 +243,8 @@ export default {
             ],
             cb: async event => {
               if (this.ancestorsSet.has(event.id)) return
+
+              this.$store.dispatch('useProfile', event.pubkey)
               this.ancestorsSet.add(event.id)
 
               // manual sorting

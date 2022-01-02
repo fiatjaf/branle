@@ -62,7 +62,7 @@ export default {
 
   methods: {
     async searchProfile() {
-      if (this.searchingProfile.match(/[a-f0-9A-F]{64}/)) {
+      if (this.searchingProfile.match(/^[a-f0-9A-F]{64}$/)) {
         this.toProfile(this.searchingProfile)
         this.searchingProfile = ''
       }

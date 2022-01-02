@@ -107,7 +107,14 @@ export function addContactListToCache(state, event) {
 
   // replace the event in cache
   try {
-    state.contactListCache[event.pubkey] = JSON.parse(event.content)
+    let contacts = event.tags
+      .filter(([t, v]) => t === 'p' && v)
+      .map(([_, pubkey, relay, petname]) => ({
+        pubkey,
+        relay,
+        petname
+      }))
+    if (contacts.length) state.contactListCache[event.pubkey] = contacts
   } catch (err) {
     return
   }

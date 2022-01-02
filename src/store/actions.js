@@ -196,7 +196,7 @@ export async function addEvent(store, event) {
       break
     case 3:
       // this will reset the profile cache for this URL
-      store.dispatch('useProfile', event.pubkey)
+      store.dispatch('useContacts', event.pubkey)
       break
     case 4:
       break
@@ -214,7 +214,9 @@ export async function useProfile(store, pubkey) {
       store.commit('addProfileToCache', event)
     }
   }
+}
 
+export async function useContacts(store, pubkey) {
   if (pubkey in store.state.contactListCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
     store.commit('addContactListToCache', store.state.contactListCache[pubkey])

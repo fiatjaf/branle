@@ -28,6 +28,15 @@ export function profileDescription(state) {
   }
 }
 
+export function contacts(state) {
+  return (pubkey, short = true) =>
+    state.contactListCache[pubkey]?.slice(0, short ? 6 : Math.inf)
+}
+
+export function hasMoreContacts(state) {
+  return pubkey => state.contactListCache[pubkey]?.length > 6
+}
+
 export function unreadChats(state) {
   delete state.unreadMessages[state.keys.pub]
   return Object.values(state.unreadMessages).filter(v => v).length

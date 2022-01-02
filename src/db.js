@@ -13,6 +13,7 @@ export const db = new PouchDB('nostr-events', {
   auto_compaction: true,
   revs_limit: 1
 })
+window.db = db
 
 // db schema (views)
 // ~

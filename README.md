@@ -22,5 +22,10 @@ yarn run lint
 quasar build
 ```
 
+### Start the app in prodocution mode
+```bash
+quasar serve --history dist/spa [-p port]
+```
+
 ### Customize the configuration
 See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).

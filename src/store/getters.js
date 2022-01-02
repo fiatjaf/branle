@@ -29,5 +29,6 @@ export function profileDescription(state) {
 }
 
 export function unreadChats(state) {
+  delete state.unreadMessages[state.keys.pub]
   return Object.values(state.unreadMessages).filter(v => v).length
 }

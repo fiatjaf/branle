@@ -155,7 +155,10 @@ export default {
     async listen() {
       this.event = await dbGetEvent(this.$route.params.eventId)
       if (this.event) {
-        this.$store.dispatch('useProfile', this.event.pubkey)
+        this.$store.dispatch('useProfile', {
+          pubkey: this.event.pubkey,
+          request: true
+        })
         this.listenAncestors()
       } else {
         this.eventSub = pool.sub(
@@ -164,7 +167,10 @@ export default {
             cb: async event => {
               this.eventSub.unsub()
               this.event = event
-              this.$store.dispatch('useProfile', this.event.pubkey)
+              this.$store.dispatch('useProfile', {
+                pubkey: this.event.pubkey,
+                request: true
+              })
               this.listenAncestors()
             }
           },
@@ -244,7 +250,10 @@ export default {
             cb: async event => {
               if (this.ancestorsSet.has(event.id)) return
 
-              this.$store.dispatch('useProfile', event.pubkey)
+              this.$store.dispatch('useProfile', {
+                pubkey: event.pubkey,
+                request: true
+              })
               this.ancestorsSet.add(event.id)
 
               // manual sorting

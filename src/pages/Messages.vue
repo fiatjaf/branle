@@ -83,7 +83,7 @@ export default {
     }px)`
 
     // load peer profile if it exists
-    this.$store.dispatch('useProfile', this.$route.params.pubkey)
+    this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
 
     // load saved messages and start listening for new ones
     this.restart()
@@ -105,7 +105,7 @@ export default {
       if (this.listener) this.listener.cancel()
 
       this.$store.commit('haveReadMessage', this.$route.params.pubkey)
-      this.$store.dispatch('useProfile', this.$route.params.pubkey)
+      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
       this.messages = await dbGetMessages(this.$route.params.pubkey, 100)
 
       if (this.messages.length > 0) {

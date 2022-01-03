@@ -59,7 +59,7 @@ export async function launch(store) {
   })
 
   // preload our own profile from the db
-  await store.dispatch('useProfile', store.state.keys.pub)
+  await store.dispatch('useProfile', {pubkey: store.state.keys.pub})
 
   // start listening for nostr events
   store.dispatch('restartMainSubscription')
@@ -117,7 +117,9 @@ export function restartMainSubscription(store) {
                   .map(([_, v]) => v)
                 store.commit('setFollowing', following)
 
-                following.forEach(f => store.dispatch('useProfile', f))
+                following.forEach(f =>
+                  store.dispatch('useProfile', {pubkey: f})
+                )
               }
             }
             break
@@ -188,7 +190,7 @@ export async function addEvent(store, event) {
   switch (event.kind) {
     case 0:
       // this will reset the profile cache for this URL
-      store.dispatch('useProfile', event.pubkey)
+      store.dispatch('useProfile', {pubkey: event.pubkey})
       break
     case 1:
       break
@@ -203,7 +205,7 @@ export async function addEvent(store, event) {
   }
 }
 
-export async function useProfile(store, pubkey) {
+export async function useProfile(store, {pubkey, request = false}) {
   if (pubkey in store.state.profilesCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
     store.commit('addProfileToCache', store.state.profilesCache[pubkey])
@@ -212,6 +214,20 @@ export async function useProfile(store, pubkey) {
     let event = await dbGetProfile(pubkey)
     if (event) {
       store.commit('addProfileToCache', event)
+    } else if (request) {
+      // try to request from a relay
+      let sub = pool.sub({
+        filter: [{authors: [pubkey], kinds: [0]}],
+        cb: async event => {
+          store.commit('addProfileToCache', event)
+          clearTimeout(timeout)
+          if (sub) sub.unsub()
+        }
+      })
+      let timeout = setTimeout(() => {
+        sub.unsub()
+        sub = null
+      }, 2000)
     }
   }
 }

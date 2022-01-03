@@ -165,12 +165,12 @@ export default {
 
   methods: {
     start() {
-      this.$store.dispatch('useProfile', this.$route.params.pubkey)
+      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
       this.$store.dispatch('useContacts', this.$route.params.pubkey)
       this.listen()
       this.$store.getters
         .contacts(this.$route.params.pubkey)
-        ?.forEach(pubkey => this.$store.dispatch('useProfile', pubkey))
+        ?.forEach(pubkey => this.$store.dispatch('useProfile', {pubkey}))
     },
 
     listen() {

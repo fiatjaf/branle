@@ -1,5 +1,5 @@
 <template>
-  <q-layout class="bg-lime-100/70">
+  <q-layout class="bg-white">
     <div class="flex">
       <div class="hidden sm:flex w-1/4 justify-center px-8">
         <q-card flat no-box-shadow class="text-xl bg-inherit">
@@ -28,7 +28,7 @@
 
             <q-item v-ripple clickable to="/notifications" active-class="">
               <q-item-section avatar>
-                <q-icon name="notifications" color="secondary" />
+                <q-icon name="notifications_none" color="secondary" />
               </q-item-section>
 
               <q-item-section
@@ -55,7 +55,7 @@
               active-class=""
             >
               <q-item-section avatar>
-                <q-icon name="email" color="secondary" />
+                <q-icon name="mail_outline" color="secondary" />
               </q-item-section>
 
               <q-item-section
@@ -81,7 +81,7 @@
               active-class=""
             >
               <q-item-section avatar>
-                <q-icon name="person" color="secondary" />
+                <q-icon name="person_outline" color="secondary" />
               </q-item-section>
 
               <q-item-section
@@ -130,7 +130,7 @@
         </q-card>
       </div>
 
-      <div class="w-full sm:w-3/4 lg:w-2/4 pl-4">
+      <div class="w-full sm:w-3/4 lg:w-2/4 border-gray-150 border-x">
         <q-page-container>
           <router-view />
         </q-page-container>
@@ -149,8 +149,9 @@
         bottom-0
         left-0
         right-0
-        bg-lime-100
         text-secondary
+        border-gray-150 border-t
+        bg-white
       "
       active-class="px-0"
     >
@@ -161,7 +162,7 @@
         :class="{'text-primary': $route.name === 'home'}"
       />
       <q-route-tab
-        icon="notifications"
+        icon="notifications_none"
         to="/notifications"
         active-class=""
         :class="{'text-primary': $route.name === 'notifications'}"
@@ -177,7 +178,7 @@
       </q-route-tab>
       <q-route-tab
         v-if="!!$store.state.keys.priv"
-        icon="email"
+        icon="mail_outline"
         to="/messages"
         active-class=""
         :class="{'text-primary': $route.name === 'messages'}"
@@ -192,7 +193,7 @@
         </q-badge>
       </q-route-tab>
       <q-route-tab
-        icon="person"
+        icon="person_outline"
         :to="'/' + $store.state.keys.pub"
         active-class=""
         :class="{

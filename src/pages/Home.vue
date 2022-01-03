@@ -1,6 +1,6 @@
 <template>
-  <q-page class="px-4 pt-6">
-    <div class="text-xl">Home</div>
+  <q-page class="pt-4">
+    <div class="text-xl pl-4">Home</div>
 
     <Publish />
 

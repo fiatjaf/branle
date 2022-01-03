@@ -4,9 +4,10 @@
   </q-dialog>
 
   <q-item
+    class="border-gray-150 border-t"
     :class="{
       'transition-colors': true,
-      'py-4': !highlighted,
+      'py-3': !highlighted,
       'hover:bg-white/50': !highlighted && item,
       'py-6': highlighted,
       'bg-white/70': highlighted

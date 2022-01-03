@@ -5,7 +5,8 @@
         <div>
           <q-input
             v-model="searchingProfile"
-            filled
+            rounded
+            outlined
             label="Search a Profile"
             clearable
           >
@@ -15,6 +16,7 @@
                 type="submit"
                 color="primary"
                 class="ml-3"
+                rounded
                 @click="searchProfile"
               />
             </template>

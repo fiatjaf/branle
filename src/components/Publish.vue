@@ -1,5 +1,5 @@
 <template>
-  <q-card class="no-shadow py-6 bg-inherit">
+  <q-card class="no-shadow bg-inherit">
     <q-card-section>
       <q-form @submit="sendPost">
         <q-input
@@ -7,8 +7,9 @@
           dense
           autogrow
           autofocus
-          label="Say something"
+          label="Whats happening?"
           maxlength="280"
+          class="message-input"
         >
           <template #before>
             <q-avatar
@@ -24,7 +25,8 @@
         <div class="flex justify-end mt-3">
           <q-btn
             v-close-popup
-            label="Publish"
+            class="publish-button"
+            label="Post"
             rounded
             unelevated
             type="submit"
@@ -56,3 +58,15 @@ export default {
   }
 }
 </script>
+<style lang="css">
+.message-input .q-field__label {
+  font-size: 20px;
+  line-height: 22px;
+}
+.message-input .q-field__control:before {
+  border: none;
+}
+.publish-button .q-btn {
+  text-transform: none;
+}
+</style>

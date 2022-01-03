@@ -1,10 +1,10 @@
 <template>
-  <q-page class="px-4 py-6">
-    <div class="text-xl text-center">
+  <q-page class="">
+    <div class="text-xl text-center mt-4">
       {{ $store.getters.displayName($route.params.pubkey) }}
     </div>
 
-    <div class="flex justify-left items-center mt-4">
+    <div class="flex justify-left items-center m-4">
       <q-avatar round>
         <img :src="$store.getters.avatar($route.params.pubkey)" />
       </q-avatar>
@@ -111,10 +111,10 @@
       </div>
     </div>
 
-    <q-separator class="my-6" />
+    <q-separator />
 
     <div>
-      <div class="text-lg mx-4">Notes</div>
+      <div class="text-lg m-4">Posts</div>
       <Post
         v-for="event in events"
         :key="event.id"

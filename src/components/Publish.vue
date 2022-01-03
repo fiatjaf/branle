@@ -4,7 +4,6 @@
       <q-form @submit="sendPost">
         <q-input
           v-model="text"
-          dense
           autogrow
           autofocus
           label="Say something"

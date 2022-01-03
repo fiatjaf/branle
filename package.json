@@ -8,8 +8,7 @@
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
     "dev": "quasar dev --port 3001",
-    "build": "quasar build",
-    "publish": "quasar build && netlify deploy --dir=dist/spa/ --prod"
+    "publish": "rm -r dist/spa && quasar build && netlify deploy --dir=dist/spa/ --prod"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",

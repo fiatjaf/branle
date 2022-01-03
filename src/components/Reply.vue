@@ -2,7 +2,6 @@
   <q-form class="px-24" @submit="sendReply">
     <q-input
       v-model="text"
-      dense
       autogrow
       autofocus
       label="Reply to this note"

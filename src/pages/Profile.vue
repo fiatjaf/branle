@@ -201,7 +201,7 @@ export default {
                   if (event.created_at > this.events[i].created_at) {
                     // the new event is newer than the current index,
                     // so we add it at the previous index
-                    this.events.splice(i - 1, 0, event)
+                    this.events.splice(i, 0, event)
                     return
                   }
                 }

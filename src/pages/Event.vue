@@ -253,7 +253,7 @@ export default {
                 if (event.created_at < this.ancestors[i].created_at) {
                   // the new event is older than the current index,
                   // so we add it at the previous index
-                  this.ancestors.splice(i - 1, 0, event)
+                  this.ancestors.splice(i, 0, event)
                   return
                 }
               }

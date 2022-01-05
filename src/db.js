@@ -169,7 +169,44 @@ export async function dbGetHomeFeedNotes(
     limit,
     startkey: since
   })
-  return result.rows.map(r => r.doc)
+
+  //Get doc-uments from pouchdb result
+  let events = result.rows.map(r => r.doc)
+
+  //Nest replies, result like this:
+  //Event     !isReply
+  //  Event   isReply
+  //  Event   isReply
+  //Event     !isReply
+  events = toEventTree(events)
+
+  //Filter out unnested replies
+  return events
+}
+
+function toEventTree(flatList) {
+  var map = {},
+    node,
+    roots = [],
+    i
+
+  for (i = 0; i < flatList.length; i += 1) {
+    map[flatList[i].id] = i //Initialize the map
+    flatList[i].replies = [] //Initialize the children
+  }
+
+  for (i = 0; i < flatList.length; i += 1) {
+    node = flatList[i]
+    const parent = node.tags.find(t => t[0] === 'e')
+    node.isReply = !!parent
+    if (node.isReply) {
+      //If you have dangling branches check that map[parent] exists
+      flatList[map[parent[1]]].replies.push(node)
+    } else {
+      roots.push(node)
+    }
+  }
+  return roots
 }
 
 export function onNewHomeFeedNote(callback = () => {}) {

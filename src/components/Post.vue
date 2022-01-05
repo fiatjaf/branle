@@ -4,23 +4,27 @@
   </q-dialog>
 
   <q-item
-    class="border-gray-150 border-t"
+    class="overflow-hidden transition-colors"
     :class="{
-      'transition-colors': true,
       'py-3': !highlighted,
       'hover:bg-white/50': !highlighted && item,
-      'py-6': highlighted,
-      'bg-white/70': highlighted
+      'py-6 bg-white/70': highlighted,
+      'border-gray-150 border-t': !event.isReply
     }"
     :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
   >
-    <q-item-section avatar>
+    <q-item-section avatar style="height: 100%">
+      <div v-if="event.isReply" class="is-reply"></div>
       <q-avatar
         class="no-shadow cursor-pointer"
         @click="toProfile(event.pubkey)"
       >
         <img :src="$store.getters.avatar(event.pubkey)" />
       </q-avatar>
+      <div
+        v-if="(event.isReply && !isLastReply) || event.replies.length"
+        class="has-reply"
+      ></div>
     </q-item-section>
 
     <q-item-section>
@@ -35,18 +39,6 @@
           </div>
           <div class="text-slate-400 font-mono text-xs">
             {{ shorten(event.pubkey) }}
-          </div>
-          <div
-            v-if="standalone && tagged"
-            class="text-emerald-300 text-xs ml-3"
-          >
-            related to
-            <span
-              class="cursor-pointer text-emerald-400 font-bold hover:underline"
-              @click="toEvent(tagged)"
-            >
-              {{ shorten(tagged) }}
-            </span>
           </div>
         </div>
         <div class="flex items-center">
@@ -65,7 +57,7 @@
         </div>
       </q-item-label>
       <q-item-label
-        class="pt-1 pl-1 text-base font-sans flex break-words text-justify"
+        class="pt-1 text-base font-sans flex break-words text-justify"
         :class="{'cursor-pointer': item}"
         style="hyphens: auto !important"
         @mousedown="startClicking"
@@ -78,21 +70,28 @@
               v-if="hasMore"
               name="more_horiz"
               color="primary"
-              class="
-                bg-white
-                drop-shadow
-                border-1
-                px-2
-                py-1
-                ml-1
-                -translate-y-1
-              "
+              class="bg-white drop-shadow border-1 px-2 py-1 ml-1 -translate-y-1"
             />
           </template>
         </Markdown>
       </q-item-label>
+      <div class="row justify-end mt-2 text-gray-400">
+        <div class="w-14">
+          <q-btn flat round size="sm" icon="chat_bubble_outline" />
+          <span class="ml-1">{{ event.replies.length }}</span>
+        </div>
+      </div>
     </q-item-section>
   </q-item>
+
+  <Post
+    v-for="(reply, index) in event.replies"
+    :key="reply.id"
+    :event="reply"
+    standalone
+    :is-last-reply="index + 1 == event.replies.length"
+    item
+  />
 </template>
 
 <script>
@@ -104,7 +103,8 @@ export default {
     event: {type: Object, required: true},
     highlighted: {type: Boolean, default: false},
     standalone: {type: Boolean, default: false},
-    item: {type: Boolean, default: false}
+    item: {type: Boolean, default: false},
+    isLastReply: {type: Boolean, default: false}
   },
 
   data() {
@@ -155,3 +155,24 @@ export default {
   }
 }
 </script>
+<style type="css" scoped>
+img {
+  z-index: 11 !important;
+}
+.has-reply {
+  width: 2px;
+  position: absolute;
+  top: 55px;
+  left: 35px;
+  height: 100vh;
+  @apply bg-gray-400;
+}
+.is-reply {
+  width: 2px;
+  position: absolute;
+  top: 0;
+  left: 35px;
+  height: 8px;
+  @apply bg-gray-400;
+}
+</style>

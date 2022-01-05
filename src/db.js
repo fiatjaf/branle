@@ -33,6 +33,7 @@ function call(name, args) {
 
 function stream(name, args, callback) {
   let id = name + ' ' + Math.random().toString().slice(-4)
+  hub[id] = callback
   console.log('db <-', id, args)
   worker.postMessage(JSON.stringify({id, name, args, stream: true}))
   return {
@@ -68,7 +69,7 @@ export async function dbGetMessages(
   return call('dbGetMessages', [peerPubKey, limit, since])
 }
 export function onNewMessage(peerPubKey, callback = () => {}) {
-  return stream('onNewMessage', [], callback)
+  return stream('onNewMessage', [peerPubKey], callback)
 }
 export async function dbGetEvent(id) {
   return call('dbGetEvent', [id])

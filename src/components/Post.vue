@@ -4,6 +4,7 @@
   </q-dialog>
 
   <q-item
+    v-if="!event.isReplyToReply"
     class="overflow-hidden transition-colors"
     :class="{
       'py-3': !highlighted,
@@ -76,12 +77,18 @@
         </Markdown>
       </q-item-label>
       <div class="row justify-end mt-2 text-gray-400">
-        <div class="w-14">
-          <q-btn flat round size="sm" icon="chat_bubble_outline" />
-          <span class="ml-1">{{ event.replies.length }}</span>
-        </div>
+        <q-btn flat round size="sm" icon="chat_bubble_outline" />
       </div>
     </q-item-section>
+  </q-item>
+  <q-item v-else class="py-0">
+    <q-item-section><div class="dashed-line"></div></q-item-section>
+    <q-item-section>
+      <q-item-label class="text-center"
+        ><a href="#" @click.prevent="toEvent(event.root)">Show replies</a>
+      </q-item-label></q-item-section
+    >
+    <q-item-section></q-item-section>
   </q-item>
 
   <Post
@@ -156,9 +163,6 @@ export default {
 }
 </script>
 <style type="css" scoped>
-img {
-  z-index: 11 !important;
-}
 .has-reply {
   width: 2px;
   position: absolute;
@@ -174,5 +178,11 @@ img {
   left: 35px;
   height: 8px;
   @apply bg-gray-400;
+}
+.dashed-line {
+  border-right: 2px dashed;
+  @apply border-gray-400;
+  height: 100%;
+  width: 21px;
 }
 </style>

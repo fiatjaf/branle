@@ -197,11 +197,18 @@ function toEventTree(flatList) {
 
   for (i = 0; i < flatList.length; i += 1) {
     node = flatList[i]
-    const parent = node.tags.find(t => t[0] === 'e')
-    node.isReply = !!parent
+    const parents = node.tags.filter(t => t[0] === 'e')
+    node.isReply = !!parents.length
+    node.isReplyToReply = parents.length > 1
+    let parent
     if (node.isReply) {
+      node.root = parents[0][1]
+      parent = parents.pop()
       //If you have dangling branches check that map[parent] exists
       flatList[map[parent[1]]].replies.push(node)
+      flatList[map[parent[1]]].replies.sort(
+        (a, b) => a.created_at - b.created_at
+      )
     } else {
       roots.push(node)
     }

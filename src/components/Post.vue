@@ -4,18 +4,26 @@
   </q-dialog>
 
   <q-item
-    v-if="!event.isReplyToReply"
+    v-if="!event.isReplyToReply || expandReplies"
     class="overflow-hidden transition-colors"
     :class="{
       'py-3': !highlighted,
       'hover:bg-white/50': !highlighted && item,
       'py-6 bg-white/70': highlighted,
-      'border-gray-150 border-t': !event.isReply
+      'border-gray-150 border-t': !event.isReply,
+      'border-gray-150 border-b':
+        (isEventPage && !event.replies.length) || (!isEventPage && isLastReply)
     }"
     :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
   >
     <q-item-section avatar style="height: 100%">
-      <div v-if="event.isReply" class="is-reply"></div>
+      <div
+        v-if="
+          level === 2 ||
+          (!(expandReplies && isFirstReply) && !isRoot && event.isReply)
+        "
+        class="is-reply"
+      ></div>
       <q-avatar
         class="no-shadow cursor-pointer"
         @click="toProfile(event.pubkey)"
@@ -23,7 +31,11 @@
         <img :src="$store.getters.avatar(event.pubkey)" />
       </q-avatar>
       <div
-        v-if="(event.isReply && !isLastReply) || event.replies.length"
+        v-if="
+          (!isRoot && event.replies.length) ||
+          (!isEventPage && event.replies.length) ||
+          (!isEventPage && level != 0 && !isLastReply)
+        "
         class="has-reply"
       ></div>
     </q-item-section>
@@ -91,12 +103,18 @@
     <q-item-section></q-item-section>
   </q-item>
 
+  <Reply v-if="isRoot" :event="event" class="border-gray-150 border-b" />
+
   <Post
     v-for="(reply, index) in event.replies"
     :key="reply.id"
     :event="reply"
     standalone
     :is-last-reply="index + 1 == event.replies.length"
+    :is-first-reply="index === 0 || level + 1 == 1"
+    :expand-replies="expandReplies"
+    :level="level + 1"
+    :is-event-page="isEventPage"
     item
   />
 </template>
@@ -111,7 +129,12 @@ export default {
     highlighted: {type: Boolean, default: false},
     standalone: {type: Boolean, default: false},
     item: {type: Boolean, default: false},
-    isLastReply: {type: Boolean, default: false}
+    isLastReply: {type: Boolean, default: false},
+    isFirstReply: {type: Boolean, default: true},
+    level: {type: Number, default: 0},
+    isRoot: {type: Boolean, default: false},
+    isEventPage: {type: Boolean, default: false},
+    expandReplies: {type: Boolean, default: false}
   },
 
   data() {

@@ -1,26 +1,40 @@
 <template>
-  <q-form class="px-24" @submit="sendReply">
-    <q-input
-      v-model="text"
-      dense
-      autogrow
-      autofocus
-      label="Reply to this note"
-      maxlength="280"
-    >
-    </q-input>
-
-    <div class="flex justify-end mt-2">
-      <q-btn
-        :disable="!$store.state.keys.priv"
-        label="Reply"
-        rounded
-        unelevated
-        type="submit"
-        color="primary"
-      />
-    </div>
-  </q-form>
+  <q-card class="no-shadow bg-inherit">
+    <q-card-section class="pt-0">
+      <q-form class="q-form border-gray-150 border-t pt-4" @submit="sendReply">
+        <q-input
+          v-model="text"
+          dense
+          autogrow
+          autofocus
+          label="Post your reply"
+          maxlength="280"
+        >
+          <template #before>
+            <q-avatar
+              round
+              size="40px"
+              class="cursor-pointer mr-3"
+              @click="toProfile($store.state.keys.pub)"
+            >
+              <img :src="$store.getters.avatar($store.state.keys.pub)" />
+            </q-avatar>
+          </template>
+        </q-input>
+        <div class="flex justify-end mt-3">
+          <q-btn
+            v-close-popup
+            label="Reply"
+            rounded
+            unelevated
+            type="submit"
+            color="primary"
+            :disable="!$store.state.keys.priv"
+          />
+        </div>
+      </q-form>
+    </q-card-section>
+  </q-card>
 </template>
 
 <script>

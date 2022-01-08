@@ -159,10 +159,7 @@ export async function dbSave(event) {
 
 // db queries
 // ~
-export async function dbGetHomeFeedNotes(
-  limit = 50,
-  since = Math.round(Date.now() / 1000)
-) {
+export async function dbGetHomeFeedNotes(limit, since) {
   let result = await db.query('main/homefeed', {
     include_docs: true,
     descending: true,
@@ -173,47 +170,7 @@ export async function dbGetHomeFeedNotes(
   //Get doc-uments from pouchdb result
   let events = result.rows.map(r => r.doc)
 
-  //Nest replies, result like this:
-  //Event     !isReply
-  //  Event   isReply
-  //  Event   isReply
-  //Event     !isReply
-  events = toEventTree(events)
-
-  //Filter out unnested replies
   return events
-}
-
-function toEventTree(flatList) {
-  var map = {},
-    node,
-    roots = [],
-    i
-
-  for (i = 0; i < flatList.length; i += 1) {
-    map[flatList[i].id] = i //Initialize the map
-    flatList[i].replies = [] //Initialize the children
-  }
-
-  for (i = 0; i < flatList.length; i += 1) {
-    node = flatList[i]
-    const parents = node.tags.filter(t => t[0] === 'e')
-    node.isReply = !!parents.length
-    node.isReplyToReply = parents.length > 1
-    let parent
-    if (node.isReply) {
-      node.root = parents[0][1]
-      parent = parents.pop()
-      //If you have dangling branches check that map[parent] exists
-      flatList[map[parent[1]]].replies.push(node)
-      flatList[map[parent[1]]].replies.sort(
-        (a, b) => a.created_at - b.created_at
-      )
-    } else {
-      roots.push(node)
-    }
-  }
-  return roots
 }
 
 export function onNewHomeFeedNote(callback = () => {}) {

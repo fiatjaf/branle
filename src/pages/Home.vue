@@ -18,7 +18,8 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbGetHomeFeedNotes, onNewHomeFeedNote} from '../db'
+import {onNewHomeFeedNote} from '../db'
+import {GetHomeFeed} from '../services/event'
 
 export default {
   name: 'Home',
@@ -33,7 +34,7 @@ export default {
   },
 
   async mounted() {
-    this.homeFeed = await dbGetHomeFeedNotes(50)
+    this.homeFeed = await GetHomeFeed(50)
     if (this.homeFeed.length > 0) {
       this.reachedEnd = false
     }
@@ -55,7 +56,7 @@ export default {
         return
       }
 
-      let loadedNotes = await dbGetHomeFeedNotes(
+      let loadedNotes = await GetHomeFeed(
         50,
         this.homeFeed[this.homeFeed.length - 1].created_at - 1
       )

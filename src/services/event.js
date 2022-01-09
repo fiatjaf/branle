@@ -1,5 +1,4 @@
 import {dbGetHomeFeedNotes, dbGetEvent} from '../db'
-//import {pool} from '../pool'
 
 export async function GetHomeFeed(
   limit = 50,

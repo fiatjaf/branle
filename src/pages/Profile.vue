@@ -59,16 +59,7 @@
               v-if="$store.getters.hasMoreContacts($route.params.pubkey)"
               :name="showAllContacts ? 'expand_less' : 'more_horiz'"
               color="primary"
-              class="
-                bg-white
-                drop-shadow
-                cursor-pointer
-                border-1
-                px-2
-                py-1
-                ml-1
-                -translate-y-1
-              "
+              class="bg-white drop-shadow cursor-pointer border-1 px-2 py-1 ml-1 -translate-y-1"
               @click="showAllContacts = !showAllContacts"
             />
           </div>
@@ -115,13 +106,7 @@
 
     <div>
       <div class="text-lg m-4">Posts</div>
-      <Post
-        v-for="event in events"
-        :key="event.id"
-        :event="event"
-        standalone
-        item
-      />
+      <Post v-for="event in events" :key="event.id" :event="event" item />
     </div>
   </q-page>
 </template>

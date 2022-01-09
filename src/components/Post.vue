@@ -5,39 +5,22 @@
 
   <q-item
     v-if="!event.isReplyToReply || expandReplies"
-    class="overflow-hidden transition-colors"
+    class="overflow-hidden transition-colors py-3 hover:bg-gray-100 border-gray-150"
     :class="{
-      'py-3': !highlighted,
-      'hover:bg-white/50': !highlighted && item,
-      'py-6 bg-white/70': highlighted,
-      'border-gray-150 border-t': !event.isReply,
-      'border-gray-150 border-b':
-        (isEventPage && !event.replies.length) || (!isEventPage && isLastReply)
+      'border-gray-150 border-t': showBorderTop,
+      'border-gray-150 border-b': showBorderBottom
     }"
     :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
   >
     <q-item-section avatar style="height: 100%">
-      <div
-        v-if="
-          level === 2 ||
-          (!(expandReplies && isFirstReply) && !isRoot && event.isReply)
-        "
-        class="is-reply"
-      ></div>
+      <div v-if="showVerticalLineTop" class="is-reply"></div>
       <q-avatar
         class="no-shadow cursor-pointer"
         @click="toProfile(event.pubkey)"
       >
         <img :src="$store.getters.avatar(event.pubkey)" />
       </q-avatar>
-      <div
-        v-if="
-          (!isRoot && event.replies.length) ||
-          (!isEventPage && event.replies.length) ||
-          (!isEventPage && level != 0 && !isLastReply)
-        "
-        class="has-reply"
-      ></div>
+      <div v-if="showVerticalLineBottom" class="has-reply"></div>
     </q-item-section>
 
     <q-item-section>
@@ -89,7 +72,13 @@
         </Markdown>
       </q-item-label>
       <div class="row justify-end mt-2 text-gray-400">
-        <q-btn flat round size="sm" icon="chat_bubble_outline" />
+        <q-btn
+          flat
+          round
+          size="sm"
+          icon="chat_bubble_outline"
+          @click="toEvent(event.id)"
+        />
       </div>
     </q-item-section>
   </q-item>
@@ -109,7 +98,6 @@
     v-for="(reply, index) in event.replies"
     :key="reply.id"
     :event="reply"
-    standalone
     :is-last-reply="index + 1 == event.replies.length"
     :is-first-reply="index === 0 || level + 1 == 1"
     :expand-replies="expandReplies"
@@ -127,7 +115,6 @@ export default {
   props: {
     event: {type: Object, required: true},
     highlighted: {type: Boolean, default: false},
-    standalone: {type: Boolean, default: false},
     item: {type: Boolean, default: false},
     isLastReply: {type: Boolean, default: false},
     isFirstReply: {type: Boolean, default: true},
@@ -145,16 +132,6 @@ export default {
   },
 
   computed: {
-    tagged() {
-      for (let i = this.event.tags.length - 1; i >= 0; i--) {
-        let tag = this.event.tags[i]
-        if (tag.length === 2 && tag[0] === 'e') {
-          return tag[1]
-        }
-      }
-      return null
-    },
-
     trimmedContent() {
       if (this.event.content.length > 280) {
         return this.event.content.slice(0, 270)
@@ -166,6 +143,34 @@ export default {
     hasMore() {
       if (this.event.content.length > 280) return true
       return false
+    },
+
+    showBorderTop() {
+      return this.isEventPage && !this.event.isReply
+    },
+
+    showBorderBottom() {
+      return (
+        (this.isEventPage && !this.event.replies.length) ||
+        (!this.isEventPage && this.isLastReply)
+      )
+    },
+
+    showVerticalLineTop() {
+      return (
+        this.level === 2 ||
+        (!(this.expandReplies && this.isFirstReply) &&
+          !this.isRoot &&
+          this.event.isReply)
+      )
+    },
+
+    showVerticalLineBottom() {
+      return (
+        (!this.isRoot && this.event.replies.length) ||
+        (!this.isEventPage && this.event.replies.length) ||
+        (!this.isEventPage && this.level !== 0 && !this.isLastReply)
+      )
     }
   },
 

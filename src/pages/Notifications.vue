@@ -13,7 +13,6 @@
         <Post
           :event="event"
           :highlighted="$store.state.lastNotificationRead < event.created_at"
-          standalone
         />
       </div>
     </q-infinite-scroll>

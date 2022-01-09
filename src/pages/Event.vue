@@ -27,12 +27,10 @@ export default {
       metadataDialog: false,
       replying: false,
       userHasActed: false,
-      ancestors: [],
       ancestorsSet: new Set(),
       ancestorsSub: null,
       event: null,
       eventSub: null,
-      childrenThreads: [],
       childrenSet: new Set(),
       childrenSub: null,
       events: []
@@ -115,7 +113,6 @@ export default {
     },
 
     listenChildren() {
-      this.childrenThreads = []
       this.childrenSet = new Set()
       this.childrenSub = pool.sub(
         {
@@ -138,7 +135,6 @@ export default {
     },
 
     listenAncestors() {
-      this.ancestors = []
       this.ancestorsSet = new Set()
 
       let eventTags = this.event.tags.filter(([t, _]) => t === 'e')

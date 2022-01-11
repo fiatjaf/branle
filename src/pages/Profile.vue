@@ -150,12 +150,12 @@ export default {
 
   methods: {
     start() {
-      this.$store.dispatch('useProfile', this.$route.params.pubkey)
+      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
       this.$store.dispatch('useContacts', this.$route.params.pubkey)
       this.listen()
       this.$store.getters
         .contacts(this.$route.params.pubkey)
-        ?.forEach(pubkey => this.$store.dispatch('useProfile', pubkey))
+        ?.forEach(pubkey => this.$store.dispatch('useProfile', {pubkey}))
     },
 
     listen() {
@@ -186,7 +186,7 @@ export default {
                   if (event.created_at > this.events[i].created_at) {
                     // the new event is newer than the current index,
                     // so we add it at the previous index
-                    this.events.splice(i - 1, 0, event)
+                    this.events.splice(i, 0, event)
                     return
                   }
                 }

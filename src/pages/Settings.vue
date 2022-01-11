@@ -35,7 +35,7 @@
     <q-separator />
     <div class="my-8">
       <div class="text-lg p-4">Relays</div>
-      <q-list class="mb-3" dense>
+      <q-list class="mb-3">
         <q-item v-for="(opts, url) in $store.state.relays" :key="url">
           <q-item-section class="text-slate-800">
             <div class="flex-inline">
@@ -71,13 +71,7 @@
         </q-item>
       </q-list>
       <q-form @submit="addRelay">
-        <q-input
-          v-model="addingRelay"
-          class="mx-3"
-          filled
-          dense
-          label="Add a relay"
-        >
+        <q-input v-model="addingRelay" class="mx-3" filled label="Add a relay">
           <template #append>
             <q-btn
               label="Add"
@@ -150,7 +144,7 @@ import {LocalStorage} from 'quasar'
 import {nextTick} from 'vue'
 
 import helpersMixin from '../utils/mixin'
-import {db} from '../db'
+import {eraseDatabase} from '../db'
 
 export default {
   name: 'Settings',
@@ -239,7 +233,7 @@ export default {
         })
         .onOk(async () => {
           LocalStorage.clear()
-          await db.destroy()
+          await eraseDatabase()
           window.location.reload()
         })
     }

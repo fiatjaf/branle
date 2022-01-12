@@ -23,7 +23,8 @@ export default {
     return {
       listener: null,
       reachedEnd: false,
-      homeFeed: []
+      homeFeed: [],
+      notesSet: new Set()
     }
   },
 
@@ -35,10 +36,14 @@ export default {
 
     for (let i = notes.length - 1; i >= 0; i--) {
       addToThread(this.homeFeed, notes[i])
+      this.notesSet.add(notes[i].id)
     }
 
     this.listener = onNewHomeFeedNote(event => {
+      if (this.notesSet.has(event.id)) return
+
       addToThread(this.homeFeed, event)
+      this.notesSet.add(event.id)
     })
   },
 
@@ -66,6 +71,7 @@ export default {
       }
       for (let i = loadedNotes.length - 1; i >= 0; i--) {
         addToThread(this.homeFeed, loadedNotes[i])
+        this.notesSet.add(event.id)
       }
       done()
     }

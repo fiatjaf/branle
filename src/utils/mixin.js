@@ -20,7 +20,7 @@ export default {
     },
 
     shorten(str) {
-      return str.slice(0, 3) + '…' + str.slice(-4)
+      return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
     },
 
     niceDate(value) {

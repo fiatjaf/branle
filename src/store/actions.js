@@ -128,7 +128,7 @@ export function restartMainSubscription(store) {
             break
         }
 
-        store.dispatch('addEvent', event)
+        store.dispatch('addEvent', {event, relay})
       }
     },
     'main-channel'
@@ -146,7 +146,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
     content: message
   })
 
-  store.dispatch('addEvent', event)
+  store.dispatch('addEvent', {event})
 }
 
 export async function setMetadata(store, metadata) {
@@ -158,7 +158,7 @@ export async function setMetadata(store, metadata) {
     content: JSON.stringify(metadata)
   })
 
-  store.dispatch('addEvent', event)
+  store.dispatch('addEvent', {event})
 }
 
 export async function sendChatMessage(store, {pubkey, text, replyTo}) {
@@ -180,11 +180,11 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
 
   event = await pool.publish(event)
 
-  store.dispatch('addEvent', event)
+  store.dispatch('addEvent', {event})
 }
 
-export async function addEvent(store, event) {
-  await dbSave(event)
+export async function addEvent(store, {event, relay = null}) {
+  await dbSave(event, relay)
 
   // do things after the event is saved
   switch (event.kind) {
@@ -271,7 +271,7 @@ export async function publishContactList(store) {
     content: JSON.stringify(store.state.relays)
   })
 
-  await store.dispatch('addEvent', event)
+  await store.dispatch('addEvent', {event})
 
   Notify.create({
     message: 'Updated and published list of followed keys and relays.',

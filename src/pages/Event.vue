@@ -71,6 +71,16 @@
       </div>
     </div>
 
+    <div v-if="event?.seen_on?.length">
+      <q-separator class="my-2" />
+      <div class="text-lg mx-4 mt-6 mb-4">Seen on relays</div>
+      <ul class="mb-2 pl-4 text-md list-disc">
+        <li v-for="relay in event.seen_on" :key="relay">
+          {{ relay }}
+        </li>
+      </ul>
+    </div>
+
     <div v-if="childrenThreads.length">
       <q-separator class="my-2" />
       <div class="text-lg mx-4 mt-6 mb-4">Replies</div>

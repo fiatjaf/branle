@@ -5,6 +5,8 @@ import PouchDBUpsert from 'pouchdb-upsert'
 import PouchDBMapReduce from 'pouchdb-mapreduce'
 import PouchDBAdapterIDB from 'pouchdb-adapter-idb'
 
+import {cleanEvent} from './utils/helpers'
+
 PouchDB.plugin(PouchDBAdapterIDB).plugin(PouchDBMapReduce).plugin(PouchDBUpsert)
 
 // instantiate db (every doc will be an event, that's it)
@@ -120,7 +122,7 @@ const methods = {
 
   // general function for saving an event, with granular logic for each kind
   //
-  async dbSave(event) {
+  async dbSave(event, relay) {
     switch (event.kind) {
       case 0: {
         // first check if we don't have a newer metadata for this user
@@ -155,11 +157,23 @@ const methods = {
     event._id = event.id
 
     try {
-      await db.put(event)
+      await db.upsert(event.id, current => {
+        if (
+          (current.seen_on && current.seen_on.indexOf(relay) !== -1) ||
+          !relay
+        ) {
+          // return falsey so the document won't be updated
+          return false
+        }
+
+        // otherwise update with the relay this was seen on
+        let updated = cleanEvent(event)
+        updated.seen_on = current.seen_on || []
+        updated.seen_on.push(relay)
+        return updated
+      })
     } catch (err) {
-      if (err.name !== 'conflict') {
-        console.error('unexpected error saving event', event, err)
-      }
+      console.error('unexpected error saving event', event, err)
     }
   },
 

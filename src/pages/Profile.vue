@@ -180,10 +180,10 @@ export default {
               kinds: [0, 1, 3]
             }
           ],
-          cb: async event => {
+          cb: async (event, relay) => {
             switch (event.kind) {
               case 0:
-                await this.$store.dispatch('addEvent', event)
+                await this.$store.dispatch('addEvent', {event, relay})
                 return
 
               case 1:

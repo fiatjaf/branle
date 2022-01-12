@@ -46,8 +46,8 @@ function stream(name, args, callback) {
 export async function eraseDatabase() {
   return call('eraseDatabase', [])
 }
-export async function dbSave(event) {
-  return call('dbSave', [event])
+export async function dbSave(event, relay) {
+  return call('dbSave', [event, relay])
 }
 export async function dbGetHomeFeedNotes(
   limit = 50,

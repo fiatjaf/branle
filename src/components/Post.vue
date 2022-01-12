@@ -73,7 +73,7 @@
       <q-item-label
         class="pt-1 text-base font-sans flex break-words text-justify"
         style="hyphens: auto !important"
-        :class="{'cursor-pointer': item}"
+        :class="{'cursor-pointer': $route.params.eventId !== event.id}"
         @mousedown="startClicking"
         @mouseup="finishClicking"
       >

@@ -11,6 +11,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
+import {cleanEvent} from '../utils/helpers'
 
 export default {
   name: 'RawEventData',
@@ -19,16 +20,8 @@ export default {
 
   computed: {
     cleaned() {
-      if (Array.isArray(this.event))
-        return this.event.map(this.withoutLocalMetadata)
-      return this.withoutLocalMetadata(this.event)
-    }
-  },
-
-  methods: {
-    withoutLocalMetadata(event) {
-      let {_id, _rev, ...evt} = event
-      return evt
+      if (Array.isArray(this.event)) return this.event.map(cleanEvent)
+      return cleanEvent(this.event)
     }
   }
 }

@@ -9,7 +9,7 @@
     <q-separator class="my-6" />
 
     <div v-if="ancestors.length">
-      <Thread :events="ancestors" />
+      <Thread :events="ancestors" is-ancestors />
     </div>
 
     <div ref="main" class="py-4 px-1">

@@ -1,21 +1,12 @@
 <template>
-  <div
-    :class="
-      'flex my-4 ml-[25px]' +
-      (events.length > 1 ? ' border-l-8 border-slate-300' : '')
-    "
-  >
+  <div class="flex my-4 ml-[25px]">
     <div
-      v-for="event in filledEvents"
+      v-for="(event, index) in filledEvents"
       :key="event.id"
-      class="w-full -translate-x-[40px]"
+      class="w-full -translate-x-[33px]"
     >
-      <div v-if="event === 'FILLER'" class="ml-16 pl-3 mb-6 text-xl">
-        <div class="h-3">.</div>
-        <div class="h-3">.</div>
-        <div class="h-3">.</div>
-      </div>
-      <Post v-else :event="event" item />
+      <ShowMore v-if="event === 'FILLER'" :root="root" />
+      <ThreadItem v-else :event="event" :position="position(index)" item />
     </div>
   </div>
 </template>
@@ -27,10 +18,15 @@ export default {
   name: 'Thread',
   mixins: [helpersMixin],
   props: {
-    events: {type: Array, required: true}
+    events: {type: Array, required: true},
+    isAncestors: {type: Boolean, default: false}
   },
 
   computed: {
+    root() {
+      return this.events[0].id
+    },
+
     filledEvents() {
       if (this.events.length === 0) return []
 
@@ -46,6 +42,26 @@ export default {
       }
 
       return filled
+    }
+  },
+
+  methods: {
+    position(index) {
+      if (!this.isAncestors) {
+        // normal thread
+        if (this.filledEvents.length === 1) return 'single'
+        if (index === 0) return 'first'
+        if (index === this.filledEvents.length - 1) return 'last'
+        return 'middle'
+      } else {
+        // in this mode the last event should have the left bar to the bottom,
+        // as it will plug into the "main" event in the thread,
+        // so 'single' is turned into 'first' and 'last' into 'middle'
+        if (this.filledEvents.length === 1) return 'first'
+        if (index === 0) return 'first'
+        if (index === this.filledEvents.length - 1) return 'middle'
+        return 'middle'
+      }
     }
   }
 }

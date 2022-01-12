@@ -15,6 +15,21 @@
     :bg-color="event.pubkey === $store.state.keys.pub ? 'primary' : 'tertiary'"
     @click="click"
   />
+
+  <q-menu context-menu>
+    <q-list dense>
+      <q-item div class="py-3">
+        <q-item-section>
+          <div class="text-md font-semibold">Seen on relays:</div>
+          <ul class="pl-1 text-sm list-disc">
+            <li v-for="relay in event.seen_on" :key="relay">
+              {{ relay }}
+            </li>
+          </ul>
+        </q-item-section>
+      </q-item>
+    </q-list>
+  </q-menu>
 </template>
 
 <script>

@@ -161,7 +161,7 @@ export async function setMetadata(store, metadata) {
   store.dispatch('addEvent', {event})
 }
 
-export async function sendChatMessage(store, {pubkey, text, replyTo}) {
+export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
   if (text.length === 0) return
 
   let [ciphertext, iv] = encrypt(store.state.keys.priv, pubkey, text)
@@ -169,7 +169,7 @@ export async function sendChatMessage(store, {pubkey, text, replyTo}) {
   // make event
   let event = {
     pubkey: store.state.keys.pub,
-    created_at: Math.floor(Date.now() / 1000),
+    created_at: now,
     kind: 4,
     tags: [['p', pubkey]],
     content: ciphertext + '?iv=' + iv

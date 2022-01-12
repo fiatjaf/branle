@@ -6,7 +6,7 @@
       class="w-full -translate-x-[33px]"
     >
       <ShowMore v-if="event === 'FILLER'" :root="root" />
-      <ThreadItem v-else :event="event" :position="position(index)" item />
+      <Post v-else :event="event" :position="position(index)" item />
     </div>
   </div>
 </template>

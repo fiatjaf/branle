@@ -4,22 +4,24 @@
   </q-dialog>
 
   <q-item
-    :class="{
-      'transition-colors': true,
-      'py-4': !highlighted,
-      'hover:bg-white/50': !highlighted && item,
-      'py-6': highlighted,
-      'bg-white/70': highlighted
-    }"
+    class="
+      overflow-hidden
+      transition-colors
+      py-3
+      hover:bg-gray-100
+      border-gray-150
+    "
     :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
   >
-    <q-item-section avatar>
+    <q-item-section avatar style="height: 100%">
+      <div v-if="showVerticalLineTop" class="is-reply"></div>
       <q-avatar
         class="no-shadow cursor-pointer"
         @click="toProfile(event.pubkey)"
       >
         <img :src="$store.getters.avatar(event.pubkey)" />
       </q-avatar>
+      <div v-if="showVerticalLineBottom" class="has-reply"></div>
     </q-item-section>
 
     <q-item-section>
@@ -36,7 +38,7 @@
             {{ shorten(event.pubkey) }}
           </div>
           <div
-            v-if="standalone && tagged"
+            v-if="position === 'standalone' && tagged"
             class="text-emerald-300 text-xs ml-3"
           >
             related to
@@ -64,9 +66,9 @@
         </div>
       </q-item-label>
       <q-item-label
-        class="pt-1 pl-1 text-base font-sans flex break-words text-justify"
-        :class="{'cursor-pointer': item}"
+        class="pt-1 text-base font-sans flex break-words text-justify"
         style="hyphens: auto !important"
+        :class="{'cursor-pointer': item}"
         @mousedown="startClicking"
         @mouseup="finishClicking"
       >
@@ -102,8 +104,8 @@ export default {
   props: {
     event: {type: Object, required: true},
     highlighted: {type: Boolean, default: false},
-    standalone: {type: Boolean, default: false},
-    item: {type: Boolean, default: false}
+    item: {type: Boolean, default: false},
+    position: {type: String, default: 'standalone'}
   },
 
   data() {
@@ -135,6 +137,14 @@ export default {
     hasMore() {
       if (this.event.content.length > 280) return true
       return false
+    },
+
+    showVerticalLineTop() {
+      return this.position === 'middle' || this.position === 'last'
+    },
+
+    showVerticalLineBottom() {
+      return this.position === 'middle' || this.position === 'first'
     }
   },
 
@@ -154,3 +164,21 @@ export default {
   }
 }
 </script>
+<style type="css" scoped>
+.has-reply {
+  width: 2px;
+  position: absolute;
+  top: 55px;
+  left: 35px;
+  height: 100vh;
+  @apply bg-gray-400;
+}
+.is-reply {
+  width: 2px;
+  position: absolute;
+  top: 0;
+  left: 35px;
+  height: 8px;
+  @apply bg-gray-400;
+}
+</style>

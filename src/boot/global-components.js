@@ -1,5 +1,4 @@
 import RawEventData from '../components/RawEventData.vue'
-import ThreadItem from '../components/ThreadItem.vue'
 import Markdown from '../components/Markdown.vue'
 import ShowMore from '../components/ShowMore.vue'
 import Publish from '../components/Publish.vue'
@@ -11,7 +10,6 @@ import Post from '../components/Post.vue'
 
 export default ({app}) => {
   app.component('RawEventData', RawEventData)
-  app.component('ThreadItem', ThreadItem)
   app.component('Markdown', Markdown)
   app.component('ShowMore', ShowMore)
   app.component('Publish', Publish)

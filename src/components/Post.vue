@@ -38,10 +38,15 @@
             {{ shorten(event.pubkey) }}
           </div>
           <div
-            v-if="position === 'standalone' && tagged"
+            v-if="
+              tagged &&
+              (position === 'standalone' ||
+                (position === 'single' &&
+                  ($route.name === 'home' || $route.name === 'profile')))
+            "
             class="text-emerald-300 text-xs ml-3"
           >
-            related to
+            in reply to
             <span
               class="cursor-pointer text-emerald-400 font-bold hover:underline"
               @click="toEvent(tagged)"
@@ -104,7 +109,6 @@ export default {
   props: {
     event: {type: Object, required: true},
     highlighted: {type: Boolean, default: false},
-    item: {type: Boolean, default: false},
     position: {type: String, default: 'standalone'}
   },
 

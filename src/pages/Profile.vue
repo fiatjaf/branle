@@ -115,20 +115,15 @@
 
     <div>
       <div class="text-lg mx-4">Notes</div>
-      <Post
-        v-for="event in events"
-        :key="event.id"
-        :event="event"
-        standalone
-        item
-      />
+      <Thread v-for="thread in threads" :key="thread[0].id" :events="thread" />
     </div>
   </q-page>
 </template>
 
 <script>
-import helpersMixin from '../utils/mixin'
 import {pool} from '../pool'
+import helpersMixin from '../utils/mixin'
+import {addToThread} from '../utils/threads'
 
 export default {
   name: 'Profile',
@@ -136,7 +131,7 @@ export default {
 
   data() {
     return {
-      events: [],
+      threads: [],
       eventsSet: new Set(),
       sub: null,
       showAllContacts: false
@@ -174,7 +169,7 @@ export default {
     },
 
     listen() {
-      this.events = []
+      this.threads = []
       this.eventsSet = new Set()
 
       this.sub = pool.sub(
@@ -195,20 +190,7 @@ export default {
                 if (this.eventsSet.has(event.id)) return
                 this.eventsSet.add(event.id)
 
-                // manual sorting
-                // newer events first
-                for (let i = 0; i < this.events.length; i++) {
-                  if (event.created_at > this.events[i].created_at) {
-                    // the new event is newer than the current index,
-                    // so we add it at the previous index
-                    this.events.splice(i, 0, event)
-                    return
-                  }
-                }
-
-                // the newer event is the oldest, add to end
-                this.events.push(event)
-
+                addToThread(this.threads, event)
                 return
             }
           }

@@ -28,7 +28,6 @@
             unelevated
             type="submit"
             color="primary"
-            :disable="!$store.state.keys.priv"
           />
         </div>
       </q-form>
@@ -48,9 +47,9 @@ export default {
     }
   },
   methods: {
-    sendPost() {
-      this.$store.dispatch('sendPost', {message: this.text})
-      this.text = ''
+    async sendPost() {
+      let ok = await this.$store.dispatch('sendPost', {message: this.text})
+      if (ok) this.text = ''
     }
   }
 }

@@ -221,22 +221,21 @@
           <div class="text-lg text-bold tracking-wide leading-relaxed py-2">
             Initial Key Setup
           </div>
-          <p>
-            Type your mnemonic seed from a previous Nostr account or generate a
+          <div class="mb-2">
+            Type your private key from a previous Nostr account or generate a
             new one.
-          </p>
-          <p>
-            You can also type a raw private key or just a public key for a
-            watch-only setup.
-          </p>
-        </q-card-section>
-        <q-card-section>
+          </div>
+          <div>
+            You can also type just a public key and later sign events manually
+            or using a Nostr-capable browser extension.
+          </div>
+
           <q-form @submit="proceed">
             <q-input
               v-model="key"
               autogrow
               autofocus
-              label="BIP39 Seed Words, private key or public key"
+              label="Private key or public key"
               class="text-lg"
             />
             <q-toggle

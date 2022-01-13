@@ -10,14 +10,7 @@
     </q-input>
 
     <div class="flex justify-end mt-2">
-      <q-btn
-        :disable="!$store.state.keys.priv"
-        label="Reply"
-        rounded
-        unelevated
-        type="submit"
-        color="primary"
-      />
+      <q-btn label="Reply" rounded unelevated type="submit" color="primary" />
     </div>
   </q-form>
 </template>
@@ -39,7 +32,7 @@ export default {
   },
 
   methods: {
-    sendReply() {
+    async sendReply() {
       // build tags
       let tags = []
 
@@ -69,11 +62,12 @@ export default {
       // remove ourselves
       tags = tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
 
-      this.$store.dispatch('sendPost', {
+      let ok = await this.$store.dispatch('sendPost', {
         message: this.text,
         tags
       })
-      this.text = ''
+
+      if (ok) this.text = ''
     }
   }
 }

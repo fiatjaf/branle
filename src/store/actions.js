@@ -1,7 +1,7 @@
 import {encrypt} from 'nostr-tools/nip04'
 import {Notify, LocalStorage} from 'quasar'
 
-import {pool} from '../pool'
+import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
 
 export function initKeys(store, keys) {
@@ -19,9 +19,11 @@ export async function launch(store) {
     store.commit('haveReadNotifications')
   }
 
-  // now we already have a key
+  // if we have already have a private key
   if (store.state.keys.priv) {
     pool.setPrivateKey(store.state.keys.priv)
+  } else {
+    pool.registerSigningFunction(signAsynchronously)
   }
 
   // translate localStorage into a kind3 event -- or load relays and following from event
@@ -138,15 +140,31 @@ export function restartMainSubscription(store) {
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
 
-  let event = await pool.publish({
-    pubkey: store.state.keys.pub,
-    created_at: Math.floor(Date.now() / 1000),
-    kind,
-    tags,
-    content: message
-  })
+  let event
+  try {
+    event = await pool.publish({
+      pubkey: store.state.keys.pub,
+      created_at: Math.floor(Date.now() / 1000),
+      kind,
+      tags,
+      content: message
+    })
+  } catch (err) {
+    Notify.create({
+      message: `Did not publish: ${err}`,
+      color: 'red'
+    })
+    return
+  }
+
+  if (!event) {
+    // aborted
+    return
+  }
 
   store.dispatch('addEvent', {event})
+
+  return true
 }
 
 export async function setMetadata(store, metadata) {

@@ -20,7 +20,7 @@ export function setKeys(state, {mnemonic, priv, pub} = {}) {
     pub = getPublicKey(priv)
   }
 
-  state.keys = {mnemonic, priv, pub}
+  state.keys = {priv, pub}
 }
 
 export function setRelays(state, relays) {

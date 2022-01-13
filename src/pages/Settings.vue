@@ -103,23 +103,17 @@
           <div class="text-lg text-bold tracking-wide leading-relaxed py-2">
             Your keys <q-icon name="vpn_key" />
           </div>
-          <p>
-            Make sure you back up your private key! <br />
-            <small
-              >Posts are published using your private key. Others can see your
-              posts or follow you using only your public key.</small
-            >
+          <p v-if="$store.state.keys.priv">
+            Make sure you back up your private key!
           </p>
+          <p v-else>Your private key is not here!</p>
+          <div class="mt-1 text-xs">
+            Posts are published using your private key. Others can see your
+            posts or follow you using only your public key.
+          </div>
         </q-card-section>
 
         <q-card-section>
-          <p>Seed Words:</p>
-          <q-input
-            v-model="$store.state.keys.mnemonic"
-            class="mb-2"
-            readonly
-            filled
-          />
           <p>Private Key:</p>
           <q-input
             v-model="$store.state.keys.priv"

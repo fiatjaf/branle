@@ -131,7 +131,7 @@
       </div>
 
       <div class="w-full sm:w-3/4 lg:w-2/4 pl-4">
-        <q-page-container>
+        <q-page-container v-if="$store.state.keys.pub">
           <router-view />
         </q-page-container>
       </div>

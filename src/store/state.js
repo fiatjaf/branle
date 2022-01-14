@@ -2,7 +2,7 @@ import {LocalStorage} from 'quasar'
 
 export default function () {
   return {
-    keys: LocalStorage.getItem('keys') || {pub: '00'}, // { mnemonic, priv, pub }
+    keys: LocalStorage.getItem('keys') || {pub: '00000000000000000000000000'}, // {priv, pub }
 
     relays: {
       // 'wss://nostr.rocks': {read: true, write: true},

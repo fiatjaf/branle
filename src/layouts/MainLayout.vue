@@ -245,6 +245,11 @@
             />
             <div class="flex w-full mt-4 justify-between">
               <q-btn @click="generate">Generate</q-btn>
+              <q-btn
+                v-if="hasExtension && !isKeyValid"
+                @click="getFromExtension"
+                >Use Public Key from Extension</q-btn
+              >
               <q-btn v-if="isKeyValid" color="primary" @click="proceed"
                 >Proceed</q-btn
               >
@@ -257,7 +262,8 @@
 </template>
 <script>
 import helpersMixin from '../utils/mixin'
-import {generateSeedWords, validateWords} from 'nostr-tools/nip06'
+import {validateWords} from 'nostr-tools/nip06'
+import {generatePrivateKey} from 'nostr-tools'
 
 export default {
   name: 'MainLayout',
@@ -267,7 +273,8 @@ export default {
     return {
       initializeKeys: true,
       watchOnly: false,
-      key: null
+      key: null,
+      hasExtension: false
     }
   },
 
@@ -284,16 +291,37 @@ export default {
     }
   },
 
-  created: function () {
-    if (this.$store.state.keys.pub !== '00') {
+  async created() {
+    if (this.$store.state.keys.pub) {
+      // keys already set up
       this.$store.dispatch('launch')
       this.initializeKeys = false
+    } else {
+      // keys not set up, offer the option to try to get a pubkey from window.nostr
+      setTimeout(() => {
+        if (window.nostr) {
+          this.hasExtension = true
+        }
+      }, 1000)
     }
   },
 
   methods: {
+    async getFromExtension() {
+      try {
+        this.key = await window.nostr.getPublicKey()
+        this.watchOnly = true
+      } catch (err) {
+        this.$q.notify({
+          message: `Failed to get a public key from a Nostr extension: ${err}`,
+          color: 'orange'
+        })
+      }
+    },
+
     generate() {
-      this.key = generateSeedWords()
+      this.key = generatePrivateKey()
+      this.watchOnly = false
     },
 
     proceed() {

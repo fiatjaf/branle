@@ -52,7 +52,6 @@
             {{ niceDate(event.created_at) }}
           </div>
           <q-btn
-            :disable="!$store.state.keys.priv"
             round
             unelevated
             flat
@@ -206,6 +205,8 @@ export default {
           cb: async event => {
             if (this.childrenSet.has(event.id)) return
             this.childrenSet.add(event.id)
+
+            this.$store.dispatch('useProfile', {pubkey: event.pubkey})
 
             addToThread(this.childrenThreads, event)
             return

@@ -285,7 +285,7 @@ export default {
   },
 
   created: function () {
-    if (this.$store.state.keys.pub !== '00') {
+    if (this.$store.state.keys.pub !== '00000000000000000000000000') {
       this.$store.dispatch('launch')
       this.initializeKeys = false
     }

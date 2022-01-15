@@ -1,11 +1,11 @@
 <template>
-  <q-layout class="bg-lime-100/70">
+  <q-layout>
     <div class="flex">
       <div class="hidden sm:flex w-1/4 justify-center px-8">
         <q-card flat no-box-shadow class="text-xl bg-inherit">
           <q-card-section class="flex justify-center">
             <q-img
-              src="/bird.png"
+              :src="icon"
               fit="scale-down"
               width="80px"
               @click="$router.push('/')"
@@ -142,16 +142,7 @@
     </div>
 
     <q-tabs
-      class="
-        w-full
-        sm:hidden
-        fixed
-        bottom-0
-        left-0
-        right-0
-        bg-lime-100
-        text-secondary
-      "
+      class="w-full sm:hidden fixed bottom-0 left-0 right-0 text-secondary"
       active-class="px-0"
     >
       <q-route-tab
@@ -279,6 +270,10 @@ export default {
   },
 
   computed: {
+    icon() {
+      return document.getElementById('icon').href
+    },
+
     isKeyKey() {
       if (this.isKey(this.key)) return true
       return false

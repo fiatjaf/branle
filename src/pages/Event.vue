@@ -28,7 +28,7 @@
           >
             {{ $store.getters.displayName(event.pubkey) }}
           </div>
-          <div class="text-slate-400 font-mono ml-4">
+          <div class="text-accent font-mono ml-4">
             {{ shorten(event.pubkey) }}
           </div>
         </div>
@@ -42,11 +42,11 @@
           <q-icon
             size="xs"
             name="info"
-            class="text-slate-300 cursor-pointer mr-1"
+            class="opacity-50 cursor-pointer mr-1"
             @click="metadataDialog = true"
           />
           <div
-            class="text-slate-500 cursor-pointer hover:underline"
+            class="opacity-40 cursor-pointer hover:underline"
             @click="toEvent(event.id)"
           >
             {{ niceDate(event.created_at) }}
@@ -74,7 +74,11 @@
       <q-separator class="my-2" />
       <div class="text-lg mx-4 mt-6 mb-4">Seen on relays</div>
       <ul class="mb-2 pl-4 text-md list-disc">
-        <li v-for="relay in event.seen_on" :key="relay">
+        <li
+          v-for="relay in event.seen_on"
+          :key="relay"
+          class="text-accent opacity-65"
+        >
           {{ relay }}
         </li>
       </ul>

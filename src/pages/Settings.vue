@@ -37,12 +37,12 @@
       <div class="text-lg p-4">Relays</div>
       <q-list class="mb-3">
         <q-item v-for="(opts, url) in $store.state.relays" :key="url">
-          <q-item-section class="text-slate-800">
+          <q-item-section class="opacity-75">
             <div class="flex-inline">
               <q-btn
                 round
                 flat
-                color="primary"
+                color="negative"
                 icon="cancel"
                 size="xs"
                 @click="removeRelay(url)"
@@ -88,7 +88,7 @@
     <q-separator />
 
     <div class="my-8">
-      <q-btn label="Delete Local Storage" color="primary" @click="hardReset" />
+      <q-btn label="Delete Local Data" color="negative" @click="hardReset" />
       <q-btn
         class="q-ml-md"
         label="View your keys"

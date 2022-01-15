@@ -22,5 +22,6 @@ yarn run lint
 quasar build
 ```
 
-### Customize the configuration
-See [Configuring quasar.conf.js](https://quasar.dev/quasar-cli/quasar-conf-js).
+### Customize the brand
+Edit `customize.json` and replace the colors, icon, name and dark mode setting.
+When setting the dark mode, you can also set the colors `"dark-page"` and `"dark"`.

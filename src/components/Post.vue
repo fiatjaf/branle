@@ -8,7 +8,7 @@
       overflow-hidden
       transition-colors
       py-3
-      hover:bg-gray-100
+      hover:bg-white-100/30
       border-gray-150
     "
     :style="{backgroundColor: highlighted ? 'rgba(255, 255, 255, 0.7)' : null}"
@@ -34,7 +34,7 @@
           >
             {{ $store.getters.displayName(event.pubkey) }}
           </div>
-          <div class="text-slate-400 font-mono text-xs">
+          <div class="text-accent font-mono text-xs">
             {{ shorten(event.pubkey) }}
           </div>
           <div
@@ -44,11 +44,11 @@
                 (position === 'single' &&
                   ($route.name === 'home' || $route.name === 'profile')))
             "
-            class="text-emerald-300 text-xs ml-3"
+            class="text-info text-xs ml-3"
           >
             in reply to
             <span
-              class="cursor-pointer text-emerald-400 font-bold hover:underline"
+              class="cursor-pointer text-info font-bold hover:underline"
               @click="toEvent(tagged)"
             >
               {{ shorten(tagged) }}
@@ -59,11 +59,11 @@
           <q-icon
             size="xs"
             name="info"
-            class="text-slate-300 cursor-pointer mr-2"
+            class="opacity-50 cursor-pointer mr-2"
             @click="metadataDialog = true"
           />
           <div
-            class="text-slate-500 cursor-pointer hover:underline text-xs"
+            class="opacity-40 cursor-pointer hover:underline text-xs"
             @click="toEvent(event.id)"
           >
             {{ niceDate(event.created_at) }}

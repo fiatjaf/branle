@@ -2,7 +2,6 @@
   "name": "branle",
   "version": "0.0.1",
   "description": "a twitter-like nostr client",
-  "productName": "branle",
   "author": "fiatjaf <fiatjaf@gmail.com>",
   "private": true,
   "scripts": {

@@ -12,7 +12,7 @@
         <p class="mb-1 break-all text-xs font-mono text-secondary">
           {{ $route.params.pubkey }}
         </p>
-        <div class="text-slate-600 text-base break-words w-full">
+        <div class="text-accent text-base break-words w-full">
           <Markdown>
             {{ $store.getters.profileDescription($route.params.pubkey) }}
           </Markdown>
@@ -36,12 +36,12 @@
               :key="user.pubkey"
             >
               <span
-                class="text-slate-400 cursor-pointer hover:underline"
+                class="text-accent cursor-pointer hover:underline"
                 @click="toProfile(user.pubkey)"
                 >{{ shorten(user.pubkey) }}</span
               ><span
                 v-if="$store.getters.hasName(user.pubkey)"
-                class="text-slate-500"
+                class="text-primary"
               >
                 ({{ $store.getters.displayName(user.pubkey) }})</span
               ><span

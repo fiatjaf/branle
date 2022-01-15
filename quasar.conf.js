@@ -11,6 +11,8 @@ const webpack = require('webpack')
 const ESLintPlugin = require('eslint-webpack-plugin')
 const {configure} = require('quasar/wrappers')
 
+const customize = require('./customize.json')
+
 module.exports = configure(function (ctx) {
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
@@ -97,7 +99,10 @@ module.exports = configure(function (ctx) {
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-framework
     framework: {
-      config: {},
+      config: {
+        dark: customize.useDarkTheme,
+        brand: customize.colors
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
@@ -111,6 +116,11 @@ module.exports = configure(function (ctx) {
 
       // Quasar plugins
       plugins: ['Notify', 'Dialog']
+    },
+
+    htmlVariables: {
+      name: customize.name,
+      icon: customize.icon
     }
   }
 })

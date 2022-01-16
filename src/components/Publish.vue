@@ -6,7 +6,7 @@
           v-model="text"
           autogrow
           autofocus
-          label="Say something"
+          label="What's happening?"
           maxlength="280"
         >
           <template #before>

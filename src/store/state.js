@@ -2,8 +2,9 @@ import {LocalStorage} from 'quasar'
 
 export default function () {
   const relays = {
+    'wss://rsslay.fiatjaf.com': {read: true, write: false},
     'wss://nostr-pub.wellorder.net': {read: true, write: true},
-    'wss://rsslay.fiatjaf.com': {read: true, write: false}
+    'wss://expensive-relay.fiatjaf.com': {read: true, write: false}
   }
   const optional = [
     ['wss://nostr.rocks', {read: true, write: true}],

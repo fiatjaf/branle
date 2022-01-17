@@ -41,7 +41,7 @@
             v-if="
               tagged &&
               (position === 'standalone' ||
-                (position === 'single' &&
+                ((position === 'single' || position === 'first') &&
                   ($route.name === 'home' || $route.name === 'profile')))
             "
             class="text-info text-xs ml-3"

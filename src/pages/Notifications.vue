@@ -62,7 +62,7 @@ export default {
       this.reading = true
       setTimeout(() => {
         if (this.reading) this.$store.commit('haveReadNotifications')
-      }, 5000)
+      }, 1400 * this.notifications.filter(n => n.created_at > this.$store.state.lastNotificationRead).length)
     }
   },
 

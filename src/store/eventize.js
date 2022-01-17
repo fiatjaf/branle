@@ -1,9 +1,3 @@
-import {debounce} from 'quasar'
-
-export const publishContactList = debounce(store => {
-  store.dispatch('publishContactList')
-}, 10000)
-
 export default function (store) {
   store.subscribe(({type, payload}, state) => {
     switch (type) {
@@ -16,7 +10,7 @@ export default function (store) {
       case 'follow':
       case 'unfollow':
         // make an event kind3 and publish it
-        publishContactList(store)
+        store.dispatch('publishContactList')
         break
     }
   })

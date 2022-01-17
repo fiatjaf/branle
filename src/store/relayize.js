@@ -4,17 +4,17 @@ import {pool} from '../pool'
 
 const addRelay = debounce((store, url) => {
   pool.addRelay(url)
-}, 10000)
+}, 3000)
 
 const removeRelay = debounce((store, url) => {
   pool.removeRelay(url)
-}, 10000)
+}, 3000)
 
 const replaceRelay = debounce((store, url, policy) => {
   pool.removeRelay(url)
   pool.addRelay(url, policy)
   store.dispatch('restartMainSubscription')
-}, 10000)
+}, 3000)
 
 export default function (store) {
   store.subscribe(({type, payload}, state) => {

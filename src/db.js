@@ -74,6 +74,9 @@ export function onNewMessage(peerPubKey, callback = () => {}) {
 export async function dbGetEvent(id) {
   return call('dbGetEvent', [id])
 }
+export async function onEventUpdate(id, callback = () => {}) {
+  return stream('onEventUpdate', [id], callback)
+}
 export async function dbGetMentions(ourPubKey, limit = 40, since, until) {
   return call('dbGetMentions', [ourPubKey, limit, since, until])
 }

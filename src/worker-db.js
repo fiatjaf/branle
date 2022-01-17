@@ -190,7 +190,6 @@ const methods = {
   },
 
   onNewHomeFeedNote(callback = () => {}) {
-    // listen for changes
     let changes = db.changes({
       live: true,
       since: 'now',
@@ -282,6 +281,19 @@ const methods = {
       if (err.name === 'not_found') return null
       else throw err
     }
+  },
+
+  onEventUpdate(id, callback = () => {}) {
+    let changes = db.changes({
+      live: true,
+      since: 'now',
+      include_docs: true,
+      doc_ids: [id]
+    })
+
+    changes.on('change', change => callback(change.doc))
+
+    return changes
   },
 
   async dbGetMentions(ourPubKey, limit = 40, since, until) {

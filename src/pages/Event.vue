@@ -72,14 +72,30 @@
 
     <div v-if="event?.seen_on?.length">
       <q-separator class="my-2" />
-      <div class="text-lg mx-4 mt-6 mb-4">Seen on relays</div>
+      <div class="text-lg mx-4 mt-6 mb-4">Seen on</div>
       <ul class="mb-2 pl-4 text-md list-disc">
-        <li
-          v-for="relay in event.seen_on"
-          :key="relay"
-          class="text-accent opacity-65"
-        >
+        <li v-for="relay in event.seen_on" :key="relay">
+          <span class="text-accent opacity-65">
+            {{ relay }}
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    <div v-if="missingFrom.length">
+      <div class="text-lg mx-4 mt-6 mb-4">Not seen on</div>
+      <ul class="mb-2 pl-4 text-md list-disc">
+        <li v-for="relay in missingFrom" :key="relay" class="cursor-pointer">
           {{ relay }}
+          <q-btn
+            label="Publish"
+            rounded
+            unelevated
+            color="accent"
+            size="xs"
+            class="py-0 px-1 ml-2"
+            @click="publishTo(relay)"
+          />
         </li>
       </ul>
     </div>
@@ -97,7 +113,7 @@
 
 <script>
 import {pool} from '../pool'
-import {dbGetEvent} from '../db'
+import {dbGetEvent, onEventUpdate} from '../db'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 
@@ -117,7 +133,20 @@ export default {
       eventSub: null,
       childrenThreads: [],
       childrenSet: new Set(),
-      childrenSub: null
+      childrenSub: null,
+      eventUpdates: null
+    }
+  },
+
+  computed: {
+    missingFrom() {
+      // filter out events we don't have locally as they are from people we don't follow
+      if (!this.event || !this.event.seen_on) return []
+
+      return Object.entries(this.$store.state.relays)
+        .filter(([_, prefs]) => prefs.write)
+        .map(([url, _]) => url)
+        .filter(url => this.event.seen_on.indexOf(url) === -1)
     }
   },
 
@@ -158,6 +187,7 @@ export default {
       if (this.ancestorsSub) this.ancestorsSub.unsub()
       if (this.childrenSub) this.childrenSub.unsub()
       if (this.eventSub) this.eventSub.unsub()
+      if (this.eventUpdates) this.eventUpdates.cancel()
       window.removeEventListener('scroll', this.detectedUserActivity)
       window.removeEventListener('click', this.detectedUserActivity)
     },
@@ -174,6 +204,11 @@ export default {
           request: true
         })
         this.listenAncestors()
+
+        // only listen for updates in the case we already have this event stored locally
+        this.eventUpdates = await onEventUpdate(this.event.id, event => {
+          this.event = event
+        })
       } else {
         this.eventSub = pool.sub(
           {
@@ -263,6 +298,10 @@ export default {
           'event-ancestors'
         )
       }
+    },
+
+    publishTo(relayURL) {
+      pool.relays[relayURL]?.relay?.publish?.(this.event)
     }
   }
 }

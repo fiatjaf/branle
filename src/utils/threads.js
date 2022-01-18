@@ -1,47 +1,47 @@
+import {addSorted} from './helpers'
+
 export function addToThread(threads, event) {
   // filter just tagged event ids from tags
-  let refs = event.tags.filter(([t, v]) => t === 'e' && v)
+  let refs = event.tags.filter(([t, v]) => t === 'e' && v).map(([_, v]) => v)
+  if (refs.length === 0) {
+    // this event starts its own thread
+    addSorted(threads, [event], (a, b) => a[0].created_at < b[0].created_at)
+    return
+  }
 
-  let thread =
-    refs.length >= 2 &&
-    threads.find(threadEvents => {
-      return threadEvents.find(tevt => {
-        return refs.find(([_, v]) => tevt.id === v)
-      })
-    })
+  // find the thread this is in as an immediate reply
+  for (let i = 0; i < threads.length; i++) {
+    let thread = threads[i]
+    if (thread[thread.length - 1].id === refs[refs.length - 1]) {
+      // found one
+      thread.push(event)
+      return
+    }
+  }
 
-  if (thread) {
-    // this is a member of an existing thread
-    thread.push(event)
-
-    // sort thread according to internal thread tag hierarchy
-    thread.sort((a, b) => {
-      if (a.tags.find(([_, v]) => v === b.id)) {
-        // a has a reference to b, sort b before a
-        return 1
-      } else if (b.tags.find(([_, v]) => v === a.id)) {
-        // b has a reference to a, sort a before b
-        return -1
-      } else {
-        // doesn't matter
-        return 0
-      }
-    })
-  } else {
-    // its own thread
-
-    // manual sorting
-    // newer events first
-    for (let i = 0; i < threads.length; i++) {
-      if (event.created_at > threads[i][0].created_at) {
-        // the new event is newer than the current index,
-        // so we add it at the previous index
-        threads.splice(i, 0, [event])
+  // otherwise search across all events in the existing threads
+  // as this event could be a reply to another event in the middle of an existing thread
+  for (let i = 0; i < threads.length; i++) {
+    let thread = threads[i]
+    for (let j = 0; j < thread.length; j++) {
+      if (thread[j].id === refs[refs.length - 1]) {
+        // in this case we copy the thread up to this point and add the new event to it
+        threads.push(thread.slice(0, j + 1).concat(event))
         return
       }
     }
-
-    // the newer event is the oldest, add to end
-    threads.push([event])
   }
+
+  // if we still haven't found anything, let's see if this event fits a position
+  // at the start of one of the threads we have
+  for (let i = 0; i < threads.length; i++) {
+    let thread = threads[i]
+    if (thread[0].tags.filter(([t, v]) => t === 'e' && v).slice(-1)[1]) {
+      thread.unshift(event)
+      return
+    }
+  }
+
+  // lastly, as we have no other alternative, push this event as its own thread
+  addSorted(threads, [event], (a, b) => a[0].created_at < b[0].created_at)
 }

@@ -33,3 +33,16 @@ export function metadataFromEvent(event) {
     return {}
   }
 }
+
+export function addSorted(list, newItem, compare) {
+  for (let i = 0; i < list.length; i++) {
+    let item = list[i]
+    if (compare(item, newItem)) {
+      list.splice(i, 0, newItem)
+      return
+    }
+  }
+
+  // the newer event is the oldest, add to end
+  list.push(newItem)
+}

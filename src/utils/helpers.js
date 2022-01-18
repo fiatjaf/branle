@@ -23,3 +23,13 @@ export function cleanEvent(event) {
     sig: event.sig
   }
 }
+
+export function metadataFromEvent(event) {
+  try {
+    let metadata = JSON.parse(event.content)
+    metadata.pubkey = event.pubkey
+    return metadata
+  } catch (_) {
+    return {}
+  }
+}

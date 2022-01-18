@@ -7,14 +7,14 @@
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
     "dev": "quasar dev --port 3001",
-    "publish": "rm -r dist/spa && quasar build && netlify deploy --dir=dist/spa/ --prod"
+    "publish": "rm -rf dist/spa && quasar build && netlify deploy --dir=dist/spa/ --prod"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
     "core-js": "^3.6.5",
     "identicon.js": "^2.3.3",
     "markdown-it": "^12.3.0",
-    "nostr-tools": "^0.19.0",
+    "nostr-tools": "^0.20.1",
     "pouchdb-adapter-idb": "6",
     "pouchdb-core": "6",
     "pouchdb-mapreduce": "6",

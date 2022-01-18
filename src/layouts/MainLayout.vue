@@ -309,7 +309,7 @@ export default {
       } catch (err) {
         this.$q.notify({
           message: `Failed to get a public key from a Nostr extension: ${err}`,
-          color: 'orange'
+          color: 'warning'
         })
       }
     },

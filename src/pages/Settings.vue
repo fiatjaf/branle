@@ -18,7 +18,7 @@
         maxlength="150"
       />
       <q-input
-        v-model="metadata.picture"
+        v-model.trim="metadata.picture"
         filled
         type="text"
         label="Picture URL"
@@ -30,6 +30,13 @@
           </q-avatar>
         </template>
       </q-input>
+      <q-input
+        v-model.trim="metadata.nip05"
+        filled
+        type="text"
+        label="NIP-05 Identifier"
+        maxlength="50"
+      />
       <q-btn label="Save" type="submit" color="primary" />
     </q-form>
     <q-separator />
@@ -136,6 +143,7 @@
 <script>
 import {LocalStorage} from 'quasar'
 import {nextTick} from 'vue'
+import {queryName} from 'nostr-tools/nip05'
 
 import helpersMixin from '../utils/mixin'
 import {eraseDatabase} from '../db'
@@ -145,7 +153,7 @@ export default {
   mixins: [helpersMixin],
 
   data() {
-    const {name, picture, about} =
+    const {name, picture, about, nip05} =
       this.$store.state.profilesCache[this.$store.state.keys.pub] || {}
 
     return {
@@ -154,7 +162,8 @@ export default {
       metadata: {
         name,
         picture,
-        about
+        about,
+        nip05
       },
       unsubscribe: null
     }
@@ -166,7 +175,7 @@ export default {
     this.unsubscribe = this.$store.subscribe((mutation, state) => {
       switch (mutation.type) {
         case 'addProfileToCache': {
-          const {name, picture, about} =
+          const {name, picture, about, nip05} =
             state.profilesCache[state.keys.pub] || {}
 
           nextTick(() => {
@@ -175,6 +184,7 @@ export default {
               if (!this.metadata.picture && picture)
                 this.metadata.picture = picture
               if (!this.metadata.about && about) this.metadata.about = about
+              if (!this.metadata.nip05 && nip05) this.metadata.nip05 = nip05
             }, 1)
           })
 
@@ -197,7 +207,21 @@ export default {
   },
 
   methods: {
-    setMetadata() {
+    async setMetadata() {
+      if (this.metadata.nip05 === '') this.metadata.nip05 = undefined
+      if (this.metadata.nip05) {
+        if (
+          (await queryName(this.metadata.nip05)) !== this.$store.state.keys.pub
+        ) {
+          this.$q.notify({
+            message: 'Failed to verify NIP05 identifier on server.',
+            color: 'warning'
+          })
+
+          return
+        }
+      }
+
       this.$store.dispatch('setMetadata', this.metadata)
     },
     addRelay() {

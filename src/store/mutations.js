@@ -66,33 +66,36 @@ export function unfollow(state, key) {
   if (idx >= 0) state.following.splice(idx, 1)
 }
 
-export function addProfileToCache(state, event) {
-  if (event.pubkey in state.profilesCache) {
+export function addProfileToCache(
+  state,
+  {pubkey, name, about, picture, nip05}
+) {
+  if (pubkey in state.profilesCache) {
     // was here already, remove from LRU (will readd next)
-    state.profilesCacheLRU.splice(
-      state.profilesCacheLRU.indexOf(event.pubkey),
-      0
-    )
+    state.profilesCacheLRU.splice(state.profilesCacheLRU.indexOf(pubkey), 0)
   }
 
-  // replace the event in cache
-  try {
-    state.profilesCache[event.pubkey] = JSON.parse(event.content)
-  } catch (err) {
-    return
-  }
+  // replace the metadata in cache
+  state.profilesCache[pubkey] = {name, about, picture, nip05}
 
   // adding to LRU
-  if (event.pubkey === state.keys.pub) {
+  if (pubkey === state.keys.pub) {
     // if it's our own profile, we'll never remove from the cache
   } else {
-    state.profilesCacheLRU.push(event.pubkey)
+    state.profilesCacheLRU.push(pubkey)
   }
 
   // removing older stuff if necessary
   if (state.profilesCacheLRU.length > 150) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
+  }
+}
+
+export function addToNIP05VerificationCache(state, {identifier, pubkey}) {
+  state.nip05VerificationCache[identifier] = {
+    pubkey,
+    when: Math.round(Date.now() / 1000)
   }
 }
 

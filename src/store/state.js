@@ -31,6 +31,7 @@ export default function () {
     profilesCacheLRU: [], // [ pubkeys... ]
     contactListCache: {}, // { [pubkey]: {name, about, picture, ...} }
     contactListCacheLRU: [], // [ pubkeys... ]
+    nip05VerificationCache: {}, // { [identifier]: {pubkey, when }
 
     lastMessageRead: LocalStorage.getItem('lastMessageRead') || {},
     unreadMessages: {},

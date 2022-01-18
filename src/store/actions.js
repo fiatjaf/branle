@@ -1,8 +1,10 @@
 import {encrypt} from 'nostr-tools/nip04'
+import {queryName} from 'nostr-tools/nip05'
 import {Notify, LocalStorage} from 'quasar'
 
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
+import {metadataFromEvent} from '../utils/helpers'
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)
@@ -56,7 +58,7 @@ export async function launch(store) {
   pool.onNotice((notice, relay) => {
     Notify.create({
       message: `Relay ${relay.url} says: ${notice}`,
-      color: 'pink'
+      color: 'info'
     })
   })
 
@@ -152,7 +154,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
   } catch (err) {
     Notify.create({
       message: `Did not publish: ${err}`,
-      color: 'red'
+      color: 'negative'
     })
     return
   }
@@ -224,28 +226,60 @@ export async function addEvent(store, {event, relay = null}) {
 }
 
 export async function useProfile(store, {pubkey, request = false}) {
+  let metadata
+
   if (pubkey in store.state.profilesCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
-    store.commit('addProfileToCache', store.state.profilesCache[pubkey])
-  } else {
-    // fetch from db and add to cache
-    let event = await dbGetProfile(pubkey)
-    if (event) {
-      store.commit('addProfileToCache', event)
-    } else if (request) {
-      // try to request from a relay
+    store.commit('addProfileToCache', {
+      pubkey,
+      ...store.state.profilesCache[pubkey]
+    }) // (just the pubkey is enough)
+    return
+  }
+
+  // fetch from db and add to cache
+  let event = await dbGetProfile(pubkey)
+  if (event) {
+    metadata = metadataFromEvent(event)
+  } else if (request) {
+    // try to request from a relay
+    await new Promise(resolve => {
       let sub = pool.sub({
         filter: [{authors: [pubkey], kinds: [0]}],
         cb: async event => {
-          store.commit('addProfileToCache', event)
+          metadata = metadataFromEvent(event)
           clearTimeout(timeout)
           if (sub) sub.unsub()
+          resolve()
         }
       })
       let timeout = setTimeout(() => {
         sub.unsub()
         sub = null
+        resolve()
       }, 2000)
+    })
+  }
+
+  if (metadata) {
+    store.commit('addProfileToCache', metadata)
+
+    if (metadata.nip05) {
+      if (metadata.nip05 === '') delete metadata.nip05
+
+      let cached = store.state.nip05VerificationCache[metadata.nip05]
+      if (cached && cached.when > Date.now() / 1000 - 60 * 60) {
+        if (cached.pubkey !== pubkey) delete metadata.nip05
+      } else {
+        let checked = await queryName(metadata.nip05)
+        store.commit('addToNIP05VerificationCache', {
+          pubkey: checked,
+          identifier: metadata.nip05
+        })
+        if (pubkey !== checked) delete metadata.nip05
+      }
+
+      store.commit('addProfileToCache', metadata)
     }
   }
 }
@@ -293,6 +327,6 @@ export async function publishContactList(store) {
 
   Notify.create({
     message: 'Updated and published list of followed keys and relays.',
-    color: 'blue'
+    color: 'positive'
   })
 }

@@ -1,14 +1,25 @@
 import Identicon from 'identicon.js'
 
 export function hasName(state) {
-  return pubkey => !!state.profilesCache[pubkey]
+  return pubkey => {
+    let {name, nip05} = state.profilesCache[pubkey] || {}
+    return (name || nip05 || '').length > 0
+  }
 }
 
-export function displayName(state) {
+export function displayName(state, getters) {
   return pubkey => {
-    let pubShort = pubkey.slice(0, 3) + '...' + pubkey.slice(-4)
-    let {name = pubShort} = state.profilesCache[pubkey] || {}
-    return name
+    let {name, nip05} = state.profilesCache[pubkey] || {}
+    return getters.hasName(pubkey)
+      ? nip05 || name
+      : pubkey.slice(0, 3) + '...' + pubkey.slice(-4)
+  }
+}
+
+export function isVerifiedNIP05(state) {
+  return pubkey => {
+    let {nip05} = state.profilesCache[pubkey] || {}
+    return nip05
   }
 }
 

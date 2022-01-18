@@ -49,6 +49,8 @@
 </template>
 
 <script>
+import {queryName} from 'nostr-tools/nip05'
+
 import helpersMixin from '../utils/mixin'
 
 export default {
@@ -62,9 +64,21 @@ export default {
 
   methods: {
     async searchProfile() {
+      this.searchingProfile = this.searchingProfile.trim().toLowerCase()
+
       if (this.searchingProfile.match(/^[a-f0-9A-F]{64}$/)) {
         this.toProfile(this.searchingProfile)
         this.searchingProfile = ''
+        return
+      }
+
+      if (this.searchingProfile.match(/^([a-z0-9-_.]+@)?[a-z-0-9-_.]+$/)) {
+        let pubkey = await queryName(this.searchingProfile)
+        if (pubkey) {
+          this.toProfile(pubkey)
+          this.searchingProfile = ''
+          return
+        }
       }
     }
   }

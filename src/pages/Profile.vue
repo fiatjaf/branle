@@ -1,15 +1,7 @@
 <template>
   <q-page class="px-4 py-6">
     <div class="text-xl text-center">
-      {{ $store.getters.displayName($route.params.pubkey) }}
-
-      <q-icon
-        v-if="$store.getters.isVerifiedNIP05($route.params.pubkey)"
-        name="verified"
-        color="accent"
-        class="-translate-y-1 cursor-pointer"
-        @click="openNIP05"
-      />
+      <Name :pubkey="$route.params.pubkey" />
     </div>
 
     <div class="flex justify-left items-center mt-4">
@@ -213,17 +205,6 @@ export default {
 
     follow() {
       this.$store.commit('follow', this.$route.params.pubkey)
-    },
-
-    openNIP05() {
-      let [name, domain] = this.$store.getters
-        .displayName(this.$route.params.pubkey)
-        .split('@')
-      if (!domain) {
-        domain = name
-        name = '_'
-      }
-      window.open(`https://${domain}/.well-known/nostr.json?name=${name}`)
     }
   }
 }

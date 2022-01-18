@@ -21,12 +21,8 @@
           >
             <img :src="$store.getters.avatar(event.pubkey)" />
           </q-avatar>
-          <div
-            v-if="$store.getters.hasName(event.pubkey)"
-            class="cursor-pointer font-bold text-secondary ml-4 text-lg"
-            @click="toProfile(event.pubkey)"
-          >
-            {{ $store.getters.displayName(event.pubkey) }}
+          <div class="text-lg ml-4">
+            <Name :pubkey="event.pubkey" />
           </div>
           <div class="text-accent font-mono ml-4">
             {{ shorten(event.pubkey) }}

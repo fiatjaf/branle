@@ -7,6 +7,7 @@ import Thread from '../components/Thread.vue'
 import Follow from '../components/Follow.vue'
 import Reply from '../components/Reply.vue'
 import Post from '../components/Post.vue'
+import Name from '../components/Name.vue'
 
 export default ({app}) => {
   app.component('RawEventData', RawEventData)
@@ -18,4 +19,5 @@ export default ({app}) => {
   app.component('Follow', Follow)
   app.component('Reply', Reply)
   app.component('Post', Post)
+  app.component('Name', Name)
 }

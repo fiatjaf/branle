@@ -27,32 +27,9 @@
     <q-item-section>
       <q-item-label lines="1" class="flex justify-between items-center">
         <div class="flex items-center">
-          <div
-            v-if="$store.getters.hasName(event.pubkey)"
-            class="cursor-pointer font-bold text-secondary mr-2"
-            @click="toProfile(event.pubkey)"
-          >
-            {{ $store.getters.displayName(event.pubkey) }}
-          </div>
+          <Name :pubkey="event.pubkey" />
           <div class="text-accent font-mono text-xs">
             {{ shorten(event.pubkey) }}
-          </div>
-          <div
-            v-if="
-              tagged &&
-              (position === 'standalone' ||
-                ((position === 'single' || position === 'first') &&
-                  ($route.name === 'home' || $route.name === 'profile')))
-            "
-            class="text-info text-xs ml-3"
-          >
-            in reply to
-            <span
-              class="cursor-pointer text-info font-bold hover:underline"
-              @click="toEvent(tagged)"
-            >
-              {{ shorten(tagged) }}
-            </span>
           </div>
         </div>
         <div class="flex items-center">
@@ -69,6 +46,23 @@
             {{ niceDate(event.created_at) }}
           </div>
         </div>
+      </q-item-label>
+      <q-item-label
+        v-if="
+          tagged &&
+          (position === 'standalone' ||
+            ((position === 'single' || position === 'first') &&
+              ($route.name === 'home' || $route.name === 'profile')))
+        "
+        class="text-xs"
+      >
+        <span class="opacity-50">in reply to&nbsp;</span>
+        <span
+          class="cursor-pointer text-info font-bold hover:underline"
+          @click="toEvent(tagged)"
+        >
+          {{ shorten(tagged) }}
+        </span>
       </q-item-label>
       <q-item-label
         class="pt-1 text-base font-sans flex break-words text-justify"

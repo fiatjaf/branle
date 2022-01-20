@@ -1,6 +1,8 @@
 import {LocalStorage} from 'quasar'
 
-export default function () {
+const isClientUsingTor = () => window.location.hostname.endsWith('.onion');
+
+const getMainnetRelays = () => {
   const relays = {
     'wss://rsslay.fiatjaf.com': {read: true, write: false},
     'wss://nostr-pub.wellorder.net': {read: true, write: true},
@@ -14,12 +16,25 @@ export default function () {
     ['wss://nostr.bitcoiner.social', {read: true, write: true}],
     ['wss://nostr-relay.freeberty.net', {read: true, write: true}]
   ]
+
   for (let i = 0; i < 3; i++) {
     let pick = parseInt(Math.random() * optional.length)
     let [url, prefs] = optional[pick]
     relays[url] = prefs
     optional.splice(pick, 1)
   }
+  
+  return relays
+}
+
+const getTorRelays = () => ({
+  'wss://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {read: true, write: true},
+});
+
+export default function () {
+  const relays = isClientUsingTor()
+    ? getTorRelays()
+    : getMainnetRelays();
 
   return {
     keys: LocalStorage.getItem('keys') || {}, // {priv, pub }

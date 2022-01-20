@@ -1,6 +1,6 @@
 import {LocalStorage} from 'quasar'
 
-const isClientUsingTor = () => window.location.hostname.endsWith('.onion');
+const isClientUsingTor = () => window.location.hostname.endsWith('.onion')
 
 const getMainnetRelays = () => {
   const relays = {
@@ -23,18 +23,18 @@ const getMainnetRelays = () => {
     relays[url] = prefs
     optional.splice(pick, 1)
   }
-  
+
   return relays
 }
 
 const getTorRelays = () => ({
   'wss://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {read: true, write: true},
-});
+})
 
 export default function () {
   const relays = isClientUsingTor()
     ? getTorRelays()
-    : getMainnetRelays();
+    : getMainnetRelays()
 
   return {
     keys: LocalStorage.getItem('keys') || {}, // {priv, pub }

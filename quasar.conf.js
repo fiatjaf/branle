@@ -27,7 +27,7 @@ module.exports = configure(function (ctx) {
     boot: ['global-components'],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
-    css: ['add-tailwind.css'],
+    css: ['add-tailwind.css', '../../node_modules/highlight.js/styles/base16/solarized-light.css'],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [

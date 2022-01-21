@@ -6,6 +6,7 @@
 
 <script>
 import MarkdownIt from 'markdown-it'
+import markdownHighlightJs from 'markdown-it-highlightjs'
 
 import helpersMixin from '../utils/mixin'
 
@@ -14,6 +15,9 @@ const md = MarkdownIt({
   breaks: true,
   linkify: true
 })
+md
+  .use(markdownHighlightJs)
+
 md.linkify
   .tlds(['onion', 'eth'], true)
   .add('bitcoin:', null)

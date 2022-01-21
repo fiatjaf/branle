@@ -9,6 +9,7 @@ import MarkdownIt from 'markdown-it'
 import subscript from 'markdown-it-sub'
 import superscript from 'markdown-it-sup'
 import deflist from 'markdown-it-deflist'
+import taskLists from 'markdown-it-task-lists'
 
 import helpersMixin from '../utils/mixin'
 
@@ -21,6 +22,7 @@ md
   .use(subscript)
   .use(superscript)
   .use(deflist)
+  .use(taskLists)
 
 md.linkify
   .tlds(['onion', 'eth'], true)

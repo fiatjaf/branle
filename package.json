@@ -17,6 +17,7 @@
     "markdown-it-deflist": "^2.1.0",
     "markdown-it-sub": "^1.0.0",
     "markdown-it-sup": "^1.0.0",
+    "markdown-it-task-lists": "^2.1.1",
     "nostr-tools": "^0.20.1",
     "pouchdb-adapter-idb": "6",
     "pouchdb-core": "6",

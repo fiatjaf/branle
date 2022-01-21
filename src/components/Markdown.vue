@@ -6,6 +6,9 @@
 
 <script>
 import MarkdownIt from 'markdown-it'
+import subscript from 'markdown-it-sub'
+import superscript from 'markdown-it-sup'
+import deflist from 'markdown-it-deflist'
 
 import helpersMixin from '../utils/mixin'
 
@@ -14,6 +17,11 @@ const md = MarkdownIt({
   breaks: true,
   linkify: true
 })
+md
+  .use(subscript)
+  .use(superscript)
+  .use(deflist)
+
 md.linkify
   .tlds(['onion', 'eth'], true)
   .add('bitcoin:', null)

@@ -6,6 +6,10 @@
 
 <script>
 import MarkdownIt from 'markdown-it'
+import subscript from 'markdown-it-sub'
+import superscript from 'markdown-it-sup'
+import deflist from 'markdown-it-deflist'
+import taskLists from 'markdown-it-task-lists'
 import markdownHighlightJs from 'markdown-it-highlightjs'
 
 import helpersMixin from '../utils/mixin'
@@ -16,6 +20,10 @@ const md = MarkdownIt({
   linkify: true
 })
 md
+  .use(subscript)
+  .use(superscript)
+  .use(deflist)
+  .use(taskLists)
   .use(markdownHighlightJs)
 
 md.linkify

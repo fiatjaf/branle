@@ -55,6 +55,13 @@
                 @click="removeRelay(url)"
               />
               {{ url }}
+              <q-btn
+                color="primary"
+                size="sm"
+                label="Share"
+                :disable="hasJustSharedRelay"
+                @click="shareRelay(url)"
+              />
             </div>
           </q-item-section>
           <q-item-section side>
@@ -165,7 +172,8 @@ export default {
         about,
         nip05
       },
-      unsubscribe: null
+      unsubscribe: null,
+      hasJustSharedRelay: false
     }
   },
 
@@ -241,6 +249,13 @@ export default {
     },
     setRelayOpt(url, opt, value) {
       this.$store.commit('setRelayOpt', {url, opt, value})
+    },
+    shareRelay(url) {
+      this.hasJustSharedRelay = true
+      this.$store.dispatch('recommendServer', url)
+      setTimeout(() => {
+        this.hasJustSharedRelay = false
+      }, 5000)
     },
     async hardReset() {
       this.$q

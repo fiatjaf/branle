@@ -177,7 +177,7 @@ export default {
           filter: [
             {
               authors: [this.$route.params.pubkey],
-              kinds: [0, 1, 3]
+              kinds: [0, 1, 2, 3]
             }
           ],
           cb: async (event, relay) => {
@@ -187,6 +187,7 @@ export default {
                 return
 
               case 1:
+              case 2:
                 if (this.eventsSet.has(event.id)) return
                 this.eventsSet.add(event.id)
 

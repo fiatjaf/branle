@@ -18,7 +18,7 @@ const db = new PouchDB('nostr-events', {
 
 // db schema (views)
 // ~
-const DESIGN_VERSION = 3
+const DESIGN_VERSION = 4
 db.upsert('_design/main', current => {
   if (current && current.version >= DESIGN_VERSION) return false
 
@@ -34,7 +34,7 @@ db.upsert('_design/main', current => {
       },
       homefeed: {
         map: function (event) {
-          if (event.kind === 1) {
+          if (event.kind === 1 || event.kind === 2) {
             emit(event.created_at)
           }
         }.toString()

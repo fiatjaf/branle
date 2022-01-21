@@ -181,6 +181,16 @@ export async function setMetadata(store, metadata) {
   store.dispatch('addEvent', {event})
 }
 
+export async function recommendServer(store, url) {
+  await pool.publish({
+    pubkey: store.state.keys.pub,
+    created_at: Math.round(Date.now() / 1000),
+    kind: 2,
+    tags: [],
+    content: url
+  })
+}
+
 export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
   if (text.length === 0) return
 

@@ -71,7 +71,7 @@
         @mousedown="startClicking"
         @mouseup="finishClicking"
       >
-        <Markdown>
+        <Markdown v-if="event.kind === 1">
           {{ trimmedContent }}
           <template #append>
             <q-icon
@@ -90,6 +90,7 @@
             />
           </template>
         </Markdown>
+        <Recommend v-else-if="event.kind === 2" :url="event.content" />
       </q-item-label>
     </q-item-section>
   </q-item>
@@ -148,10 +149,12 @@ export default {
 
   methods: {
     startClicking() {
+      if (this.event.kind === 2) return
+
       this.clicking = true
       setTimeout(() => {
         this.clicking = false
-      }, 300)
+      }, 200)
     },
 
     finishClicking(ev) {

@@ -1,4 +1,5 @@
 import RawEventData from '../components/RawEventData.vue'
+import Recommend from '../components/Recommend.vue'
 import Markdown from '../components/Markdown.vue'
 import ShowMore from '../components/ShowMore.vue'
 import Publish from '../components/Publish.vue'
@@ -11,6 +12,7 @@ import Name from '../components/Name.vue'
 
 export default ({app}) => {
   app.component('RawEventData', RawEventData)
+  app.component('Recommend', Recommend)
   app.component('Markdown', Markdown)
   app.component('ShowMore', ShowMore)
   app.component('Publish', Publish)

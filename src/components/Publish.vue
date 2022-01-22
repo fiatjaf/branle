@@ -8,6 +8,7 @@
           autofocus
           label="What's happening?"
           maxlength="280"
+          @keypress.ctrl.enter="sendPost"
         >
           <template #before>
             <q-avatar
@@ -48,6 +49,9 @@ export default {
   },
   methods: {
     async sendPost() {
+      if (!this.text.length) {
+        return
+      }
       let ok = await this.$store.dispatch('sendPost', {message: this.text})
       if (ok) this.text = ''
     }

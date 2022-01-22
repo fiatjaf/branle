@@ -6,6 +6,7 @@
       autofocus
       label="Reply to this note"
       maxlength="280"
+      @keypress.ctrl.enter="sendReply"
     >
     </q-input>
 
@@ -33,6 +34,9 @@ export default {
 
   methods: {
     async sendReply() {
+      if (!this.text.length) {
+        return
+      }
       // build tags
       let tags = []
 

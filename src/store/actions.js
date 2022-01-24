@@ -4,7 +4,7 @@ import {Notify, LocalStorage} from 'quasar'
 
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
-import {metadataFromEvent, } from '../utils/helpers'
+import {metadataFromEvent, processMentions} from '../utils/helpers'
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)

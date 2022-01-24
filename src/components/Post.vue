@@ -72,23 +72,7 @@
         @mouseup="finishClicking"
       >
         <Markdown v-if="event.kind === 1">
-          {{ trimmedContent }}
-          <template #append>
-            <q-icon
-              v-if="hasMore"
-              name="more_horiz"
-              color="primary"
-              class="
-                bg-white
-                drop-shadow
-                border-1
-                px-2
-                py-1
-                ml-1
-                -translate-y-1
-              "
-            />
-          </template>
+          {{ content }}
         </Markdown>
         <Recommend v-else-if="event.kind === 2" :url="event.content" />
       </q-item-label>
@@ -125,17 +109,8 @@ export default {
       return null
     },
 
-    trimmedContent() {
-      if (this.event.content.length > 280) {
-        return this.event.content.slice(0, 270)
-      }
-
-      return this.event.content
-    },
-
-    hasMore() {
-      if (this.event.content.length > 280) return true
-      return false
+    content() {
+      return this.interpolateMentions(this.event.content, this.event.tags)
     },
 
     showVerticalLineTop() {
@@ -161,7 +136,7 @@ export default {
       if (ev.target.tagName === 'A') return
 
       if (this.clicking) this.toEvent(this.event.id)
-    }
+    },
   }
 }
 </script>

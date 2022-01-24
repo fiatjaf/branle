@@ -29,6 +29,16 @@ export default {
       }
 
       return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
+    },
+
+    interpolateMentions(text, tags) {
+      const replacer = (_, index) => {
+        const profile = tags[Number(index)][1]
+        const displayName = this.$store.getters.displayName(profile)
+        return `[@${displayName}](/${profile})`
+      }
+
+      return text.replace(/\B#\[(\d+)\]\B/g, replacer)
     }
   }
 }

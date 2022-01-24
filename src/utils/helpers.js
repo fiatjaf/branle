@@ -46,3 +46,32 @@ export function addSorted(list, newItem, compare) {
   // the newer event is the oldest, add to end
   list.push(newItem)
 }
+
+export function processMentions(event) {
+  const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+
+  const matches = Array.from(event.content.matchAll(mentionRegex)).map(
+    match => match.groups.p
+  )
+
+  const tags = Array.from(new Set(matches).values()).reduce(
+    (tags, pubkey) =>
+      tags.find(([t, v]) => t === 'p' && v === pubkey)
+        ? tags
+        : [...tags, ['p', pubkey]],
+    event.tags
+  )
+
+  const indexOfProfileTag = profile =>
+    tags.findIndex(tag => tag[0] === 'p' && tag[1] === profile)
+
+  const replacer = (_, profile) => `#[${indexOfProfileTag(profile)}]`
+
+  const content = event.content.replace(mentionRegex, replacer)
+
+  return {
+    ...event,
+    tags,
+    content
+  }
+}

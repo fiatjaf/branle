@@ -4,7 +4,7 @@ import {Notify, LocalStorage} from 'quasar'
 
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
-import {metadataFromEvent} from '../utils/helpers'
+import {metadataFromEvent, } from '../utils/helpers'
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)
@@ -139,44 +139,12 @@ export function restartMainSubscription(store) {
   )
 }
 
-const addTag = (tags = [], [kind, profile, ...rest]) => {
-  const exists = tags.find((tag) => tag[0] === kind && tag[1] === profile)
-
-  return (!exists) ? [...tags, [kind, profile, ...rest]] : tags
-}
-
-const parseMentions = (event) => {
-  const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
-
-  const matches = Array.from(event.content.matchAll(mentionRegex)).map(
-    (match) => match.groups.p
-  )
-
-  const tags = Array.from(new Set(matches).values()).reduce(
-    (accum, profile) => addTag(accum, ['p', profile]),
-    event.tags
-  )
-
-  const indexOfProfileTag = (profile) =>
-    tags.findIndex((tag) => tag[0] === 'p' && tag[1] === profile)
-
-  const replacer = (_, profile) => `#[${indexOfProfileTag(profile)}]`
-
-  const content = event.content.replace(mentionRegex, replacer)
-
-  return {
-    ...event,
-    tags,
-    content,
-  }
-}
-
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
 
   let event
   try {
-    const unpublishedEvent = parseMentions({
+    const unpublishedEvent = processMentions({
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
       kind,

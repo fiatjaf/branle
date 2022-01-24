@@ -32,7 +32,7 @@
           class="text-xl my-4 font-sans break-words text-justify"
           style="hyphens: auto !important"
         >
-          <Markdown>{{ event.content }}</Markdown>
+          <Markdown>{{ content }}</Markdown>
         </div>
         <div class="flex items-center justify-between w-full">
           <q-icon
@@ -143,6 +143,9 @@ export default {
         .filter(([_, prefs]) => prefs.write)
         .map(([url, _]) => url)
         .filter(url => this.event.seen_on.indexOf(url) === -1)
+    },
+    content() {
+      return this.interpolateMentions(this.event.content, this.event.tags)
     }
   },
 

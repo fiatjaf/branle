@@ -139,18 +139,52 @@ export function restartMainSubscription(store) {
   )
 }
 
+const addTag = (tags = [], [kind, profile, ...rest]) => {
+  const exists = tags.find((tag) => tag[0] === kind && tag[1] === profile)
+
+  return (!exists) ? [...tags, [kind, profile, ...rest]] : tags
+}
+
+const parseMentions = (event) => {
+  const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+
+  const matches = Array.from(event.content.matchAll(mentionRegex)).map(
+    (match) => match.groups.p
+  )
+
+  const tags = Array.from(new Set(matches).values()).reduce(
+    (accum, profile) => addTag(accum, ['p', profile]),
+    event.tags
+  )
+
+  const indexOfProfileTag = (profile) =>
+    tags.findIndex((tag) => tag[0] === 'p' && tag[1] === profile)
+
+  const replacer = (_, profile) => `#[${indexOfProfileTag(profile)}]`
+
+  const content = event.content.replace(mentionRegex, replacer)
+
+  return {
+    ...event,
+    tags,
+    content,
+  }
+}
+
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
 
   let event
   try {
-    event = await pool.publish({
+    const unpublishedEvent = parseMentions({
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
       kind,
       tags,
       content: message
     })
+
+    event = await pool.publish(unpublishedEvent)
   } catch (err) {
     Notify.create({
       message: `Did not publish: ${err}`,

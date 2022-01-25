@@ -196,7 +196,20 @@ export async function recommendServer(store, url) {
 export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
   if (text.length === 0) return
 
-  let [ciphertext, iv] = encrypt(store.state.keys.priv, pubkey, text)
+  let ciphertext = '???'
+  try {
+    if (store.state.keys.priv) {
+      ciphertext = encrypt(store.state.keys.priv, pubkey, text)
+    } else if (
+      (await window?.nostr?.getPublicKey?.()) === store.state.keys.pub
+    ) {
+      ciphertext = await window.nostr.nip04.encrypt(pubkey, text)
+    } else {
+      throw new Error('no private key available to encrypt!')
+    }
+  } catch (err) {
+    /***/
+  }
 
   // make event
   let event = {
@@ -204,7 +217,7 @@ export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
     created_at: now,
     kind: 4,
     tags: [['p', pubkey]],
-    content: ciphertext + '?iv=' + iv
+    content: ciphertext
   }
   if (replyTo) {
     event.tags.push(['e', replyTo])

@@ -59,6 +59,9 @@ export default {
 
   async mounted() {
     this.chats = await dbGetChats(this.$store.state.keys.pub)
+    this.chats.forEach(({peer}) =>
+      this.$store.dispatch('useProfile', {pubkey: peer})
+    )
   }
 }
 </script>

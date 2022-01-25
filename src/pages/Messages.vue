@@ -48,6 +48,7 @@
 
 <script>
 import {debounce} from 'quasar'
+import {decrypt} from 'nostr-tools/nip04'
 
 import helpersMixin from '../utils/mixin'
 import {getElementFullHeight, isElementFullyScrolled} from '../utils/helpers'
@@ -64,7 +65,9 @@ export default {
       canLoadMore: false,
       text: '',
       sending: null,
-      messagesSet: new Set()
+      messagesSet: new Set(),
+      unlock: () => {},
+      mutex: null
     }
   },
 
@@ -110,6 +113,16 @@ export default {
   },
 
   methods: {
+    async lock() {
+      if (this.mutex) {
+        await this.mutex
+      }
+
+      this.mutex = new Promise(resolve => {
+        this.unlock = resolve
+      })
+    },
+
     async restart() {
       this.messagesSet = new Set()
       if (this.listener) this.listener.cancel()
@@ -117,6 +130,10 @@ export default {
       this.$store.commit('haveReadMessage', this.$route.params.pubkey)
       this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
       this.messages = await dbGetMessages(this.$route.params.pubkey, 100)
+
+      for (let i = 0; i < this.messages.length; i++) {
+        this.messages[i].text = await this.getPlaintext(this.messages[i])
+      }
 
       if (this.messages.length > 0) {
         await this.scrollToBottom()
@@ -127,6 +144,10 @@ export default {
         this.$store.commit('haveReadMessage', this.$route.params.pubkey)
         if (this.messagesSet.has(event.id)) return
         this.messagesSet.add(event.id)
+
+        await this.lock()
+        event.text = await this.getPlaintext(event)
+        this.unlock()
 
         if (
           event.pubkey === this.$store.state.keys.pub &&
@@ -199,6 +220,10 @@ export default {
         this.messages[0].created_at - 1
       )
 
+      for (let i = 0; i < newMessages.length; i++) {
+        newMessages[i].text = await this.getPlaintext(newMessages[i])
+      }
+
       if (newMessages.length === 0) {
         this.canLoadMore = false
       } else {
@@ -220,6 +245,39 @@ export default {
       }
 
       this.messages = newMessages.concat(this.messages)
+    },
+
+    async getPlaintext(event) {
+      if (
+        event.tags.find(
+          ([tag, value]) => tag === 'p' && value === this.$store.state.keys.pub
+        )
+      ) {
+        // it is addressed to us
+        // decrypt it
+        return await this.decrypt(event.pubkey, event.content)
+      } else if (event.pubkey === this.$store.state.keys.pub) {
+        // it is coming from us
+        let [_, target] = event.tags.find(([tag]) => tag === 'p')
+        // decrypt it
+        return await this.decrypt(target, event.content)
+      }
+    },
+
+    async decrypt(peer, ciphertext) {
+      try {
+        if (this.$store.state.keys.priv) {
+          return decrypt(this.$store.state.keys.priv, peer, ciphertext)
+        } else if (
+          (await window?.nostr?.getPublicKey?.()) === this.$store.state.keys.pub
+        ) {
+          return await window.nostr.nip04.decrypt(peer, ciphertext)
+        } else {
+          throw new Error('no private key available to decrypt!')
+        }
+      } catch (err) {
+        return '???'
+      }
     }
   }
 }

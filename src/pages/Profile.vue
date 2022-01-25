@@ -77,7 +77,7 @@
 
       <div class="flex justify-end">
         <q-btn
-          :disable="!$store.state.keys.priv"
+          :disable="!$store.getters.canEncryptDecrypt"
           round
           flat
           :to="'/messages/' + $route.params.pubkey"
@@ -88,7 +88,7 @@
         />
         <q-btn
           v-if="isFollowing"
-          :disable="!$store.state.keys.priv"
+          :disable="!$store.getters.canSignEventsAutomatically"
           round
           unelevated
           flat
@@ -99,7 +99,7 @@
         />
         <q-btn
           v-if="!isFollowing"
-          :disable="!$store.state.keys.priv"
+          :disable="!$store.getters.canSignEventsAutomatically"
           round
           unelevated
           color="primary"

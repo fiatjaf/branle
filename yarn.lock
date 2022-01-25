@@ -4470,6 +4470,14 @@ markdown-it-deflist@^2.1.0:
   resolved "https://registry.yarnpkg.com/markdown-it-deflist/-/markdown-it-deflist-2.1.0.tgz#50d7a56b9544cd81252f7623bd785e28a8dcef5c"
   integrity sha512-3OuqoRUlSxJiuQYu0cWTLHNhhq2xtoSFqsZK8plANg91+RJQU1ziQ6lA2LzmFAEes18uPBsHZpcX6We5l76Nzg==
 
+markdown-it-highlightjs@^3.6.0:
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/markdown-it-highlightjs/-/markdown-it-highlightjs-3.6.0.tgz#b567408c633d71e5e4cc33e1d0121a44447d2f29"
+  integrity sha512-ex+Lq3cVkprh0GpGwFyc53A/rqY6GGzopPCG1xMsf8Ya3XtGC8Uw9tChN1rWbpyDae7tBBhVHVcMM29h4Btamw==
+  dependencies:
+    highlight.js "^11.3.1"
+    lodash.flow "^3.5.0"
+
 markdown-it-sub@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/markdown-it-sub/-/markdown-it-sub-1.0.0.tgz#375fd6026eae7ddcb012497f6411195ea1e3afe8"
@@ -4484,13 +4492,6 @@ markdown-it-task-lists@^2.1.1:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/markdown-it-task-lists/-/markdown-it-task-lists-2.1.1.tgz#f68f4d2ac2bad5a2c373ba93081a1a6848417088"
   integrity sha512-TxFAc76Jnhb2OUu+n3yz9RMu4CwGfaT788br6HhEDlvWfdeJcLUsxk1Hgw2yJio0OXsxv7pyIPmvECY7bMbluA==
-markdown-it-highlightjs@^3.6.0:
-  version "3.6.0"
-  resolved "https://registry.yarnpkg.com/markdown-it-highlightjs/-/markdown-it-highlightjs-3.6.0.tgz#b567408c633d71e5e4cc33e1d0121a44447d2f29"
-  integrity sha512-ex+Lq3cVkprh0GpGwFyc53A/rqY6GGzopPCG1xMsf8Ya3XtGC8Uw9tChN1rWbpyDae7tBBhVHVcMM29h4Btamw==
-  dependencies:
-    highlight.js "^11.3.1"
-    lodash.flow "^3.5.0"
 
 markdown-it@^12.3.0:
   version "12.3.0"
@@ -4806,10 +4807,10 @@ normalize-url@^6.0.1:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-6.1.0.tgz#40d0885b535deffe3f3147bec877d05fe4c5668a"
   integrity sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==
 
-nostr-tools@^0.20.1:
-  version "0.20.1"
-  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.20.1.tgz#440b9b4328a6e6e09c283d917c064f241c28a0e6"
-  integrity sha512-S3JpQmX87h4MzP801OV8l5djp/2bNJC8pG4yBBmeTY/eWM8IrV15lFvTwxZLoW+O2s3mahli1VetqKEI1Ex3Fg==
+nostr-tools@^0.21.4:
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.21.4.tgz#c9cb88955ee55ab751287aa4e492708221748d86"
+  integrity sha512-ZCYRMfryb2loOFm3WGG5dXPGCJP3OqanNur6q1moZUMKhzDOzb3d95yVBa752LF9cReTjjxyIoZm0TklEAaeAA==
   dependencies:
     "@noble/hashes" "^0.5.7"
     "@noble/secp256k1" "^1.3.0"

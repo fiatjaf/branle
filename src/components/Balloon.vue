@@ -33,8 +33,6 @@
 </template>
 
 <script>
-import {decrypt} from 'nostr-tools/nip04'
-
 import helpersMixin from '../utils/mixin'
 
 export default {
@@ -55,41 +53,17 @@ export default {
     },
 
     text() {
-      return this.sequence.map(event => this.getPlaintext(event))
+      return this.sequence.map(evt => evt.text)
     }
   },
 
   mounted() {
     setTimeout(() => {
       this.invisible = false
-    }, 150)
+    }, 20)
   },
 
   methods: {
-    getPlaintext(event) {
-      if (
-        event.tags.find(
-          ([tag, value]) => tag === 'p' && value === this.$store.state.keys.pub
-        )
-      ) {
-        // it is addressed to us
-        // decrypt it
-        let [ciphertext, iv] = event.content.split('?iv=')
-        return decrypt(
-          this.$store.state.keys.priv,
-          event.pubkey,
-          ciphertext,
-          iv
-        )
-      } else if (event.pubkey === this.$store.state.keys.pub) {
-        // it is coming from us
-        let [_, target] = event.tags.find(([tag]) => tag === 'p')
-        // decrypt it
-        let [ciphertext, iv] = event.content.split('?iv=')
-        return decrypt(this.$store.state.keys.priv, target, ciphertext, iv)
-      }
-    },
-
     click(e) {
       if (e.target.classList.contains('q-message-stamp')) {
         this.metadataDialog = true

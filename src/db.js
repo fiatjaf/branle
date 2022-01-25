@@ -6,7 +6,7 @@ worker.onmessage = ev => {
   let {id, success, error, data, stream} = JSON.parse(ev.data)
 
   if (stream) {
-    console.log('🖴', id, '~>>', data)
+    console.debug('🖴', id, '~>>', data)
     hub[id](data)
     return
   }
@@ -17,14 +17,14 @@ worker.onmessage = ev => {
     return
   }
 
-  if (data) console.log('🖴', id, '->', data)
-  hub[id].resolve(data)
+  if (data) console.debug('🖴', id, '->', data)
+  hub[id]?.resolve?.(data)
   delete hub[id]
 }
 
 function call(name, args) {
   let id = name + ' ' + Math.random().toString().slice(-4)
-  console.log('🖴', id, '<-', args)
+  console.debug('🖴', id, '<-', args)
   worker.postMessage(JSON.stringify({id, name, args}))
   return new Promise((resolve, reject) => {
     hub[id] = {resolve, reject}
@@ -34,7 +34,7 @@ function call(name, args) {
 function stream(name, args, callback) {
   let id = name + ' ' + Math.random().toString().slice(-4)
   hub[id] = callback
-  console.log('db <-', id, args)
+  console.debug('db <-', id, args)
   worker.postMessage(JSON.stringify({id, name, args, stream: true}))
   return {
     cancel() {

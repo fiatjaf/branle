@@ -52,6 +52,7 @@
                 color="negative"
                 icon="cancel"
                 size="xs"
+                :disable="$store.getters.canSignEventsAutomatically"
                 @click="removeRelay(url)"
               />
               {{ url }}
@@ -59,7 +60,10 @@
                 color="primary"
                 size="sm"
                 label="Share"
-                :disable="hasJustSharedRelay"
+                :disable="
+                  hasJustSharedRelay ||
+                  !$store.getters.canSignEventsAutomatically
+                "
                 @click="shareRelay(url)"
               />
             </div>
@@ -69,14 +73,22 @@
               <span
                 class="cursor-pointer tracking-wide"
                 :class="{'font-bold': opts.read, 'text-secondary': opts.read}"
-                @click="setRelayOpt(url, 'read', !opts.read)"
+                @click="
+                  $store.getters.canSignEventsAutomatically
+                    ? setRelayOpt(url, 'read', !opts.read)
+                    : null
+                "
               >
                 read
               </span>
               <span
                 class="cursor-pointer tracking-wide"
                 :class="{'font-bold': opts.write, 'text-secondary': opts.write}"
-                @click="setRelayOpt(url, 'write', !opts.write)"
+                @click="
+                  $store.getters.canSignEventsAutomatically
+                    ? setRelayOpt(url, 'write', !opts.write)
+                    : null
+                "
               >
                 write
               </span>
@@ -85,7 +97,13 @@
         </q-item>
       </q-list>
       <q-form @submit="addRelay">
-        <q-input v-model="addingRelay" class="mx-3" filled label="Add a relay">
+        <q-input
+          v-model="addingRelay"
+          class="mx-3"
+          filled
+          label="Add a relay"
+          :disable="!$store.getters.canSignEventsAutomatically"
+        >
           <template #append>
             <q-btn
               label="Add"

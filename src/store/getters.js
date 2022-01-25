@@ -52,3 +52,11 @@ export function unreadChats(state) {
   delete state.unreadMessages[state.keys.pub]
   return Object.values(state.unreadMessages).filter(v => v).length
 }
+
+export function canSignEventsAutomatically(state) {
+  return Boolean(state.keys.priv || window.nostr)
+}
+
+export function canEncryptDecrypt(state) {
+  return Boolean(state.keys.priv || (window.nostr && window.nostr.nip04))
+}

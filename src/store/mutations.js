@@ -72,7 +72,7 @@ export function addProfileToCache(
 ) {
   if (pubkey in state.profilesCache) {
     // was here already, remove from LRU (will readd next)
-    state.profilesCacheLRU.splice(state.profilesCacheLRU.indexOf(pubkey), 0)
+    state.profilesCacheLRU.splice(state.profilesCacheLRU.indexOf(pubkey), 1)
   }
 
   // replace the metadata in cache
@@ -104,7 +104,7 @@ export function addContactListToCache(state, event) {
     // was here already, remove from LRU (will readd next)
     state.contactListCacheLRU.splice(
       state.contactListCacheLRU.indexOf(event.pubkey),
-      0
+      1
     )
   }
 

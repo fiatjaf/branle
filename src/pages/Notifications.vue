@@ -47,6 +47,10 @@ export default {
       this.reachedEnd = false
     }
 
+    this.notifications.forEach(({pubkey}) => {
+      this.$store.dispatch('useProfile', {pubkey, request: true})
+    })
+
     this.listener = onNewMention(this.$store.state.keys.pub, async event => {
       this.notifications.unshift(event)
       // we could trigger the timeout-to-mark-as-read here too, but we don't because

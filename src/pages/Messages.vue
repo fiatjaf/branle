@@ -6,7 +6,7 @@
         class="text-secondary cursor-pointer"
         @click="toProfile($route.params.pubkey)"
       >
-        {{ $store.getters.displayName($route.params.pubkey) }}
+        <Name :pubkey="$route.params.pubkey" fallback />
       </span>
     </div>
 

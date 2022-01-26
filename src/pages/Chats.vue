@@ -25,7 +25,7 @@
           </q-badge>
         </q-item-section>
         <q-item-section>
-          {{ $store.getters.displayName(chat.peer) }}
+          <Name :pubkey="chat.peer" fallback />
         </q-item-section>
         <q-item-section side>
           {{ niceDate(chat.lastMessage) }}

@@ -48,7 +48,7 @@
             </q-item>
 
             <q-item
-              v-if="!!$store.state.keys.priv"
+              v-if="$store.getter.canEncryptDecrypt"
               v-ripple
               clickable
               to="/messages"
@@ -167,7 +167,7 @@
         </q-badge>
       </q-route-tab>
       <q-route-tab
-        v-if="!!$store.state.keys.priv"
+        v-if="$store.getters.canEncryptDecrypt"
         icon="email"
         to="/messages"
         active-class=""

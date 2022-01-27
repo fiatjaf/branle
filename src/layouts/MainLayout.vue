@@ -48,7 +48,7 @@
             </q-item>
 
             <q-item
-              v-if="$store.getter.canEncryptDecrypt"
+              v-if="$store.getters.canEncryptDecrypt"
               v-ripple
               clickable
               to="/messages"

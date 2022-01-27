@@ -167,8 +167,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
   }
 
   store.dispatch('addEvent', {event})
-
-  return true
+  return event
 }
 
 export async function setMetadata(store, metadata) {

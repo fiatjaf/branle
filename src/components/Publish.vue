@@ -52,8 +52,8 @@ export default {
       if (!this.text.length) {
         return
       }
-      let ok = await this.$store.dispatch('sendPost', {message: this.text})
-      if (ok) this.text = ''
+      let event = await this.$store.dispatch('sendPost', {message: this.text})
+      if (event) this.toEvent(event.id)
     }
   }
 }

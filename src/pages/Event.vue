@@ -203,11 +203,6 @@ export default {
           request: true
         })
         this.listenAncestors()
-
-        // only listen for updates in the case we already have this event stored locally
-        this.eventUpdates = await onEventUpdate(this.event.id, event => {
-          this.event = event
-        })
       } else {
         this.eventSub = pool.sub(
           {
@@ -225,6 +220,18 @@ export default {
           'event-browser'
         )
       }
+
+      // listen to changes to the event in the db so we get .seen_on updates
+      this.eventUpdates = await onEventUpdate(
+        this.$route.params.eventId,
+        event => {
+          // once we get an update from the db we know we can stop listening for relay updates
+          if (this.eventSub) this.eventSub.unsub()
+
+          // and just update our local event with the latest one from the db
+          this.event = event
+        }
+      )
 
       this.listenChildren()
     },

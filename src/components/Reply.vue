@@ -66,12 +66,11 @@ export default {
       // remove ourselves
       tags = tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
 
-      let ok = await this.$store.dispatch('sendPost', {
+      let event = await this.$store.dispatch('sendPost', {
         message: this.text,
         tags
       })
-
-      if (ok) this.text = ''
+      if (event) this.toEvent(event.id)
     }
   }
 }

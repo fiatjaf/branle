@@ -1,6 +1,7 @@
 <template>
   <q-form class="px-24" @submit="sendReply">
     <q-input
+      ref="input"
       v-model="text"
       autogrow
       autofocus
@@ -30,6 +31,23 @@ export default {
     return {
       text: ''
     }
+  },
+
+  computed: {
+    textarea() {
+      return this.$refs.input.$el.querySelector('textarea')
+    },
+    mentions() {
+      return this.createMentionsProvider()
+    }
+  },
+
+  mounted() {
+    this.mentions.attach(this.textarea)
+  },
+
+  beforeUnmount() {
+    this.mentions.detach(this.textarea)
   },
 
   methods: {

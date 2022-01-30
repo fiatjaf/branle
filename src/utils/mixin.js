@@ -1,5 +1,6 @@
 import relative from 'relative-date'
 import {date} from 'quasar'
+import {shorten} from './helpers'
 
 export default {
   methods: {
@@ -19,9 +20,7 @@ export default {
       this.$router.push('/event/' + id)
     },
 
-    shorten(str) {
-      return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
-    },
+    shorten,
 
     niceDate(value) {
       if (value + 60 * 60 /* an hour */ > Date.now() / 1000) {

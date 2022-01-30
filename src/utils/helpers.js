@@ -1,3 +1,7 @@
+export function shorten(str) {
+  return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
+}
+
 export function getElementFullHeight(element) {
   let styles = window.getComputedStyle(element)
   let margin =

@@ -1,5 +1,14 @@
 import Identicon from 'identicon.js'
 
+export function namedProfiles(state, getters) {
+  return Object.entries(state.profilesCache)
+    .reduce((result, [pubkey, profile]) => getters.hasName(pubkey)
+      ? [...result, { ...profile, pubkey }] // [..., { name, pubkey, nip05, ...}, ...]
+      : result,
+      []
+    )
+}
+
 export function hasName(state) {
   return pubkey => {
     let {name, nip05} = state.profilesCache[pubkey] || {}

@@ -1,3 +1,7 @@
+export function shorten(str) {
+  return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
+}
+
 export function getElementFullHeight(element) {
   let styles = window.getComputedStyle(element)
   let margin =
@@ -54,7 +58,7 @@ export function processMentions(event) {
     match => match.groups.p
   )
 
-  const tags = Array.from(new Set(matches).values()).reduce(
+  const tags = matches.reduce(
     (tags, pubkey) =>
       tags.find(([t, v]) => t === 'p' && v === pubkey)
         ? tags

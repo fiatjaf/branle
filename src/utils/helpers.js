@@ -58,7 +58,7 @@ export function processMentions(event) {
     match => match.groups.p
   )
 
-  const tags = Array.from(new Set(matches).values()).reduce(
+  const tags = matches.reduce(
     (tags, pubkey) =>
       tags.find(([t, v]) => t === 'p' && v === pubkey)
         ? tags

@@ -28,7 +28,7 @@ const getMainnetRelays = () => {
 }
 
 const getTorRelays = () => ({
-  'wss://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {read: true, write: true},
+  'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {read: true, write: true},
 })
 
 export default function () {

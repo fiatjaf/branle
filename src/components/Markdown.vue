@@ -19,12 +19,50 @@ const md = MarkdownIt({
   breaks: true,
   linkify: true
 })
-md
-  .use(subscript)
+md.use(subscript)
   .use(superscript)
   .use(deflist)
   .use(taskLists)
   .use(markdownHighlightJs)
+  .use(md => {
+    md.core.ruler.before('normalize', 'auto-imager', state => {
+      state.src = state.src.replace(/https?:[^ ]+/g, m => {
+        if (m) {
+          let trimmed = m.split('?')[0]
+          if (
+            trimmed.endsWith('.gif') ||
+            trimmed.endsWith('.png') ||
+            trimmed.endsWith('.jpeg') ||
+            trimmed.endsWith('.jpg') ||
+            trimmed.endsWith('.mp4') ||
+            trimmed.endsWith('.webm') ||
+            trimmed.endsWith('.ogg')
+          ) {
+            return `![](${m})`
+          }
+        } else return m
+      })
+    })
+
+    md.renderer.rules.image = (tokens, idx) => {
+      let src = tokens[idx].attrs[[tokens[idx].attrIndex('src')]][1]
+      let trimmed = src.split('?')[0]
+      if (
+        trimmed.endsWith('.gif') ||
+        trimmed.endsWith('.png') ||
+        trimmed.endsWith('.jpeg') ||
+        trimmed.endsWith('.jpg')
+      ) {
+        return `<img src="${src}" style="max-width: 90%">`
+      } else if (
+        trimmed.endsWith('.mp4') ||
+        trimmed.endsWith('.webm') ||
+        trimmed.endsWith('.ogg')
+      ) {
+        return `<video controls style="max-width: 90%"><source src="${src}"></video>`
+      }
+    }
+  })
 
 md.linkify
   .tlds(['onion', 'eth'], true)

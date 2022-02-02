@@ -40,7 +40,9 @@ md.use(subscript)
           ) {
             return `![](${m})`
           }
-        } else return m
+        }
+
+        return m
       })
     })
 

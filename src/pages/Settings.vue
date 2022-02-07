@@ -52,7 +52,7 @@
                 color="negative"
                 icon="cancel"
                 size="xs"
-                :disable="$store.getters.canSignEventsAutomatically"
+                :disable="!$store.getters.canSignEventsAutomatically"
                 @click="removeRelay(url)"
               />
               {{ url }}

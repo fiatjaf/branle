@@ -18,7 +18,7 @@ const db = new PouchDB('nostr-events', {
 
 // db schema (views)
 // ~
-const DESIGN_VERSION = 4
+const DESIGN_VERSION = 6
 db.upsert('_design/main', current => {
   if (current && current.version >= DESIGN_VERSION) return false
 
@@ -93,6 +93,13 @@ db.upsert('_design/main', current => {
               }
             }
           }
+        }.toString()
+      },
+      userrelays: {
+        map: function (event) {
+          event.seen_on.forEach(relay => {
+            emit([event.pubkey, event.created_at], relay)
+          })
         }.toString()
       }
     }
@@ -407,6 +414,30 @@ const methods = {
         return sorted[0].doc
       }
     }
+  },
+
+  async dbGetRelayForPubKey(pubkey) {
+    let result = await db.query('main/userrelays', {
+      include_docs: false,
+      startkey: [pubkey, null],
+      endkey: [pubkey, {}]
+    })
+
+    let scores = {}
+    let top = {score: 0, relay: null}
+    for (let i = 0; i < result.rows.length; i++) {
+      let {
+        key: [_, time],
+        value: relay
+      } = result.rows[i]
+      let newScore = (scores[relay] || 0) + time - 1644269009
+      scores[relay] = newScore
+      if (newScore > top.score) {
+        top = {score: newScore, relay}
+      }
+    }
+
+    return top.relay
   }
 }
 

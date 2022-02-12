@@ -98,3 +98,6 @@ export async function dbGetProfile(pubkey) {
 export async function dbGetContactList(pubkey) {
   return call('dbGetContactList', [pubkey])
 }
+export async function dbGetRelayForPubKey(pubkey) {
+  return call('dbGetRelayForPubKey', [pubkey])
+}

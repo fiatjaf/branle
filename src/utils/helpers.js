@@ -1,3 +1,5 @@
+import {dbGetRelayForPubKey} from '../db'
+
 export function shorten(str) {
   return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
 }
@@ -51,31 +53,44 @@ export function addSorted(list, newItem, compare) {
   list.push(newItem)
 }
 
-export function processMentions(event) {
+export async function processMentions(event) {
   const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+  let matches = event.content.matchAll(mentionRegex)
 
-  const matches = Array.from(event.content.matchAll(mentionRegex)).map(
-    match => match.groups.p
-  )
-
-  const tags = matches.reduce(
-    (tags, pubkey) =>
-      tags.find(([t, v]) => t === 'p' && v === pubkey)
-        ? tags
-        : [...tags, ['p', pubkey]],
-    event.tags
-  )
-
-  const indexOfProfileTag = profile =>
-    tags.findIndex(tag => tag[0] === 'p' && tag[1] === profile)
-
-  const replacer = (_, profile) => `#[${indexOfProfileTag(profile)}]`
-
-  const content = event.content.replace(mentionRegex, replacer)
-
-  return {
-    ...event,
-    tags,
-    content
+  var profileTagIndexMap = {}
+  for (let i = 0; i < matches.length; i++) {
+    let pubkey = matches[i].groups.p
+    let idx = event.tags.findIndex(([t, v]) => t === 'p' && v === pubkey)
+    if (idx) {
+      profileTagIndexMap[pubkey] = idx
+    } else {
+      event.tags.push(await getPubKeyTagWithRelay('p', pubkey))
+      profileTagIndexMap[pubkey] = event.tags.length - 1
+    }
   }
+
+  event.content = event.content.replace(
+    mentionRegex,
+    (_, pubkey) => `#[${profileTagIndexMap[pubkey]}]`
+  )
+
+  return event
+}
+
+export async function getPubKeyTagWithRelay(pubkey) {
+  var base = ['p', pubkey]
+  let relay = await dbGetRelayForPubKey(pubkey)
+  if (relay) {
+    base.push(relay)
+  }
+  return base
+}
+
+export function getEventTagWithRelay(event) {
+  if (event.seen_on && event.seen_on.length) {
+    let random = event.seen_on[Math.floor(Math.random() * event.seen_on.length)]
+    return ['e', event.id, random]
+  }
+
+  return ['e', event.id]
 }

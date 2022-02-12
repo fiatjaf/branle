@@ -4,7 +4,11 @@ import {Notify, LocalStorage} from 'quasar'
 
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
-import {metadataFromEvent, processMentions} from '../utils/helpers'
+import {
+  metadataFromEvent,
+  processMentions,
+  getPubKeyTagWithRelay
+} from '../utils/helpers'
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)
@@ -144,7 +148,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 
   let event
   try {
-    const unpublishedEvent = processMentions({
+    const unpublishedEvent = await processMentions({
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
       kind,
@@ -333,9 +337,9 @@ export async function publishContactList(store) {
 
   // now we merely add to the existing event because it might contain more data in the
   // tags that we don't want to replace
-  store.state.following.forEach(pubkey => {
+  store.state.following.forEach(async pubkey => {
     if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
-      tags.push(['p', pubkey])
+      tags.push(await getPubKeyTagWithRelay('p', pubkey))
     }
   })
 

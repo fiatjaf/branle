@@ -128,7 +128,7 @@ export default {
       event: null,
       eventSub: null,
       childrenThreads: [],
-      childrenSet: new Set(),
+      childrenSeen: new Map(),
       childrenSub: null,
       eventUpdates: null
     }
@@ -238,7 +238,7 @@ export default {
 
     listenChildren() {
       this.childrenThreads = []
-      this.childrenSet = new Set()
+      this.childrenSeen = new Map()
       this.childrenSub = pool.sub(
         {
           filter: [
@@ -247,9 +247,15 @@ export default {
               kinds: [1]
             }
           ],
-          cb: async event => {
-            if (this.childrenSet.has(event.id)) return
-            this.childrenSet.add(event.id)
+          cb: async (event, relay) => {
+            let existing = this.childrenSeen.get(event.id)
+            if (existing) {
+              existing.seen_on.push(relay)
+              return
+            }
+
+            event.seen_on = [relay]
+            this.childrenSeen.set(event.id, event)
 
             this.$store.dispatch('useProfile', {pubkey: event.pubkey})
 

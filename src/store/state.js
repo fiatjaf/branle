@@ -11,7 +11,8 @@ const getMainnetRelays = () => {
   const optional = [
     ['wss://nostr.rocks', {read: true, write: true}],
     ['wss://relayer.fiatjaf.com', {read: true, write: true}],
-    ['wss://nostrrr.bublina.eu.org', {read: true, write: true}],
+    ['wss://nostr.onsats.org', {read: true, write: true}],
+    ['wss://nostr-relay.untethr.me	', {read: true, write: true}],
     ['wss://nostr-relay.wlvs.space', {read: true, write: true}],
     ['wss://nostr.bitcoiner.social', {read: true, write: true}],
     ['wss://nostr-relay.freeberty.net', {read: true, write: true}]
@@ -28,13 +29,14 @@ const getMainnetRelays = () => {
 }
 
 const getTorRelays = () => ({
-  'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {read: true, write: true},
+  'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {
+    read: true,
+    write: true
+  }
 })
 
 export default function () {
-  const relays = isClientUsingTor()
-    ? getTorRelays()
-    : getMainnetRelays()
+  const relays = isClientUsingTor() ? getTorRelays() : getMainnetRelays()
 
   return {
     keys: LocalStorage.getItem('keys') || {}, // {priv, pub }

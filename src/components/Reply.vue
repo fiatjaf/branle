@@ -67,13 +67,11 @@ export default {
       // add last 4 pubkeys mentioned
       let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v)
       for (let i = 0; i < Math.min(4, pubkeys.length); i++) {
-        tags.push(
-          await getPubKeyTagWithRelay('p', pubkeys[pubkeys.length - 1 - i])
-        )
+        tags.push(await getPubKeyTagWithRelay(pubkeys[pubkeys.length - 1 - i]))
       }
       // plus the author of the note being replied to, if not present already
       if (!tags.find(([_, v]) => v === this.event.pubkey)) {
-        tags.push(await getPubKeyTagWithRelay('p', this.event.pubkey))
+        tags.push(await getPubKeyTagWithRelay(this.event.pubkey))
       }
 
       // add the first and the last event ids

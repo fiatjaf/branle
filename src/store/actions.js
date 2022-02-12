@@ -4,11 +4,8 @@ import {Notify, LocalStorage} from 'quasar'
 
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
-import {
-  metadataFromEvent,
-  processMentions,
-  getPubKeyTagWithRelay
-} from '../utils/helpers'
+import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
+import {metadataFromEvent} from '../utils/event'
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)
@@ -339,7 +336,7 @@ export async function publishContactList(store) {
   // tags that we don't want to replace
   store.state.following.forEach(async pubkey => {
     if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
-      tags.push(await getPubKeyTagWithRelay('p', pubkey))
+      tags.push(await getPubKeyTagWithRelay(pubkey))
     }
   })
 

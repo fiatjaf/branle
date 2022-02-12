@@ -11,7 +11,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {cleanEvent} from '../utils/helpers'
+import {cleanEvent} from '../utils/event'
 
 export default {
   name: 'RawEventData',

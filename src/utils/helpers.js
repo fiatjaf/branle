@@ -1,4 +1,4 @@
-import {dbGetRelayForPubKey} from '../db'
+import {dbGetProfile} from '../db'
 
 export function shorten(str) {
   return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
@@ -18,28 +18,6 @@ export function isElementFullyScrolled(element) {
   )
 }
 
-export function cleanEvent(event) {
-  return {
-    id: event.id,
-    pubkey: event.pubkey,
-    created_at: event.created_at,
-    kind: event.kind,
-    tags: event.tags,
-    content: event.content,
-    sig: event.sig
-  }
-}
-
-export function metadataFromEvent(event) {
-  try {
-    let metadata = JSON.parse(event.content)
-    metadata.pubkey = event.pubkey
-    return metadata
-  } catch (_) {
-    return {}
-  }
-}
-
 export function addSorted(list, newItem, compare) {
   for (let i = 0; i < list.length; i++) {
     let item = list[i]
@@ -55,16 +33,15 @@ export function addSorted(list, newItem, compare) {
 
 export async function processMentions(event) {
   const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
-  let matches = event.content.matchAll(mentionRegex)
 
   var profileTagIndexMap = {}
-  for (let i = 0; i < matches.length; i++) {
-    let pubkey = matches[i].groups.p
+  for (let match of event.content.matchAll(mentionRegex)) {
+    let pubkey = match.groups.p
     let idx = event.tags.findIndex(([t, v]) => t === 'p' && v === pubkey)
-    if (idx) {
+    if (idx !== -1) {
       profileTagIndexMap[pubkey] = idx
     } else {
-      event.tags.push(await getPubKeyTagWithRelay('p', pubkey))
+      event.tags.push(await getPubKeyTagWithRelay(pubkey))
       profileTagIndexMap[pubkey] = event.tags.length - 1
     }
   }
@@ -79,9 +56,10 @@ export async function processMentions(event) {
 
 export async function getPubKeyTagWithRelay(pubkey) {
   var base = ['p', pubkey]
-  let relay = await dbGetRelayForPubKey(pubkey)
-  if (relay) {
-    base.push(relay)
+  let event = await dbGetProfile(pubkey)
+  if (event && event.seen_on && event.seen_on.length) {
+    let random = event.seen_on[Math.floor(Math.random() * event.seen_on.length)]
+    base.push(random)
   }
   return base
 }

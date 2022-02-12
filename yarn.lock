@@ -997,15 +997,15 @@
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-0.5.7.tgz#8605d84b34daf43d15c344fae54f0a1d5d5a4632"
   integrity sha512-R9PPYv7TqoYi+enikzZvwRQesGTxR0+jwqzZJGL0uNcf2NFL+lt/uvCCewtXXmr6jWBxiMuNjBfJwKv9UJaCng==
 
-"@noble/secp256k1@^1.3.0":
-  version "1.3.3"
-  resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.3.3.tgz#238160421281ffa9afac721361e20d3b8c99322c"
-  integrity sha512-uzKQA9AzoypXGQusSQahpZbNYYnzZblOgr4AjNjI9s3cGy15V+exxmEnjcC6L/slVKMR30NC+srp00Ch6Pm2hg==
-
 "@noble/secp256k1@^1.3.4":
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.3.4.tgz#158ded712d09237c0d3428be60dc01ce8ebab9fb"
   integrity sha512-ZVRouDO5mbdCiDg4zCd3ZZABduRtpy4tCnB33Gh9upHe9tRzpiqbRSN1VTjrj/2g8u2c6MBi0YLNnNQpBYOiWg==
+
+"@noble/secp256k1@^1.5.2":
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.5.2.tgz#40399e4fba54f588fda14fc03a4499044fdcab24"
+  integrity sha512-5mzA40W2q55VCRuC9XzmkiEnODdY0c5a7qsK2QcOfI5/MuVQyBaWGQyE6YOEF7kDwp+tDVWGsCDVJUME+wsWWw==
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -4807,13 +4807,13 @@ normalize-url@^6.0.1:
   resolved "https://registry.yarnpkg.com/normalize-url/-/normalize-url-6.1.0.tgz#40d0885b535deffe3f3147bec877d05fe4c5668a"
   integrity sha512-DlL+XwOy3NxAQ8xuC0okPgK46iuVNAK01YN7RueYBqqFeGsBjV9XmCAzAdgt+667bCl5kPh9EqKKDwnaPG1I7A==
 
-nostr-tools@^0.21.4:
-  version "0.21.4"
-  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.21.4.tgz#c9cb88955ee55ab751287aa4e492708221748d86"
-  integrity sha512-ZCYRMfryb2loOFm3WGG5dXPGCJP3OqanNur6q1moZUMKhzDOzb3d95yVBa752LF9cReTjjxyIoZm0TklEAaeAA==
+nostr-tools@^0.22.1:
+  version "0.22.1"
+  resolved "https://registry.yarnpkg.com/nostr-tools/-/nostr-tools-0.22.1.tgz#ad4048d8e9b6d3d658bbe2a0753f75a84c860f2b"
+  integrity sha512-uGSp246JlqjiHQr2RahfOxvSJ4jGPgqKjiyb/YkEM55CriVVF1ISNmpfc7bFchIvPSFhWoWouGqXwqNpoHXdbw==
   dependencies:
     "@noble/hashes" "^0.5.7"
-    "@noble/secp256k1" "^1.3.0"
+    "@noble/secp256k1" "^1.5.2"
     browserify-cipher ">=1"
     buffer ">=5"
     create-hash "^1.2.0"

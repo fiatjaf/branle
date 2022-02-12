@@ -19,7 +19,7 @@
     "markdown-it-sub": "^1.0.0",
     "markdown-it-sup": "^1.0.0",
     "markdown-it-task-lists": "^2.1.1",
-    "nostr-tools": "^0.21.4",
+    "nostr-tools": "^0.22.1",
     "pouchdb-adapter-idb": "6",
     "pouchdb-core": "6",
     "pouchdb-mapreduce": "6",

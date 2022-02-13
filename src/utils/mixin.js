@@ -5,6 +5,10 @@ import {shorten} from './helpers'
 
 export default {
   methods: {
+    getLocation() {
+      return location
+    },
+
     json(o) {
       return JSON.stringify(o, null, 2)
     },
@@ -80,6 +84,6 @@ export default {
         attach: element => tribute.attach(element),
         detach: element => tribute.detach(element),
       }
-    }
+    },
   }
 }

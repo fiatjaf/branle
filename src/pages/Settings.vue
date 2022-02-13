@@ -2,6 +2,7 @@
   <q-page class="px-4 py-6">
     <div class="text-xl">Settings</div>
 
+    <q-separator />
     <q-form class="my-8 q-gutter-md" @submit="setMetadata">
       <div class="text-lg p-4">Profile</div>
       <q-input v-model="metadata.name" filled type="text" label="Name">
@@ -121,6 +122,13 @@
 
     <div class="my-8">
       <q-btn label="Delete Local Data" color="negative" @click="hardReset" />
+      <q-btn
+        v-if="getLocation().protocol === 'https:'"
+        :label="`Register ${getLocation().host} to handle web+nostr links`"
+        class="q-ml-md"
+        color="warning"
+        @click="registerHandler"
+      />
       <q-btn
         class="q-ml-md"
         label="View your keys"
@@ -287,6 +295,13 @@ export default {
           await eraseDatabase()
           window.location.reload()
         })
+    },
+    registerHandler() {
+      navigator.registerProtocolHandler(
+        'web+nostr',
+        `https://${location.host}/%s`,
+        'Branle'
+      )
     }
   }
 }

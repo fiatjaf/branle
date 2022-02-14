@@ -334,11 +334,13 @@ export async function publishContactList(store) {
 
   // now we merely add to the existing event because it might contain more data in the
   // tags that we don't want to replace
-  store.state.following.forEach(async pubkey => {
-    if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
-      tags.push(await getPubKeyTagWithRelay(pubkey))
-    }
-  })
+  await Promise.all(
+    store.state.following.map(async pubkey => {
+      if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
+        tags.push(await getPubKeyTagWithRelay(pubkey))
+      }
+    })
+  )
 
   event = await pool.publish({
     pubkey: store.state.keys.pub,

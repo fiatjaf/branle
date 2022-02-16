@@ -8,7 +8,15 @@ pool.setPolicy('randomChoice', 3)
 // this will try to sign either with window.nostr or using a manual prompt
 export async function signAsynchronously(event) {
   if (window.nostr) {
-    return window.nostr.signEvent(event)
+    let signatureOrEvent = await window.nostr.signEvent(event)
+    switch (typeof signatureOrEvent) {
+      case 'string':
+        return signatureOrEvent
+      case 'object':
+        return signatureOrEvent.sig
+      default:
+        throw new Error('Failed to sign with Nostr extension.')
+    }
   } else {
     return new Promise((resolve, reject) => {
       Dialog.create({

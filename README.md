@@ -2,7 +2,6 @@
 
 a twitter-like nostr client forked off from https://github.com/arcbtc/nostr.
 
-https://user-images.githubusercontent.com/1653275/149637874-5ae1e400-1de0-42f1-9946-c4cec19347ed.mp4
 
 ## Install the dependencies
 ```bash

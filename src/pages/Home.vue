@@ -1,6 +1,6 @@
 <template>
   <q-page class="px-4 pt-6">
-    <div v-if="$store.getters.hasName(pubkey)" class="text-xl">Hello <Name :pubkey="$store.state.keys.pub" /></div>
+    <div v-if="$store.getters.hasName($store.state.keys.pub)" class="text-xl">Hello <Name :pubkey="$store.state.keys.pub" /></div>
     <div v-else class="text-xl">Home</div>
 
     <Publish />

@@ -7,7 +7,10 @@
   "scripts": {
     "lint": "eslint --ext .js,.vue ./",
     "dev": "quasar dev --port 3001",
-    "publish": "rm -rf dist/spa && quasar build && netlify deploy --dir=dist/spa/ --prod"
+    "publish": "rm -rf dist/spa && quasar build && netlify deploy --dir=dist/spa/ --prod",
+    "docker:build": "docker build -t branle .",
+    "docker:run": "docker run -d -p 8080:80 --name branle --restart always branle",
+    "docker:stop": "docker stop branle"
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",

@@ -133,6 +133,10 @@ export default {
 
       for (let i = 0; i < this.messages.length; i++) {
         this.messages[i].text = await this.getPlaintext(this.messages[i])
+
+        for (let j = 0; j < (this.messages[i].appended || []).length; j++) {
+          this.messages[i].appended[j].text = await this.getPlaintext(this.messages[i].appended[j])
+        }
       }
 
       if (this.messages.length > 0) {
@@ -222,6 +226,10 @@ export default {
 
       for (let i = 0; i < newMessages.length; i++) {
         newMessages[i].text = await this.getPlaintext(newMessages[i])
+
+        for (let j = 0; j < (newMessages[i].appended || []).length; j++) {
+          newMessages[i].appended[j].text = await this.getPlaintext(newMessages[i].appended[j])
+        }
       }
 
       if (newMessages.length === 0) {

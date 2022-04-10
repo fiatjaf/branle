@@ -1,4 +1,3 @@
-/* eslint-disable vue/no-deprecated-v-on-number-modifiers */
 <template>
   <q-form class="px-24" @submit="sendReply">
     <q-input

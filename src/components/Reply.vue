@@ -61,6 +61,10 @@ export default {
       if (!this.text.length) {
         return
       }
+      if (this.publishing) {
+        return
+      }
+      this.publishing = true
       // build tags
       let tags = []
 
@@ -88,7 +92,6 @@ export default {
       // remove ourselves
       tags = tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
 
-      this.publishing = true
       let event = await this.$store.dispatch('sendPost', {
         message: this.text,
         tags

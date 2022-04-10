@@ -22,7 +22,7 @@
             </q-avatar>
           </template>
         </q-input>
-        <div class="flex justify-end mt-4">
+        <div class="flex justify-end mt-3">
           <q-btn
             v-close-popup
             label="Publish"

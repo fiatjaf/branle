@@ -35,9 +35,13 @@
                 :label="sending ? 'Sending' : 'Send'"
                 type="submit"
                 color="secondary"
-                :disable="!!sending"
+                :loading="publishing"
                 @click="submitMessage"
-              />
+              >
+                <template #loading>
+                  <q-spinner-hourglass />
+                </template>
+              </q-btn>
             </template>
           </q-input>
         </div>
@@ -67,7 +71,8 @@ export default {
       sending: null,
       messagesSet: new Set(),
       unlock: () => {},
-      mutex: null
+      mutex: null,
+      publishing: false
     }
   },
 
@@ -205,11 +210,16 @@ export default {
       if (this.sending) return
 
       this.sending = Math.round(Date.now() / 1000)
-      await this.$store.dispatch('sendChatMessage', {
-        now: this.sending,
-        pubkey: this.$route.params.pubkey,
-        text: this.text
-      })
+      this.publishing = true
+      try {
+        await this.$store.dispatch('sendChatMessage', {
+          now: this.sending,
+          pubkey: this.$route.params.pubkey,
+          text: this.text
+        })
+      } finally {
+        this.publishing = false
+      }
     },
 
     async loadMore() {

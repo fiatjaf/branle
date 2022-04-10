@@ -38,7 +38,11 @@
         label="NIP-05 Identifier"
         maxlength="50"
       />
-      <q-btn label="Save" type="submit" color="primary" />
+      <q-btn label="Save" type="submit" color="primary" :loading="savingMetadata">
+        <template #loading>
+          <q-spinner-hourglass />
+        </template>
+      </q-btn>
     </q-form>
     <q-separator />
     <div class="my-8">
@@ -62,11 +66,17 @@
                 size="sm"
                 label="Share"
                 :disable="
+                  !sharingRelay && (
                   hasJustSharedRelay ||
-                  !$store.getters.canSignEventsAutomatically
+                  !$store.getters.canSignEventsAutomatically)
                 "
+                :loading="sharingRelay"
                 @click="shareRelay(url)"
-              />
+              >
+                <template #loading>
+                  <q-spinner-hourglass />
+                </template>
+              </q-btn>
             </div>
           </q-item-section>
           <q-item-section side>
@@ -199,7 +209,9 @@ export default {
         nip05
       },
       unsubscribe: null,
-      hasJustSharedRelay: false
+      hasJustSharedRelay: false,
+      savingMetadata: false,
+      sharingRelay: false,
     }
   },
 
@@ -256,7 +268,12 @@ export default {
         }
       }
 
-      this.$store.dispatch('setMetadata', this.metadata)
+      this.savingMetadata = true
+      try {
+        await this.$store.dispatch('setMetadata', this.metadata)
+      } finally {
+        this.savingMetadata = false
+      }
     },
     addRelay() {
       this.$store.commit('addRelay', this.addingRelay)
@@ -276,12 +293,14 @@ export default {
     setRelayOpt(url, opt, value) {
       this.$store.commit('setRelayOpt', {url, opt, value})
     },
-    shareRelay(url) {
+    async shareRelay(url) {
+      this.sharingRelay = true
       this.hasJustSharedRelay = true
-      this.$store.dispatch('recommendServer', url)
+      await this.$store.dispatch('recommendServer', url)
       setTimeout(() => {
         this.hasJustSharedRelay = false
       }, 5000)
+      this.sharingRelay = false
     },
     async hardReset() {
       this.$q

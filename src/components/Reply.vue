@@ -1,3 +1,4 @@
+/* eslint-disable vue/no-deprecated-v-on-number-modifiers */
 <template>
   <q-form class="px-24" @submit="sendReply">
     <q-input
@@ -12,7 +13,11 @@
     </q-input>
 
     <div class="flex justify-end mt-2">
-      <q-btn label="Reply" rounded unelevated type="submit" color="primary" />
+      <q-btn label="Reply" rounded unelevated type="submit" color="primary" :loading="publishing">
+        <template #loading>
+          <q-spinner-hourglass />
+        </template>
+      </q-btn>
     </div>
   </q-form>
 </template>
@@ -30,7 +35,8 @@ export default {
 
   data() {
     return {
-      text: ''
+      text: '',
+      publishing: false
     }
   },
 
@@ -83,10 +89,12 @@ export default {
       // remove ourselves
       tags = tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
 
+      this.publishing = true
       let event = await this.$store.dispatch('sendPost', {
         message: this.text,
         tags
       })
+      this.publishing = false
       if (event) this.toEvent(event.id)
     }
   }

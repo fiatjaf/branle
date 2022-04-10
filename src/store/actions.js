@@ -6,6 +6,9 @@ import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
 import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
+import {mine} from '../pow'
+
+const TARGET_BITS = 10
 
 export function initKeys(store, keys) {
   store.commit('setKeys', keys)
@@ -153,7 +156,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
       content: message
     })
 
-    event = await pool.publish(unpublishedEvent)
+    event = await store.dispatch('publishEvent', unpublishedEvent)
   } catch (err) {
     Notify.create({
       message: `Did not publish: ${err}`,
@@ -171,8 +174,18 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
   return event
 }
 
+export function mineEvent(_store, {event, targetBits = TARGET_BITS}) {
+  return mine(event, targetBits)
+}
+
+export async function publishEvent(store, event) {
+  const minedEvent = await store.dispatch('mineEvent', {event})
+
+  return pool.publish(minedEvent)
+}
+
 export async function setMetadata(store, metadata) {
-  let event = await pool.publish({
+  let event = await store.dispatch('publishEvent', {
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind: 0,
@@ -180,11 +193,18 @@ export async function setMetadata(store, metadata) {
     content: JSON.stringify(metadata)
   })
 
-  store.dispatch('addEvent', {event})
+  Notify.create({
+    message: 'Profile saved',
+    color: 'positive'
+  })
+
+  if (event) {
+    store.dispatch('addEvent', {event})
+  }
 }
 
-export async function recommendServer(store, url) {
-  await pool.publish({
+export function recommendServer(store, url) {
+  return store.dispatch('publishEvent', {
     pubkey: store.state.keys.pub,
     created_at: Math.round(Date.now() / 1000),
     kind: 2,
@@ -223,9 +243,11 @@ export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
     event.tags.push(['e', replyTo])
   }
 
-  event = await pool.publish(event)
+  event = await store.dispatch('publishEvent', event)
 
-  store.dispatch('addEvent', {event})
+  if (event) {
+    store.dispatch('addEvent', {event})
+  }
 }
 
 export async function addEvent(store, {event, relay = null}) {
@@ -342,7 +364,7 @@ export async function publishContactList(store) {
     })
   )
 
-  event = await pool.publish({
+  event = await store.dispatch('publishEvent', {
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind: 3,

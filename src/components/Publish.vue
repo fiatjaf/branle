@@ -22,7 +22,7 @@
             </q-avatar>
           </template>
         </q-input>
-        <div class="flex justify-end mt-3">
+        <div class="flex justify-end mt-4">
           <q-btn
             v-close-popup
             label="Publish"
@@ -30,7 +30,14 @@
             unelevated
             type="submit"
             color="primary"
-          />
+            icon-right="send"
+            :loading="publishing"
+          >
+            <template #loading>
+              <q-spinner-hourglass class="on-left" />
+              Mining
+             </template>
+          </q-btn>
         </div>
       </q-form>
     </q-card-section>
@@ -46,6 +53,7 @@ export default {
   data() {
     return {
       text: '',
+      publishing: false,
     }
   },
 
@@ -68,10 +76,15 @@ export default {
 
   methods: {
     async sendPost() {
+      if (this.publishing) {
+        return
+      }
       if (!this.text.length) {
         return
       }
+      this.publishing = true
       let event = await this.$store.dispatch('sendPost', {message: this.text})
+      this.publishing = false
       if (event) this.toEvent(event.id)
     }
   }

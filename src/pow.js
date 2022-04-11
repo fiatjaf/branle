@@ -12,6 +12,8 @@ worker.onmessage = event => {
     event.data
   )
 
+  console.debug('mining: pow: received', JSON.parse(event.data))
+
   if (!jobs[jobId]) return
 
   if (cancelled) {

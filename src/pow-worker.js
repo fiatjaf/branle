@@ -7,6 +7,8 @@ const jobRunner = createJobRunner()
 self.onmessage = event => {
   let {jobId, data, targetBits, cancel, cancelReason} = JSON.parse(event.data)
 
+  console.debug('mining: worker: received', JSON.parse(event.data))
+
   if (cancel) {
     if (jobRunner.isJob(jobId)) {
       jobRunner.cancelJob(jobId, cancelReason)
@@ -26,38 +28,32 @@ function createJobRunner() {
   const isJob = jobId => jobId in jobs
 
   const stop = () => {
+    console.debug('mining: worker: job runner stopped')
     clearInterval(interval)
     running = false
   }
 
   const start = () => {
+    console.debug('mining: worker: job runner started')
     running = true
     interval = setInterval(() => {
       for (const jobId in jobs) {
-        try {
-          const result = jobs[jobId].miner.next()
+        const result = jobs[jobId].miner.next()
 
-          if (result.done) {
+        if (result.done) {
+          if (result.value) {
             jobs[jobId].reply({
               data: result.value
             })
 
             deleteJob(jobId)
-          }
-        } catch (error) {
-          if (error.message === 'cancelled') {
-            console.warn(`mining: worker: miner cancelled: jobId:${jobId}`)
-            jobs[jobId].reply({
-              cancelled: true
-            })
           } else {
-            console.error(
-              `mining: worker: error consuming: jobId:${jobId} message:${error.message}`
-            )
             jobs[jobId].reply({
               error: true,
-              errorMessage: error.message
+              errorMessage: 'premature termination'
             })
+
+            deleteJob(jobId)
           }
         }
       }
@@ -76,13 +72,14 @@ function createJobRunner() {
   }
 
   const cancelJob = (jobId, reason = 'cancelled') => {
-    const miner = jobs[jobId].miner
+    const {miner} = jobs[jobId]
     miner.throw(new Error(reason)) // unwind the generator
 
     jobs[jobId].reply({
       cancelled: true,
       cancelReason: reason
     })
+
     deleteJob(jobId)
   }
 
@@ -109,7 +106,9 @@ function* createMiner(event, targetBits) {
 
     let nonce = 0
     const nonceTag = ['nonce', {toJSON: () => nonce.toString()}]
-    clonedEvent.tags = clonedEvent.tags ? [...clonedEvent.tags, nonceTag] : [nonceTag]
+    clonedEvent.tags = Array.isArray(clonedEvent.tags)
+      ? [...clonedEvent.tags.filter(([t]) => t !== 'nonce'), nonceTag]
+      : [nonceTag]
 
     let hash, bits
     do {
@@ -130,8 +129,8 @@ function* createMiner(event, targetBits) {
 
       nonce++
     } while (true)
-  } catch (err) {
-    console.error(`mining: worker: error: ${err.message}`)
+  } catch (error) {
+    console.error(`mining: worker: error: ${error.message}`)
   }
 }
 

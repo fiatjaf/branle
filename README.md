@@ -1,6 +1,6 @@
 # branle
 
-a twitter-like nostr client forked off from https://github.com/arcbtc/nostr.
+a twitter-like [nostr](https://github.com/fiatjaf/nostr) client.
 
 https://user-images.githubusercontent.com/1653275/149637874-5ae1e400-1de0-42f1-9946-c4cec19347ed.mp4
 
@@ -11,7 +11,7 @@ yarn
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
-npx quasar dev
+./node_modules/.bin/quasar dev
 ```
 
 ### Lint the files
@@ -21,7 +21,7 @@ yarn run lint
 
 ### Build the app for production
 ```bash
-npx quasar build
+./node_modules/.bin/quasar build
 ```
 
 ## Docker

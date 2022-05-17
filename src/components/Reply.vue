@@ -12,7 +12,11 @@
     </q-input>
 
     <div class="flex justify-end mt-2">
-      <q-btn label="Reply" rounded unelevated type="submit" color="primary" />
+      <q-btn label="Reply" rounded unelevated type="submit" color="primary" :loading="publishing">
+        <template #loading>
+          <q-spinner-hourglass />
+        </template>
+      </q-btn>
     </div>
   </q-form>
 </template>
@@ -30,7 +34,8 @@ export default {
 
   data() {
     return {
-      text: ''
+      text: '',
+      publishing: false
     }
   },
 
@@ -56,6 +61,10 @@ export default {
       if (!this.text.length) {
         return
       }
+      if (this.publishing) {
+        return
+      }
+      this.publishing = true
       // build tags
       let tags = []
 
@@ -87,6 +96,7 @@ export default {
         message: this.text,
         tags
       })
+      this.publishing = false
       if (event) this.toEvent(event.id)
     }
   }

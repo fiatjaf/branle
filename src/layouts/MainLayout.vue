@@ -1,349 +1,320 @@
 <template>
   <q-layout>
-    <div class="flex">
-      <div class="hidden sm:flex w-1/4 justify-center px-8">
-        <q-card flat no-box-shadow class="text-xl bg-inherit">
-          <q-card-section class="flex justify-center">
-            <q-img
-              :src="icon"
-              fit="scale-down"
-              width="80px"
-              @click="$router.push('/')"
-            />
-          </q-card-section>
-          <q-list class="text-slate-700">
-            <q-item v-ripple clickable to="/" active-class="">
-              <q-item-section avatar>
-                <q-icon name="home" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{
-                  'text-primary': $route.name === 'home'
-                }"
-              >
-                Home
-              </q-item-section>
-            </q-item>
-
-            <q-item v-ripple clickable to="/notifications" active-class="">
-              <q-item-section avatar>
-                <q-icon name="notifications" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{'text-primary': $route.name === 'notifications'}"
-              >
-                Notifications
-
-                <q-badge
-                  v-if="$store.state.unreadNotifications"
-                  color="primary"
-                  floating
-                  transparent
-                >
-                  {{ $store.state.unreadNotifications }}
-                </q-badge>
-              </q-item-section>
-            </q-item>
-
-            <q-item
-              v-if="$store.getters.canEncryptDecrypt"
-              v-ripple
-              clickable
-              to="/messages"
-              active-class=""
-            >
-              <q-item-section avatar>
-                <q-icon name="email" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{'text-primary': $route.name === 'messages'}"
-              >
-                Messages
-
-                <q-badge
-                  v-if="$store.getters.unreadChats"
-                  color="primary"
-                  floating
-                  transparent
-                >
-                  {{ $store.getters.unreadChats }}
-                </q-badge>
-              </q-item-section>
-            </q-item>
-
-            <q-item
-              v-ripple
-              clickable
-              :to="'/' + $store.state.keys.pub"
-              active-class=""
-            >
-              <q-item-section avatar>
-                <q-icon name="person" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{
-                  'text-primary':
-                    $route.name === 'profile' &&
-                    $route.params.pubkey === $store.state.keys.pub
-                }"
-              >
-                Profile
-              </q-item-section>
-            </q-item>
-
-            <q-item
-              v-ripple
-              clickable
-              to="/follow"
-              active-class=""
-              class="lg:hidden"
-            >
-              <q-item-section avatar>
-                <q-icon name="manage_search" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{
-                  'text-primary': $route.name === 'follow'
-                }"
-              >
-                Search and Follows
-              </q-item-section>
-            </q-item>
-
-            <q-item v-ripple clickable to="/settings" active-class="">
-              <q-item-section avatar>
-                <q-icon name="settings" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{'text-primary': $route.name === 'settings'}"
-              >
-                Settings
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card>
+    <TheKeyInitializationDialog/>
+    <div id='layout-container' :ripple='false'>
+      <div id='left-drawer' class='flex justify-end'>
+        <TheUserMenu/>
       </div>
 
-      <div class="w-full sm:w-3/4 lg:w-2/4 pl-4">
-        <q-page-container v-if="$store.state.keys.pub">
-          <router-view />
+      <div id='middle-page'>
+        <q-page-container v-if="$store.state.keys.pub"  ref='pageContainer'>
+          <!-- <router-view :key='$route.path' /> -->
+          <router-view v-slot="{ Component }">
+            <keep-alive  >
+              <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect'/>
+            </keep-alive>
+          </router-view>
         </q-page-container>
+        <q-footer id='bottom-drawer' unelevated class='z-max'>
+          <TheUserMenu :compact-mode='true'/>
+        </q-footer>
       </div>
 
-      <div class="hidden lg:flex w-1/4">
-        <Follow />
+      <div id='right-drawer' class='flex justify-start'>
+        <TheSearchMenu/>
       </div>
     </div>
-
-    <q-tabs
-      class="w-full sm:hidden fixed bottom-0 left-0 right-0 text-secondary"
-      active-class="px-0"
-    >
-      <q-route-tab
-        icon="home"
-        to="/"
-        active-class=""
-        :class="{'text-primary': $route.name === 'home'}"
-      />
-      <q-route-tab
-        icon="notifications"
-        to="/notifications"
-        active-class=""
-        :class="{'text-primary': $route.name === 'notifications'}"
+    <q-page-sticky position="top-right" :offset="fabPos" id='navagation-buttons'>
+      <q-fab
+        icon="drag_indicator"
+        active-icon="drag_indicator"
+        direction="left"
+        color="accent"
+        class='no-margin no-padding z-top'
+        :model-value='true'
+        persistent
+        flat
+        padding='xs'
+        :disable="draggingFab"
+        v-touch-pan.prevent.mouse="moveFab"
       >
-        <q-badge
-          v-if="$store.state.unreadNotifications"
+        <template #tooltip>
+          <q-tooltip>
+            click to collapse/expand or drag to move
+          </q-tooltip>
+        </template>
+        <q-btn
+          @click.prevent="$router.go(1)"
           color="primary"
-          floating
-          transparent
-        >
-          {{ $store.state.unreadNotifications }}
-        </q-badge>
-      </q-route-tab>
-      <q-route-tab
-        v-if="$store.getters.canEncryptDecrypt"
-        icon="email"
-        to="/messages"
-        active-class=""
-        :class="{'text-primary': $route.name === 'messages'}"
-      >
-        <q-badge
-          v-if="$store.getters.unreadChats"
+          unelevated
+          round
+          outline
+          icon="keyboard_arrow_right"
+          :disable="draggingFab"
+        />
+        <q-btn
+          v-if='$route.name !== "inbox" && $route.name !== "messages"'
+          @click.prevent="scrollToTop"
           color="primary"
-          floating
-          transparent
-        >
-          {{ $store.getters.unreadChats }}
-        </q-badge>
-      </q-route-tab>
-      <q-route-tab
-        icon="person"
-        :to="'/' + $store.state.keys.pub"
-        active-class=""
-        :class="{
-          'text-primary':
-            $route.name === 'profile' &&
-            $route.params.pubkey === $store.state.keys.pub
-        }"
-      />
-      <q-route-tab
-        icon="manage_search"
-        to="/follow"
-        active-class=""
-        :class="{'text-primary': $route.name === 'follow'}"
-      />
-      <q-route-tab
-        icon="settings"
-        to="/settings"
-        active-class=""
-        :class="{'text-primary': $route.name === 'settings'}"
-      />
-    </q-tabs>
-
-    <q-dialog v-model="initializeKeys" persistent>
-      <q-card class="px-4 py-2">
-        <q-card-section class="text-base">
-          <div class="text-lg text-bold tracking-wide leading-relaxed py-2">
-            Initial Key Setup
-          </div>
-          <div class="mb-2">
-            Type your private key from a previous Nostr account or generate a
-            new one.
-          </div>
-          <div>
-            You can also type just a public key and later sign events manually
-            or using a Nostr-capable browser extension.
-          </div>
-
-          <q-form @submit="proceed">
-            <q-input
-              v-model="key"
-              autogrow
-              autofocus
-              label="Private key or public key"
-              class="text-lg"
-            />
-            <q-toggle
-              v-if="isKeyKey"
-              v-model="watchOnly"
-              label="This is a public key"
-            />
-            <div class="flex w-full mt-4 justify-between">
-              <q-btn @click="generate">Generate</q-btn>
-              <q-btn
-                v-if="hasExtension && !isKeyValid"
-                @click="getFromExtension"
-                >Use Public Key from Extension</q-btn
-              >
-              <q-btn v-if="isKeyValid" color="primary" @click="proceed"
-                >Proceed</q-btn
-              >
-            </div>
-          </q-form>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
+          unelevated
+          round
+          outline
+          icon="keyboard_double_arrow_up"
+          :disable="draggingFab"
+        />
+        <q-btn
+          @click.prevent="$router.go(-1)"
+          color="primary"
+          unelevated
+          round
+          outline
+          icon="keyboard_arrow_left"
+          :disable="draggingFab"
+        />
+      </q-fab>
+    </q-page-sticky>
   </q-layout>
 </template>
-<script>
-import helpersMixin from '../utils/mixin'
-import {validateWords} from 'nostr-tools/nip06'
-import {generatePrivateKey} from 'nostr-tools'
 
-export default {
+<script>
+import { defineComponent} from 'vue'
+import { scroll } from 'quasar'
+const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
+import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
+import TheUserMenu from 'components/TheUserMenu.vue'
+import TheSearchMenu from 'components/TheSearchMenu.vue'
+
+export default defineComponent({
   name: 'MainLayout',
-  mixins: [helpersMixin],
+
+  components: {
+    TheKeyInitializationDialog,
+    TheUserMenu,
+    TheSearchMenu,
+  },
 
   data() {
     return {
-      initializeKeys: true,
-      watchOnly: false,
-      key: null,
-      hasExtension: false
+      middlePagePos: {},
+      fabPos: [0, 10],
+      draggingFab: false,
     }
   },
 
-  computed: {
-    icon() {
-      return document.getElementById('icon').href
-    },
-
-    isKeyKey() {
-      if (this.isKey(this.key)) return true
-      return false
-    },
-
-    isKeyValid() {
-      if (this.isKeyKey) return true
-      if (validateWords(this.key?.toLowerCase())) return true
-      return false
-    }
+  mounted() {
+    document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll)
+    this.$router.beforeEach((to, from) => { this.preserveScrollPos(to, from) })
+    this.$router.afterEach((to, from) => { this.restoreScrollPos(to, from) })
+    let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
+    if (pageRect) this.fabPos[0] = pageRect.right - pageRect.width
   },
 
-  async created() {
-    if (this.$store.state.keys.pub) {
-      // keys already set up
-      this.$store.dispatch('launch')
-      this.initializeKeys = false
-    } else {
-      // keys not set up, offer the option to try to get a pubkey from window.nostr
-      setTimeout(() => {
-        if (window.nostr) {
-          this.hasExtension = true
-        }
-      }, 1000)
-    }
+  beforeUnmount() {
+    document.querySelector('#left-drawer').removeEventListener('wheel', this.redirectScroll)
   },
 
   methods: {
-    async getFromExtension() {
-      try {
-        this.key = await window.nostr.getPublicKey()
-        this.watchOnly = true
-      } catch (err) {
-        this.$q.notify({
-          message: `Failed to get a public key from a Nostr extension: ${err}`,
-          color: 'warning'
-        })
+    redirectScroll(event) {
+      let pos = getVerticalScrollPosition(this.$refs.pageContainer.$el)
+      setVerticalScrollPosition(this.$refs.pageContainer.$el, pos + event.deltaY)
+    },
+
+    preserveScrollPos(to, from) {
+      if (this.$refs.pageContainer?.$el) this.middlePagePos[from.fullPath] = getVerticalScrollPosition(this.$refs.pageContainer.$el)
+    },
+
+    restoreScrollPos(to, from) {
+      if (this.$refs.pageContainer?.$el) {
+        if (this.middlePagePos[to.fullPath]) setVerticalScrollPosition(this.$refs.pageContainer.$el, this.middlePagePos[to.fullPath], 500)
+        else setVerticalScrollPosition(this.$refs.pageContainer.$el, 0)
       }
     },
 
-    generate() {
-      this.key = generatePrivateKey()
-      this.watchOnly = false
+    scrollToTop() {
+      setVerticalScrollPosition(this.$refs.pageContainer.$el, 0, 500)
     },
 
-    proceed() {
-      let key = this.key?.toLowerCase()
+    moveBackFab (ev) {
+      this.fabBackDragged = ev.isFirst !== true && ev.isFinal !== true
 
-      var keys = {}
-      if (validateWords(key)) {
-        keys.mnemonic = key
-      } else if (this.isKey(key)) {
-        if (this.watchOnly) keys.pub = key
-        else keys.priv = key
-      } else {
-        console.warn('Proceed called with invalid key', key)
-      }
-
-      this.$store.dispatch('initKeys', keys)
-      this.$store.dispatch('launch')
-      this.initializeKeys = false
-      this.$router.push({
-        name: 'settings',
-        params: {showKeys: true}
-      })
+      this.fabBackPos = [
+        this.fabBackPos[0] + ev.delta.x,
+        this.fabBackPos[1] - ev.delta.y
+      ]
     },
 
-    isKey(key) {
-      return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
+    moveTopFab (ev) {
+      this.fabTopDragged = ev.isFirst !== true && ev.isFinal !== true
+
+      this.fabTopPos = [
+        this.fabTopPos[0] + ev.delta.x,
+        this.fabTopPos[1] + ev.delta.y
+      ]
+    },
+
+    moveFab (ev) {
+      this.draggingFab = ev.isFirst !== true && ev.isFinal !== true
+
+      this.fabPos = [
+        this.fabPos[0] - ev.delta.x,
+        this.fabPos[1] + ev.delta.y
+      ]
+    },
+
+    scrollToRect(rect) {
+      let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
+      let offset = Math.max(rect.bottom - (pageRect.height / 2), 0)
+      setVerticalScrollPosition(this.$refs.pageContainer.$el, offset, 500)
     }
+  },
+})
+
+</script>
+
+<style lang='scss'>
+#layout-container {
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  height: 100vh;
+  position: relative;
+  width: 100%;
+  will-change: overflow;
+  flex-wrap: nowrap;
+}
+#left-drawer, #right-drawer {
+  display: none;
+  transition: all 1s linear;
+  margin: .5rem;
+}
+#left-drawer {
+}
+#middle-page {
+  width: 700px;
+  max-width: 100%;
+  height: auto;
+  background: $dark;
+  padding-bottom: 2rem;
+  border-right: 2px solid $accent;
+  border-left: 2px solid $accent;
+  display: flex;
+  flex-direction: column;
+  padding: 0 .5rem;
+}
+#middle-page .q-page-container {
+  overflow-y: auto;
+}
+#bottom-drawer {
+  background: rgba(255, 255, 255, 0.2);
+}
+#navagation-buttons .q-btn{
+  font-size: .6rem;
+}
+.q-fab__actions--left {
+  margin: 0;
+}
+
+@media screen and (min-width: 600px) {
+  #navagation-buttons .q-btn{
+    font-size: .8rem;
   }
 }
-</script>
+
+@media screen and (min-width: 700px) {
+  #layout-container {
+    justify-content: flex-start;
+  }
+  #left-drawer, #right-drawer {
+    display: flex;
+    visibility: inherit;
+    height: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+  }
+  #left-drawer {
+    overflow: hidden;
+    width: 50px;
+    max-width: 50px;
+    min-width: 50px;
+    flex: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+  #right-drawer {
+    width: auto;
+    max-width: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    flex-shrink: 1;
+    flex-grow: 1;
+  }
+  #middle-page {
+    min-width: 400px;
+    max-width: 600px;
+    padding-bottom: 0;
+    flex: 1;
+    flex-shrink: 1;
+    flex-grow: 1;
+  }
+  #bottom-drawer {
+    display: none;
+  }
+}
+@media screen and (min-width: 1023px) {
+  #left-drawer {
+    width: 200px;
+    min-width: 200px;
+    max-width: 300px;
+  }
+  #middle-page {
+    width: 600px;
+    min-width: 600px;
+    max-width: 600px;
+    flex: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+  #navagation-buttons .q-btn{
+    font-size: .9rem;
+  }
+}
+@media screen and (min-width: 1100px) {
+  #left-drawer {
+    width: 200px;
+    min-width: 200px;
+    max-width: 300px;
+    flex: 1;
+    flex-shrink: 1;
+    flex-grow: 1;
+  }
+  #right-drawer {
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    flex: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+}
+@media screen and (min-width: 1200px) {
+#layout-container {
+  justify-content: center;
+}
+#left-drawer, #right-drawer {
+    width: calc((100vw - 600px) / 2);
+    max-width: 300px;
+      flex: 1;
+      flex-shrink: 1;
+      flex-grow: 1;
+  }
+  #middle-page {
+  width: 600px;
+  min-width: 600px;
+  max-width: 600px;
+      flex: 0;
+      flex-shrink: 0;
+      flex-grow: 0;
+  }
+}
+</style>

@@ -1,160 +1,93 @@
 <template>
-  <q-page class="px-4 py-6">
-    <div class="text-xl text-center">
-      <Name :pubkey="$route.params.pubkey" />
-    </div>
-
-    <div class="flex justify-left items-center mt-4">
-      <q-avatar round>
-        <img :src="$store.getters.avatar($route.params.pubkey)" />
-      </q-avatar>
-      <div class="ml-4" style="width: 29rem">
-        <p class="mb-1 break-all text-xs font-mono text-secondary">
-          {{ $route.params.pubkey }}
-        </p>
-        <div class="text-accent text-base break-words w-full">
-          <Markdown>
-            {{ $store.getters.profileDescription($route.params.pubkey) }}
-          </Markdown>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="$route.params.pubkey !== $store.state.keys.pub"
-      class="flex items-center justify-between mt-2 px-2"
+  <q-page>
+    <BaseUserCard v-if='$route.params.pubkey' :pubkey='$route.params.pubkey' class='user-card-header q-my-sm' :header-mode='true'/>
+    <q-tabs
+      v-model="tab"
+      dense
+      outline
+      align="left"
+      active-color='accent'
+      :breakpoint="0"
     >
-      <div class="w-3/5">
-        <div v-if="$store.getters.contacts($route.params.pubkey)">
-          Following
-          <div class="inline">
-            <span
-              v-for="(user, i) in $store.getters.contacts(
+      <q-tab name="posts" label='posts' />
+      <q-tab name="following" label='following' />
+    </q-tabs>
+    <q-tab-panels v-model="tab" animated>
+      <q-tab-panel name="posts" class='no-padding'>
+        <div>
+          <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='addEvent'/>
+        </div>
+      </q-tab-panel>
+
+      <q-tab-panel name="following" class='no-padding'>
+        <div v-if="!$store.getters.contacts($route.params.pubkey)">not following anyone</div>
+        <div v-else class="flex column relative">
+          <q-btn
+            v-if="$store.getters.hasMoreContacts($route.params.pubkey)"
+            :name="showAllContacts ? 'show less' : 'show all'"
+            :label="showAllContacts ? 'show less' : 'show all'"
+            :icon-right="showAllContacts ? 'expand_less' : 'expand_more'"
+            color="secondary"
+            class='q-ma-sm'
+            outline
+            size='sm'
+            @click="showAllContacts = !showAllContacts"
+          />
+          <div class='q-pl-sm'>
+            <BaseUserCard
+              v-for="(user) in $store.getters.contacts(
                 $route.params.pubkey,
                 !showAllContacts
               )"
               :key="user.pubkey"
-            >
-              <span
-                class="text-accent cursor-pointer hover:underline"
-                @click="toProfile(user.pubkey)"
-                >{{ shorten(user.pubkey) }}</span
-              ><span
-                v-if="$store.getters.hasName(user.pubkey)"
-                class="text-primary"
-              >
-                ({{ $store.getters.displayName(user.pubkey) }})</span
-              ><span
-                v-if="
-                  i + 1 <
-                  $store.getters.contacts(
-                    $route.params.pubkey,
-                    !showAllContacts
-                  ).length
-                "
-                >,
-              </span>
-            </span>
-            <q-icon
-              v-if="$store.getters.hasMoreContacts($route.params.pubkey)"
-              :name="showAllContacts ? 'expand_less' : 'more_horiz'"
-              color="primary"
-              class="
-                bg-white
-                drop-shadow
-                cursor-pointer
-                border-1
-                px-2
-                py-1
-                ml-1
-                -translate-y-1
-              "
-              @click="showAllContacts = !showAllContacts"
+              :pubkey="user.pubkey"
             />
           </div>
+          <q-btn
+            v-if='!showAllContacts && $store.getters.hasMoreContacts($route.params.pubkey)'
+            icon='more_vert'
+            size='xl'
+            class='q-pa-md justify-start items-start'
+            flat
+            dense
+            @click="showAllContacts = true"
+          />
         </div>
-      </div>
-
-      <div class="flex justify-end">
-        <q-btn
-          :disable="!$store.getters.canEncryptDecrypt"
-          round
-          flat
-          :to="'/messages/' + $route.params.pubkey"
-          unelevated
-          color="primary"
-          icon="message"
-          size="xl"
-        />
-        <q-btn
-          v-if="isFollowing"
-          :disable="!$store.getters.canSignEventsAutomatically"
-          round
-          unelevated
-          flat
-          color="secondary"
-          icon="cancel"
-          size="xl"
-          @click="unfollow"
-        />
-        <q-btn
-          v-if="!isFollowing"
-          :disable="!$store.getters.canSignEventsAutomatically"
-          round
-          unelevated
-          color="primary"
-          flat
-          icon="add_circle"
-          size="xl"
-          @click="follow"
-        />
-      </div>
-    </div>
-
-    <q-separator class="my-6" />
-
-    <div>
-      <div class="text-lg mx-4">Notes</div>
-      <Thread v-for="thread in threads" :key="thread[0].id" :events="thread" />
-    </div>
+      </q-tab-panel>
+    </q-tab-panels>
   </q-page>
 </template>
 
 <script>
+import { defineComponent } from 'vue'
 import {pool} from '../pool'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
+import BaseUserCard from 'components/BaseUserCard.vue'
 
-export default {
+export default defineComponent({
   name: 'Profile',
   mixins: [helpersMixin],
+
+  components: {
+    BaseUserCard,
+  },
 
   data() {
     return {
       threads: [],
       eventsSet: new Set(),
       sub: null,
-      showAllContacts: false
+      showAllContacts: false,
+      tab: 'posts'
     }
   },
 
-  computed: {
-    isFollowing() {
-      return this.$store.state.following.includes(this.$route.params.pubkey)
-    }
-  },
-
-  watch: {
-    '$route.params.pubkey'(curr, prev) {
-      if (curr && curr !== prev) this.start()
-    }
-  },
-
-  mounted() {
+  activated() {
     this.start()
   },
 
-  beforeUnmount() {
+  deactivated() {
     if (this.sub) this.sub.unsub()
   },
 
@@ -183,9 +116,9 @@ export default {
         return
       }
 
-      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
-      this.$store.dispatch('useContacts', this.$route.params.pubkey)
       this.listen()
+      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey, request: true})
+      this.$store.dispatch('useContacts', {pubkey: this.$route.params.pubkey, request: true})
       this.$store.getters
         .contacts(this.$route.params.pubkey)
         ?.forEach(pubkey => this.$store.dispatch('useProfile', {pubkey}))
@@ -200,7 +133,7 @@ export default {
           filter: [
             {
               authors: [this.$route.params.pubkey],
-              kinds: [0, 1, 2, 3]
+              kinds: [0, 1, 2]
             }
           ],
           cb: async (event, relay) => {
@@ -212,8 +145,9 @@ export default {
               case 1:
               case 2:
                 if (this.eventsSet.has(event.id)) return
-                this.eventsSet.add(event.id)
 
+                this.interpolateEventMentions(event)
+                this.eventsSet.add(event.id)
                 addToThread(this.threads, event)
                 return
             }
@@ -223,13 +157,19 @@ export default {
       )
     },
 
-    unfollow() {
-      this.$store.commit('unfollow', this.$route.params.pubkey)
-    },
+    addEvent(event) {
+      if (this.eventsSet.has(event.id)) return
 
-    follow() {
-      this.$store.commit('follow', this.$route.params.pubkey)
+      this.interpolateEventMentions(event)
+      this.eventsSet.add(event.id)
+      addToThread(this.threads, event)
     }
   }
-}
+})
 </script>
+
+<style lang='scss' scoped>
+.q-tabs {
+  border-bottom: 1px solid $accent
+}
+</style>

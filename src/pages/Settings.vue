@@ -1,10 +1,9 @@
 <template>
-  <q-page class="px-4 py-6">
-    <div class="text-xl">Settings</div>
-
-    <q-separator />
-    <q-form class="my-8 q-gutter-md" @submit="setMetadata">
-      <div class="text-lg p-4">Profile</div>
+  <q-page>
+    <div class="text-h5 text-bold q-py-md">settings</div>
+    <q-separator color='accent' size='2px'/>
+    <q-form class="q-gutter-md" @submit="setMetadata">
+      <!-- <div class="text-lg p-4">Profile</div> -->
       <q-input v-model="metadata.name" filled type="text" label="Name">
         <template #before>
           <q-icon name="alternate_email" />
@@ -26,7 +25,7 @@
         maxlength="150"
       >
         <template #after>
-          <q-avatar v-if="metadata.picture" rounded class="mx-3">
+          <q-avatar v-if="metadata.picture" rounded>
             <img :src="metadata.picture" />
           </q-avatar>
         </template>
@@ -204,7 +203,9 @@ export default {
   },
 
   mounted() {
-    if (this.$route.params.showKeys) this.keysDialog = true
+    if (this.$route.params.showKeys) {
+      this.keysDialog = true
+    }
 
     this.unsubscribe = this.$store.subscribe((mutation, state) => {
       switch (mutation.type) {
@@ -247,6 +248,8 @@ export default {
         if (
           (await queryName(this.metadata.nip05)) !== this.$store.state.keys.pub
         ) {
+          console.log(this.metadata)
+          console.log(await queryName(this.metadata.nip05))
           this.$q.notify({
             message: 'Failed to verify NIP05 identifier on server.',
             color: 'warning'

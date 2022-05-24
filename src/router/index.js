@@ -1,5 +1,9 @@
-import {route} from 'quasar/wrappers'
-import {createRouter, createWebHistory, createWebHashHistory} from 'vue-router'
+import { route } from 'quasar/wrappers'
+import {
+  createRouter,
+  createWebHistory,
+  createWebHashHistory,
+} from 'vue-router'
 import routes from './routes'
 
 export default route(() => {
@@ -9,7 +13,15 @@ export default route(() => {
       : createWebHashHistory
 
   const Router = createRouter({
-    scrollBehavior: () => ({left: 0, top: 0}),
+    // scrollBehavior: () => ({ left: 0, top: 0 }),
+    // scrollBehavior (to, from, savedPosition) {
+    //   if (savedPosition) {
+    //     // Keep scroll position when using browser buttons
+    //     return savedPosition
+    //   } else {
+    //     return { x: 0, y: 0 }
+    //   }
+    // },
     routes,
 
     // Leave this as is and make changes in quasar.conf.js instead!
@@ -17,7 +29,7 @@ export default route(() => {
     // quasar.conf.js -> build -> publicPath
     history: createHistory(
       process.env.MODE === 'ssr' ? void 0 : process.env.VUE_ROUTER_BASE
-    )
+    ),
   })
 
   return Router

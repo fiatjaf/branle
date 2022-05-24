@@ -1,127 +1,61 @@
 <template>
-  <q-dialog v-model="metadataDialog">
-    <RawEventData :event="event" />
-  </q-dialog>
 
-  <q-page class="px-4 py-6">
-    <div class="text-xl text-center">Event</div>
-
-    <q-separator class="my-6" />
-
+  <q-page ref='page'>
+    <div class="text-h5 text-bold q-py-md">thread</div>
+    <q-separator color='accent' size='2px'/>
     <div v-if="ancestors.length">
-      <Thread :events="ancestors" is-ancestors />
+      <BasePostThread :events="ancestors" is-ancestors @add-event='addEventAncestors'/>
     </div>
 
-    <div ref="main" class="py-4 px-1">
-      <div v-if="event">
-        <div class="flex items-center">
-          <q-avatar
-            class="no-shadow cursor-pointer"
-            @click="toProfile(event.pubkey)"
-          >
-            <img :src="$store.getters.avatar(event.pubkey)" />
-          </q-avatar>
-          <div class="text-lg ml-4">
-            <Name :pubkey="event.pubkey" />
-          </div>
-          <div class="text-accent font-mono ml-4">
-            {{ shorten(event.pubkey) }}
-          </div>
-        </div>
-        <div
-          class="text-xl my-4 font-sans break-words text-justify"
-          style="hyphens: auto !important"
-        >
-          <Markdown>{{ content }}</Markdown>
-        </div>
-        <div class="flex items-center justify-between w-full">
-          <q-icon
-            size="xs"
-            name="info"
-            class="opacity-50 cursor-pointer mr-1"
-            @click="metadataDialog = true"
-          />
-          <div
-            class="opacity-40 cursor-pointer hover:underline"
-            @click="toEvent(event.id)"
-          >
-            {{ niceDate(event.created_at) }}
-          </div>
-          <q-btn
-            round
-            unelevated
-            flat
-            :color="replying ? 'secondary' : 'primary'"
-            icon="quickreply"
-            size="lg"
-            @click="replying = !replying"
-          />
-        </div>
-        <div v-if="replying" class="mt-4">
-          <Reply v-if="event" :event="event" />
-        </div>
-      </div>
-      <div v-else class="font-mono text-slate-400 p-8">
+    <q-item ref="main" class='no-padding column'>
+      <BasePost
+        v-if="event"
+        :event='event'
+        :highlighted='true'
+        :position='ancestors.length ? "last" : "standalone"'
+        @add-event='addEventChildren'
+      />
+      <div v-else>
         Event {{ $route.params.eventId }}
       </div>
-    </div>
+    <BaseRelayList v-if="event?.seen_on?.length" :event='event' style='background: rgba(255, 255, 255, 0.1);'/>
+    </q-item>
 
-    <div v-if="event?.seen_on?.length">
-      <q-separator class="my-2" />
-      <div class="text-lg mx-4 mt-6 mb-4">Seen on</div>
-      <ul class="mb-2 pl-4 text-md list-disc">
-        <li v-for="relay in event.seen_on" :key="relay">
-          <span class="text-accent opacity-65">
-            {{ relay }}
-          </span>
-        </li>
-      </ul>
-    </div>
-
-    <div v-if="missingFrom.length">
-      <div class="text-lg mx-4 mt-6 mb-4">Not seen on</div>
-      <ul class="mb-2 pl-4 text-md list-disc">
-        <li v-for="relay in missingFrom" :key="relay" class="cursor-pointer">
-          {{ relay }}
-          <q-btn
-            label="Publish"
-            rounded
-            unelevated
-            color="accent"
-            size="xs"
-            class="py-0 px-1 ml-2"
-            @click="publishTo(relay)"
-          />
-        </li>
-      </ul>
-    </div>
+    <q-separator color='accent' size='2px'/>
 
     <div v-if="childrenThreads.length">
-      <q-separator class="my-2" />
-      <div class="text-lg mx-4 mt-6 mb-4">Replies</div>
-      <div v-for="thread in childrenThreads" :key="thread[0].id">
-        <Thread :events="thread" />
-        <q-separator />
+      <div class="text-h6 text-bold">replies</div>
+      <div v-for="(thread) in childrenThreads" :key="thread[0].id">
+        <BasePostThread :events="thread" @add-event='addEventChildren'/>
       </div>
     </div>
   </q-page>
 </template>
 
 <script>
+import { defineComponent, nextTick } from 'vue'
+// import { parse } from 'JSON'
 import {pool} from '../pool'
 import {dbGetEvent, onEventUpdate} from '../db'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
+// import { scroll } from 'quasar'
+// const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
+// import { scroll } from 'quasar'
+// const { getScrollTarget, setScrollPosition } = scroll
+import BaseRelayList from 'components/BaseRelayList.vue'
 
-export default {
+export default defineComponent({
   name: 'Event',
+  emits: ['scroll-to-rect'],
   mixins: [helpersMixin],
+  components: {
+    BaseRelayList
+  },
 
   data() {
     return {
-      metadataDialog: false,
       replying: false,
-      userHasActed: false,
       ancestors: [],
       ancestorsSet: new Set(),
       ancestorsSub: null,
@@ -134,51 +68,23 @@ export default {
     }
   },
 
-  computed: {
-    missingFrom() {
-      // filter out events we don't have locally as they are from people we don't follow
-      if (!this.event || !this.event.seen_on) return []
+  // computed: {
+  //   content() {
+  //     return this.interpolateMentions(this.event.content, this.event.tags)
+  //   },
+  // },
 
-      return Object.entries(this.$store.state.relays)
-        .filter(([_, prefs]) => prefs.write)
-        .map(([url, _]) => url)
-        .filter(url => this.event.seen_on.indexOf(url) === -1)
-    },
-    content() {
-      return this.interpolateMentions(this.event.content, this.event.tags)
-    }
-  },
-
-  watch: {
-    '$route.params.eventId'(curr, prev) {
-      if (curr && curr !== prev) {
-        this.stop()
-        this.start()
-      }
-    }
-  },
-
-  mounted() {
+  activated() {
     this.start()
   },
 
-  beforeUnmount() {
+  deactivated() {
     this.stop()
-  },
-
-  updated() {
-    this.$nextTick(() => {
-      if (this.screenHasMoved) {
-        this.$refs.main.scrollIntoView()
-      }
-    })
   },
 
   methods: {
     start() {
       this.listen()
-      window.addEventListener('scroll', this.detectedUserActivity)
-      window.addEventListener('click', this.detectedUserActivity)
     },
 
     stop() {
@@ -187,12 +93,6 @@ export default {
       if (this.childrenSub) this.childrenSub.unsub()
       if (this.eventSub) this.eventSub.unsub()
       if (this.eventUpdates) this.eventUpdates.cancel()
-      window.removeEventListener('scroll', this.detectedUserActivity)
-      window.removeEventListener('click', this.detectedUserActivity)
-    },
-
-    detectedUserActivity() {
-      this.userHasActed = true
     },
 
     async listen() {
@@ -202,6 +102,7 @@ export default {
           pubkey: this.event.pubkey,
           request: true
         })
+        this.interpolateEventMentions(this.event)
         this.listenAncestors()
       } else {
         this.eventSub = pool.sub(
@@ -214,6 +115,7 @@ export default {
                 pubkey: this.event.pubkey,
                 request: true
               })
+              this.interpolateEventMentions(this.event)
               this.listenAncestors()
             }
           },
@@ -230,10 +132,11 @@ export default {
 
           // and just update our local event with the latest one from the db
           this.event = event
+          this.interpolateEventMentions(this.event)
         }
       )
-
-      this.listenChildren()
+      if (this.$route.params.childThreads) this.childrenThreads = JSON.parse(this.$route.params.childThreads)
+      else this.listenChildren()
     },
 
     listenChildren() {
@@ -250,6 +153,8 @@ export default {
           cb: async (event, relay) => {
             let existing = this.childrenSeen.get(event.id)
             if (existing) {
+              if (!Array.isArray(existing.seen_on)) existing.seen_on = []
+              else if (existing.seen_on.includes(relay)) return
               existing.seen_on.push(relay)
               return
             }
@@ -259,6 +164,7 @@ export default {
 
             this.$store.dispatch('useProfile', {pubkey: event.pubkey})
 
+            this.interpolateEventMentions(event)
             addToThread(this.childrenThreads, event)
             return
           }
@@ -267,18 +173,19 @@ export default {
       )
     },
 
-    listenAncestors() {
+    async listenAncestors() {
       this.ancestors = []
       this.ancestorsSet = new Set()
 
-      let eventTags = this.event.tags.filter(([t, _]) => t === 'e')
+      let eventTags = this.event.interpolated.replyEvents
+      if (eventTags.length === 2) await this.getAncestorsAncestorsFromDb(eventTags)
       if (eventTags.length) {
         this.ancestorsSub = pool.sub(
           {
             filter: [
               {
                 kinds: [1],
-                ids: eventTags.map(([_, v]) => v)
+                ids: eventTags
               }
             ],
             cb: async event => {
@@ -288,6 +195,7 @@ export default {
                 pubkey: event.pubkey,
                 request: true
               })
+              this.interpolateEventMentions(event)
               this.ancestorsSet.add(event.id)
 
               // manual sorting
@@ -303,6 +211,7 @@ export default {
 
               // the newer event is the newest, add to end
               this.ancestors.push(event)
+              this.scrollToMainEvent()
 
               return
             }
@@ -312,9 +221,66 @@ export default {
       }
     },
 
-    publishTo(relayURL) {
-      pool.relays[relayURL]?.relay?.publish?.(this.event)
-    }
+    async getAncestorsAncestorsFromDb(eventTags) {
+      const initialEventId = eventTags[0]
+      let lastEventId = eventTags[1]
+      let addedAncestorCount = 0
+      while (lastEventId !== initialEventId && addedAncestorCount <= 5) {
+        // console.log('starting await, lastEventId: ', lastEventId)
+        let lastEvent = await dbGetEvent(lastEventId)
+        // console.log('finished await')
+        if (lastEvent) {
+          this.$store.dispatch('useProfile', {
+            pubkey: lastEvent.pubkey,
+            request: true
+          })
+          let lastEventTags = lastEvent.tags.filter(([t, _]) => t === 'e').map(([_, v]) => v)
+          if (lastEventTags.length === 0) {
+            // console.log(`last event ${lastEventId} has no tags prior to finding initial event ${initialEventId}`)
+            break
+          } else if (lastEventTags[0] !== initialEventId) {
+            // console.log(`last event ${lastEventId} does not have initial event ${initialEventId} listed as initial event`)
+            break
+          } else if (lastEventTags.length > 2) {
+            // console.log(`last event ${lastEventId} has more than 2 tags`)
+            break
+          }
+          if (!eventTags.includes(lastEventId)) eventTags.push(lastEventId)
+          lastEventId = lastEventTags[lastEventTags.length - 1]
+          // console.log('eventTags: ', eventTags)
+          // console.log('lastEventTags: ', lastEventTags)
+        } else {
+          // console.log('no event found from db')
+          break
+        }
+      // for (eventId in eventTags) {
+        addedAncestorCount++
+      }
+      return eventTags
+    },
+
+    scrollToMainEvent() {
+      nextTick(() => {
+        let mainRect = this.$refs.main?.$el.getBoundingClientRect()
+        this.$emit('scroll-to-rect', mainRect)
+      })
+    },
+
+    addEventChildren(event) {
+      let existing = this.childrenSeen.get(event.id)
+        if (existing) {
+          return
+        }
+      this.interpolateEventMentions(event)
+      this.childrenSeen.set(event.id, event)
+      addToThread(this.childrenThreads, event)
+    },
+
+    addEventAncestors(event) {
+      this.interpolateEventMentions(event)
+      this.toEvent(event.id)
+    },
   }
-}
+})
 </script>
+

@@ -1,29 +1,50 @@
 module.exports = {
+  // https://eslint.org/docs/user-guide/configuring#configuration-cascading-and-hierarchy
+  // This option interrupts the configuration hierarchy at this file
+  // Remove this if you have an higher level ESLint config file (it usually happens into a monorepos)
   root: true,
 
   parserOptions: {
     parser: '@babel/eslint-parser',
-    ecmaVersion: 2018,
-    sourceType: 'module',
-    requireConfigFile: false
+    ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
+    sourceType: 'module', // Allows for the use of imports
+    requireConfigFile: false,
   },
 
   env: {
-    browser: true
+    browser: true,
+    'vue/setup-compiler-macros': true,
   },
 
   // Rules order is important, please avoid shuffling them
   extends: [
+    // Base ESLint recommended rules
     'eslint:recommended',
+
+    // Uncomment any of the lines below to choose desired strictness,
+    // but leave only one uncommented!
+    // See https://eslint.vuejs.org/rules/#available-rules
     'plugin:vue/vue3-essential', // Priority A: Essential (Error Prevention)
     'plugin:vue/vue3-strongly-recommended', // Priority B: Strongly Recommended (Improving Readability)
-    'plugin:vue/vue3-recommended', // Priority C: Recommended (Minimizing Arbitrary Choices and Cognitive Overhead)
-    'prettier'
+    // "plugin:vue/vue3-recommended", // Priority C: Recommended (Minimizing Arbitrary Choices and Cognitive Overhead)
+
+    // https://github.com/prettier/eslint-config-prettier#installation
+    // usage with Prettier, provided by 'eslint-config-prettier'.
+    'prettier',
   ],
 
-  plugins: ['vue'],
+  plugins: [
+    // https://eslint.vuejs.org/user-guide/#why-doesn-t-it-work-on-vue-files
+    // required to lint *.vue files
+    'vue',
+
+    // https://github.com/typescript-eslint/typescript-eslint/issues/389#issuecomment-509292674
+    // Prettier has not been included as plugin to avoid performance impact
+    // add it as an extension for your IDE
+  ],
 
   globals: {
+    ga: 'readonly', // Google Analytics
     cordova: 'readonly',
     __statics: 'readonly',
     __QUASAR_SSR__: 'readonly',
@@ -32,34 +53,38 @@ module.exports = {
     __QUASAR_SSR_PWA__: 'readonly',
     process: 'readonly',
     Capacitor: 'readonly',
-    chrome: 'readonly'
+    chrome: 'readonly',
   },
 
+  // add your custom rules here
   rules: {
+    // 'prefer-promise-reject-errors': 'off',
+
     // allow debugger during development only
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
 
     // custom
     'vue/no-v-html': 0,
+    'vue/multi-word-component-names': 0,
 
     'accessor-pairs': 2,
-    'arrow-spacing': [2, {before: true, after: true}],
+    'arrow-spacing': [2, { before: true, after: true }],
     'block-spacing': [2, 'always'],
-    'brace-style': [2, '1tbs', {allowSingleLine: true}],
+    'brace-style': [2, '1tbs', { allowSingleLine: true }],
     'comma-dangle': 0,
-    'comma-spacing': [2, {before: false, after: true}],
+    'comma-spacing': [2, { before: false, after: true }],
     'comma-style': [2, 'last'],
     'constructor-super': 2,
     curly: [0, 'multi-line'],
     'dot-location': [2, 'property'],
     'eol-last': 2,
     eqeqeq: [2, 'allow-null'],
-    'generator-star-spacing': [2, {before: true, after: true}],
+    'generator-star-spacing': [2, { before: true, after: true }],
     'handle-callback-err': [2, '^(err|error)$'],
     indent: 0,
     'jsx-quotes': [2, 'prefer-double'],
-    'key-spacing': [2, {beforeColon: false, afterColon: true}],
-    'keyword-spacing': [2, {before: true, after: true}],
+    'key-spacing': [2, { beforeColon: false, afterColon: true }],
+    'keyword-spacing': [2, { before: true, after: true }],
     'new-cap': 0,
     'new-parens': 0,
     'no-array-constructor': 2,
@@ -91,12 +116,12 @@ module.exports = {
     'no-irregular-whitespace': 2,
     'no-iterator': 2,
     'no-label-var': 2,
-    'no-labels': [2, {allowLoop: false, allowSwitch: false}],
+    'no-labels': [2, { allowLoop: false, allowSwitch: false }],
     'no-lone-blocks': 2,
     'no-mixed-spaces-and-tabs': 2,
     'no-multi-spaces': 2,
     'no-multi-str': 2,
-    'no-multiple-empty-lines': [2, {max: 2}],
+    'no-multiple-empty-lines': [2, { max: 2 }],
     'no-native-reassign': 2,
     'no-negated-in-lhs': 2,
     'no-new': 0,
@@ -125,36 +150,36 @@ module.exports = {
     'no-undef': 2,
     'no-undef-init': 2,
     'no-unexpected-multiline': 2,
-    'no-unneeded-ternary': [2, {defaultAssignment: false}],
+    'no-unneeded-ternary': [2, { defaultAssignment: false }],
     'no-unreachable': 2,
     'no-unused-vars': [
       2,
-      {vars: 'local', args: 'none', varsIgnorePattern: '^_'}
+      { vars: 'local', args: 'none', varsIgnorePattern: '^_' },
     ],
     'no-useless-call': 2,
     'no-useless-constructor': 2,
     'no-with': 2,
-    'one-var': [0, {initialized: 'never'}],
+    'one-var': [0, { initialized: 'never' }],
     'operator-linebreak': [
       2,
       'after',
-      {overrides: {'?': 'before', ':': 'before'}}
+      { overrides: { '?': 'before', ':': 'before' } },
     ],
     'padded-blocks': [2, 'never'],
-    quotes: [2, 'single', {avoidEscape: true, allowTemplateLiterals: true}],
+    quotes: [2, 'single', { avoidEscape: true, allowTemplateLiterals: true }],
     semi: [2, 'never'],
-    'semi-spacing': [2, {before: false, after: true}],
+    'semi-spacing': [2, { before: false, after: true }],
     'space-before-blocks': [2, 'always'],
     'space-before-function-paren': 0,
     'space-in-parens': [2, 'never'],
     'space-infix-ops': 2,
-    'space-unary-ops': [2, {words: true, nonwords: false}],
+    'space-unary-ops': [2, { words: true, nonwords: false }],
     'spaced-comment': 0,
     'template-curly-spacing': [2, 'never'],
     'use-isnan': 2,
     'valid-typeof': 2,
     'wrap-iife': [2, 'any'],
     'yield-star-spacing': [2, 'both'],
-    yoda: [0]
-  }
-}
+    yoda: [0],
+  },
+};

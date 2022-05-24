@@ -1,12 +1,12 @@
-# branle
+# astral
 
-a twitter-like nostr client forked off from https://github.com/arcbtc/nostr.
-
-https://user-images.githubusercontent.com/1653275/149637874-5ae1e400-1de0-42f1-9946-c4cec19347ed.mp4
+[astral](https://astral.ninja) is a web client for interacting with [Nostr](https://github.com/fiatjaf/nostr), a protocol that attempts to make decentralized social media a reality. astral began as a fork of [Branle](https://github.com/fiatjaf/branle).
 
 ## Install the dependencies
 ```bash
 yarn
+# or
+npm install
 ```
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
@@ -14,10 +14,23 @@ yarn
 quasar dev
 ```
 
+
 ### Lint the files
 ```bash
-yarn run lint
+yarn lint
+# or
+npm run lint
 ```
+
+
+### Format the files
+```bash
+yarn format
+# or
+npm run format
+```
+
+
 
 ### Build the app for production
 ```bash
@@ -28,14 +41,15 @@ quasar build
 
 ### Build the docker image
 ```bash
-docker build -t branle .
+docker build -t astral .
 ```
 
 ### Run the container
 ```bash
-docker run -d -p 8080:80 --name branle branle
+docker run -d -p 8080:8000 --name astral astral
 ```
 
-### Customize the brand
-Edit `customize.json` and replace the colors, icon, name and dark mode setting.
-When setting the dark mode, you can also set the colors `"dark-page"` and `"dark"`.
+and connect to 'http://localhost:8080/'
+
+### Customize the configuration
+See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).

@@ -179,12 +179,12 @@ const methods = {
 
   // db queries
   // ~
-  async dbGetHomeFeedNotes(limit = 50, since = Math.round(Date.now() / 1000)) {
+  async dbGetHomeFeedNotes(limit = 50, until = Math.round(Date.now() / 1000)) {
     let result = await db.query('main/homefeed', {
       include_docs: true,
       descending: true,
       limit,
-      startkey: since
+      startkey: until
     })
     return result.rows.map(r => r.doc)
   },
@@ -355,12 +355,12 @@ const methods = {
 
   async dbGetUnreadMessages(pubkey, since) {
     let result = await db.query('main/messages', {
-      include_docs: false,
+      include_docs: true,
       descending: true,
       startkey: [pubkey, {}],
       endkey: [pubkey, since]
     })
-    return result.rows.length
+    return result.rows.filter(r => r.doc.pubkey === pubkey).length
   },
 
   async dbGetProfile(pubkey) {

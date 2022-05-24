@@ -1,7 +1,7 @@
 import {dbGetProfile} from '../db'
 
 export function shorten(str) {
-  return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
+  return str ? str.slice(0, 5) + '…' + str.slice(-5) : ''
 }
 
 export function getElementFullHeight(element) {
@@ -32,26 +32,66 @@ export function addSorted(list, newItem, compare) {
 }
 
 export async function processMentions(event) {
-  const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+  // const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+  // const mentionRegex = /@((?<t>[a-z]{1}):{1})?(?<p>[a-f0-9]{64})\b/g
+  // const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})\b/g
 
-  var profileTagIndexMap = {}
-  for (let match of event.content.matchAll(mentionRegex)) {
+  // let tagIndexMap = {}
+  // // event.tags.filter(([t, v]) => (t === 'p' || t === 'e') && v).forEach(([t, v], index) => tagIndexMap[v] = index)
+  // for (let match of event.content.matchAll(mentionRegex)) {
+  //   let type = null
+  //   if (match.groups.t === '&') type = 'e'
+  //   let pubkey = match.groups.p
+  //   let idx = event.tags.findIndex(([t, v]) => t === (type || 'p') && v === pubkey)
+  //   if (idx !== -1) {
+  //     tagIndexMap[pubkey] = idx
+  //   } else {
+  //     if (type === 'e') event.tags.push(['e', pubkey])
+  //     event.tags.push(await getPubKeyTagWithRelay(pubkey))
+  //     tagIndexMap[pubkey] = event.tags.length - 1
+  //   }
+  // }
+
+  // event.content = event.content.replace(
+  //   mentionRegex,
+  //   (_, __, pubkey) => `#[${tagIndexMap[pubkey]}]`
+  // )
+
+  // return event
+  // event.content = extractMentions(event.content, event.tags)
+  console.log('event', event)
+  return event
+}
+
+export async function extractMentions(text, tags) {
+  // const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+  // const mentionRegex = /@((?<t>[a-z]{1}):{1})?(?<p>[a-f0-9]{64})\b/g
+  const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})/g
+
+  let tagIndexMap = {}
+  // event.tags.filter(([t, v]) => (t === 'p' || t === 'e') && v).forEach(([t, v], index) => tagIndexMap[v] = index)
+  for (let match of text.matchAll(mentionRegex)) {
+    let type = null
+    if (match.groups.t === '&') type = 'e'
+    else if (match.groups.t === '@') type = 'p'
+    else return
     let pubkey = match.groups.p
-    let idx = event.tags.findIndex(([t, v]) => t === 'p' && v === pubkey)
+    let idx = tags.findIndex(([t, v]) => t === type && v === pubkey)
     if (idx !== -1) {
-      profileTagIndexMap[pubkey] = idx
+      tagIndexMap[pubkey] = idx
     } else {
-      event.tags.push(await getPubKeyTagWithRelay(pubkey))
-      profileTagIndexMap[pubkey] = event.tags.length - 1
+      if (type === 'e') tags.push(['e', pubkey])
+      else tags.push(await getPubKeyTagWithRelay(pubkey))
+      tagIndexMap[pubkey] = tags.length - 1
     }
   }
 
-  event.content = event.content.replace(
+  text = text.replace(
     mentionRegex,
-    (_, pubkey) => `#[${profileTagIndexMap[pubkey]}]`
+    (_, __, pubkey) => `#[${tagIndexMap[pubkey]}]`
   )
 
-  return event
+  return text
 }
 
 export async function getPubKeyTagWithRelay(pubkey) {

@@ -1,5 +1,3 @@
-customize.json
-
 .DS_Store
 .thumbs.db
 node_modules
@@ -34,5 +32,5 @@ yarn-error.log*
 *.njsproj
 *.sln
 
-# Local Netlify folder
-.netlify
+# misc
+/src/zzz*

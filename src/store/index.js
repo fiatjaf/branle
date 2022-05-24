@@ -9,6 +9,19 @@ import eventize from './eventize'
 import relayize from './relayize'
 import unread from './unread'
 
+// export default function (/* { ssrContext } */) {
+//   const Store = createStore({
+//     modules: {
+//       state,
+//       getters,
+//       mutations,
+//       actions,
+//       plugins: [storage, eventize, relayize, unread]
+//     }
+//   })
+
+//   return Store
+// }
 export default createStore({
   state,
   getters,

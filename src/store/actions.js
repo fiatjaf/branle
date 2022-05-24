@@ -4,7 +4,8 @@ import {Notify, LocalStorage} from 'quasar'
 
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
-import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
+// import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
+import {getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
 
 export function initKeys(store, keys) {
@@ -145,14 +146,15 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 
   let event
   try {
-    const unpublishedEvent = await processMentions({
+    // const unpublishedEvent = await processMentions({
+    const unpublishedEvent = {
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
       kind,
       tags,
       content: message
-    })
-
+    }
+    // console.log('unpublishedEvent: ', unpublishedEvent)
     event = await pool.publish(unpublishedEvent)
   } catch (err) {
     Notify.create({
@@ -193,7 +195,7 @@ export async function recommendServer(store, url) {
   })
 }
 
-export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
+export async function sendChatMessage(store, {now, pubkey, text, tags}) {
   if (text.length === 0) return
 
   let ciphertext = '???'
@@ -211,21 +213,35 @@ export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
     /***/
   }
 
-  // make event
-  let event = {
-    pubkey: store.state.keys.pub,
-    created_at: now,
-    kind: 4,
-    tags: [['p', pubkey]],
-    content: ciphertext
-  }
-  if (replyTo) {
-    event.tags.push(['e', replyTo])
+  let event
+  try {
+    let unpublishedEvent = {
+      pubkey: store.state.keys.pub,
+      created_at: now,
+      kind: 4,
+      tags: tags.map(([t, v]) => [t, v]),
+      content: ciphertext
+    }
+    // console.log('unpublishedEvent: ', unpublishedEvent)
+    // if (replyTo) {
+    //   unpublishedEvent.tags.push(['e', replyTo])
+    // }
+    event = await pool.publish(unpublishedEvent)
+  } catch (err) {
+    Notify.create({
+      message: `Did not publish: ${err}`,
+      color: 'negative'
+    })
+    return
   }
 
-  event = await pool.publish(event)
+  if (!event) {
+    // aborted
+    return
+  }
 
   store.dispatch('addEvent', {event})
+  return event
 }
 
 export async function addEvent(store, {event, relay = null}) {
@@ -252,7 +268,6 @@ export async function addEvent(store, {event, relay = null}) {
 
 export async function useProfile(store, {pubkey, request = false}) {
   let metadata
-
   if (pubkey in store.state.profilesCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
     store.commit('addProfileToCache', {
@@ -282,7 +297,7 @@ export async function useProfile(store, {pubkey, request = false}) {
         sub.unsub()
         sub = null
         resolve()
-      }, 2000)
+      }, 1000)
     })
   }
 
@@ -309,18 +324,51 @@ export async function useProfile(store, {pubkey, request = false}) {
   }
 }
 
-export async function useContacts(store, pubkey) {
+export async function useContacts(store, {pubkey, request = false}) {
   if (pubkey in store.state.contactListCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
     store.commit('addContactListToCache', store.state.contactListCache[pubkey])
-  } else {
-    // fetch from db and add to cache
-    let event = await dbGetContactList(pubkey)
-    if (event) {
-      store.commit('addContactListToCache', event)
-    }
+    return
+  }
+
+  // fetch from db and add to cache
+  let event = await dbGetContactList(pubkey)
+  if (event) {
+    store.commit('addContactListToCache', event)
+  } else if (request) {
+    // try to request from a relay
+    await new Promise(resolve => {
+      let sub = pool.sub({
+        filter: [{authors: [pubkey], kinds: [3]}],
+        cb: async event => {
+          store.commit('addContactListToCache', event)
+          // store.dispatch('addEvent', {event})
+          clearTimeout(timeout)
+          if (sub) sub.unsub()
+          resolve()
+        }
+      })
+      let timeout = setTimeout(() => {
+        sub.unsub()
+        sub = null
+        resolve()
+      }, 1000)
+    })
   }
 }
+
+// export async function useContacts(store, pubkey) {
+//   if (pubkey in store.state.contactListCache) {
+//     // we don't fetch again, but we do commit this so the LRU gets updated
+//     store.commit('addContactListToCache', store.state.contactListCache[pubkey])
+//   } else {
+//     // fetch from db and add to cache
+//     let event = await dbGetContactList(pubkey)
+//     if (event) {
+//       store.commit('addContactListToCache', event)
+//     }
+//   }
+// }
 
 export async function publishContactList(store) {
   // extend the existing tags

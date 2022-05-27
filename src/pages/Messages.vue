@@ -146,7 +146,6 @@ export default {
 
       this.$store.commit('haveReadMessage', this.$route.params.pubkey)
       this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
-
       this.listener = onNewMessage(this.$route.params.pubkey, async event => {
         if (this.messagesSet.has(event.id)) return
         this.messagesSet.add(event.id)

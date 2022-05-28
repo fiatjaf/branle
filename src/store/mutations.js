@@ -66,6 +66,10 @@ export function unfollow(state, key) {
   if (idx >= 0) state.following.splice(idx, 1)
 }
 
+export function reorderFollows(state, following) {
+  state.following = following
+}
+
 export function addProfileToCache(
   state,
   {pubkey, name, about, picture, nip05}

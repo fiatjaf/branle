@@ -100,9 +100,9 @@
       transition-show='slide-up'
       transition-hide='slide-down'
     >
-      <q-card unelevated class='column postEntry'
+      <q-card unelevated class='flex column no-wrap post-entry'
       >
-        <div class='flex row justify-end q-pa-sm'>
+        <div class='flex row justify-end'>
           <q-btn icon="close" flat dense v-close-popup/>
         </div>
         <BasePostEntry class='q-pa-md' @sent='post = false'/>
@@ -215,9 +215,9 @@ const userMenuItems = [
   opacity: 1;
   font-weight: bold;
 }
-.q-dialog .postEntry {
+.q-dialog .post-entry {
   width: 600px;
-  overflow: visible;
+  overflow: auto;
 }
 .compact-user-menu-space {
   height: 2rem;

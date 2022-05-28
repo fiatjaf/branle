@@ -17,6 +17,7 @@
     >
       <q-tab name="follows" label='follows' />
       <q-tab name="global" label='global' />
+      <q-tab v-if='botsFeed.length' name="bots" label='bots' />
     </q-tabs>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="follows" class='no-padding'>
@@ -93,6 +94,43 @@
           </div>
         </div>
       </q-tab-panel>
+
+      <q-tab-panel v-if='botsFeed.length' name="bots" class='no-padding'>
+        <div>
+          <q-virtual-scroll :items='botsFeed' virtual-scroll-item-size="110" ref='botsFeedScroll'>
+            <template #default="{ item }">
+              <BasePostThread :key="item[0].id" :events="item" @add-event='addEventGlobal'/>
+            </template>
+          </q-virtual-scroll>
+          <div v-if='botsFeed.length'>
+            <q-separator color='accent'/>
+            <q-btn-group
+            flat
+            spread
+            dense
+            text-color="accent"
+            >
+              <q-btn
+                dense
+                :loading='loadingMore'
+                flat
+                color="accent"
+                class='text-weight-light'
+                style='letter-spacing: .1rem;'
+                label='load another day'
+                @click="loadMoreGlobalFeed"
+              >
+                <template #loading>
+                  <div class='row justify-center q-my-md'>
+                    <q-spinner-orbit color="accent" size='md' />
+                  </div>
+                </template>
+              </q-btn>
+            </q-btn-group>
+            <q-separator color='accent'/>
+          </div>
+        </div>
+      </q-tab-panel>
     </q-tab-panels>
   </q-page>
 </template>
@@ -115,6 +153,9 @@ export default {
       followsFeedSet: new Set(),
       globalFeed: [],
       globalFeedSet: new Set(),
+      botsFeed: [],
+      botsFeedSet: new Set(),
+      bots: [],
       loadingMore: false,
       tab: 'follows',
       sub: null,
@@ -125,15 +166,6 @@ export default {
   async mounted() {
     this.loadMoreFollowsFeed()
     this.loadMoreGlobalFeed()
-    // let notes = await dbGetHomeFeedNotes(200)
-    // this.interpolateEventMentions(notes)
-    // if (notes.length === 0) this.tab = 'global'
-    // if (notes.length > 0) this.reachedEnd = false
-
-    // for (let i = notes.length - 1; i >= 0; i--) {
-    //   addToThread(this.followsFeed, notes[i])
-    //   this.followsFeedSet.add(notes[i].id)
-    // }
 
     this.listener = onNewHomeFeedNote(event => {
       if (this.followsFeedSet.has(event.id)) return
@@ -183,39 +215,28 @@ export default {
       this.loadingMore = false
     },
 
-    // listenGlobalFeed() {
-    //   this.globalFeed = []
-    //   this.globalFeedSet = new Set()
-
-    //   this.sub = pool.sub(
-    //     {
-    //       filter: [
-    //         {
-    //           kinds: [1, 2],
-    //           since: Math.floor(Date.now() / 1000) - 86400,
-    //           until: Math.floor(Date.now() / 1000)
-    //         }
-    //       ],
-    //       cb: async (event, relay) => {
-    //         if (this.globalFeedSet.has(event.id)) return
-
-    //         // this.$store.dispatch('useProfile', {
-    //         //   pubkey: event.pubkey,
-    //         //   request: true
-    //         // })
-    //         this.interpolateEventMentions(event)
-    //         this.globalFeedSet.add(event.id)
-    //         addToThread(this.globalFeed, event, 'feed')
-    //         return
-    //       }
-    //     },
-    //     'global-feed'
-    //   )
-    // },
-
-    loadMoreGlobalFeed() {
+    async loadMoreGlobalFeed() {
       this.loadingMore = true
       if (this.sub) this.sub.unsub()
+
+      if (this.bots.length === 0) {
+        await new Promise(resolve => {
+        let sub = pool.sub({
+          filter: [{authors: ['29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'], kinds: [3]}],
+          cb: async event => {
+            this.bots = event.tags.filter(([t, v]) => t === 'p' && v).map(([_, v]) => v)
+            clearTimeout(timeout)
+            if (sub) sub.unsub()
+            resolve()
+          }
+        })
+        let timeout = setTimeout(() => {
+          sub.unsub()
+          sub = null
+          resolve()
+        }, 3000)
+      })
+    }
 
       if (!this.since) this.since = Math.floor(Date.now() / 1000) - 86400
       else this.since -= 86400
@@ -238,7 +259,8 @@ export default {
             // })
             this.interpolateEventMentions(event)
             this.globalFeedSet.add(event.id)
-            addToThread(this.globalFeed, event, 'feed')
+            if (this.bots.includes(event.pubkey)) addToThread(this.botsFeed, event)
+            else addToThread(this.globalFeed, event, 'feed')
             return
           }
         },
@@ -259,7 +281,9 @@ export default {
       if (this.globalFeedSet.has(event.id)) return
       this.interpolateEventMentions(event)
       this.globalFeedSet.add(event.id)
-      addToThread(this.globalFeed, event, 'feed')
+      // addToThread(this.globalFeed, event, 'feed')
+      if (this.bots.includes(event.pubkey)) addToThread(this.botsFeed, event)
+      else addToThread(this.globalFeed, event, 'feed')
     },
   }
 }

@@ -350,7 +350,7 @@ const methods = {
       startkey: [ourPubKey, {}],
       endkey: [ourPubKey, since]
     })
-    return result.rows.length
+    return result.rows.filter((v, i, a) => a.indexOf(v) === i).length
   },
 
   async dbGetUnreadMessages(pubkey, since) {

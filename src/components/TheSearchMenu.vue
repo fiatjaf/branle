@@ -52,15 +52,46 @@
         <q-separator color='accent' />
     </div>
     </q-card-section>
-      <h2 class='text-h5 text-bold q-my-none'> following </h2>
+      <div class='flex row justify-between no-wrap'>
+        <h2 class='text-h5 text-bold q-my-none'> following </h2>
+        <div>
+          <q-btn v-if='!reordering' flat icon='reorder' @click.stop='reorderFollowing'>
+            <q-tooltip>reorder following list</q-tooltip>
+          </q-btn>
+          <q-btn v-if='reordering' flat icon='close' @click.stop='cancelReorder'>
+            <q-tooltip>cancel</q-tooltip>
+          </q-btn>
+        </div>
+      </div>
     <q-card-section class='no-padding' style='overflow-y: auto;'>
-      <q-list v-if="$store.state.following.length" class='q-mt-xs q-pl-sm'>
-        <BaseUserCard
-          v-for="pubkey in $store.state.following"
-          :pubkey="pubkey"
-          :key="pubkey"
-        />
-      </q-list>
+      <div v-if='$store.state.following.length' class='q-mt-xs q-pl-sm'>
+        <q-list v-if="!reordering">
+          <BaseUserCard
+            v-for="pubkey in $store.state.following"
+            :pubkey="pubkey"
+            :key="pubkey"
+          />
+        </q-list>
+        <Draggable
+          v-else-if='reorderedFollowing.length'
+          v-model='reorderedFollowing'
+          @start="dragging=true"
+          @end="dragging=false"
+          item-key="pubkey"
+        >
+            <!-- <div>{{element.name}}</div> -->
+          <template #header>
+            <div class='flex row justify-between items-start'>
+              <span>drag and drop to reorder</span>
+              <q-btn outline size='sm' icon='save' label='save' color='secondary' @click.stop='saveReorder'/>
+            </div>
+          </template>
+          <template #item="{element}">
+            <BaseUserCard :pubkey='element.pubkey' :action-buttons='false'/>
+          </template>
+              <!-- <BaseUserCard :clickable='false' :pubkey="element.pubkey" /> -->
+        </Draggable>
+      </div>
       <div v-else>
         When you follow someone they will show up here.
       </div>
@@ -71,6 +102,7 @@
 <script>
 import { defineComponent } from 'vue'
 import {Notify} from 'quasar'
+import Draggable from 'vuedraggable'
 import {searchDomain, queryName} from 'nostr-tools/nip05'
 import helpersMixin from '../utils/mixin'
 import BaseButtonClear from 'components/BaseButtonClear.vue'
@@ -85,11 +117,15 @@ export default defineComponent({
       searching: false,
       domainMode: false,
       domainNames: {},
+      reordering: false,
+      reorderedFollowing: [],
+      dragging: false,
     }
   },
 
   components: {
     BaseButtonClear,
+    Draggable,
   },
 
   computed: {
@@ -176,6 +212,22 @@ export default defineComponent({
         message: 'No user found! Please enter full public key or NIP05 identifier and double check search string',
         color: 'negative'
       })
+    },
+
+    reorderFollowing() {
+      this.reorderedFollowing = this.$store.state.following.map((pubkey) => { return {pubkey} })
+      this.reordering = true
+    },
+
+    saveReorder() {
+      this.$store.commit('reorderFollows', this.reorderedFollowing.map(follow => follow.pubkey))
+      this.reordering = false
+      this.reorderedFollowing = []
+    },
+
+    cancelReorder() {
+      this.reordering = false
+      this.reorderedFollowing = []
     }
   }
 })

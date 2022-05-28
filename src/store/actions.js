@@ -376,27 +376,50 @@ export async function publishContactList(store) {
   var tags = event?.tags || []
 
   // remove contacts that we're not following anymore
-  tags = tags.filter(
-    ([t, v]) => t === 'p' && store.state.following.find(f => f === v)
-  )
+  // tags = tags.filter(
+  //   ([t, v]) => t === 'p' && store.state.following.find(f => f === v)
+  // )
 
-  // now we merely add to the existing event because it might contain more data in the
-  // tags that we don't want to replace
+  // check existing event because it might contain more data in the
+  // tags that we don't want to replace, if so push existing event tag,
+  // else push state.following tag
+  let newTags = []
   await Promise.all(
     store.state.following.map(async pubkey => {
-      if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
-        tags.push(await getPubKeyTagWithRelay(pubkey))
+      let index = tags.findIndex(([t, v]) => t === 'p' && v === pubkey)
+      if (index >= 0) {
+        newTags.push(tags[index])
+      } else {
+        newTags.push(await getPubKeyTagWithRelay(pubkey))
       }
     })
   )
+  // now we merely add to the existing event because it might contain more data in the
+  // tags that we don't want to replace
+  // await Promise.all(
+  //   store.state.following.map(async pubkey => {
+  //     if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
+  //       tags.push(await getPubKeyTagWithRelay(pubkey))
+  //     }
+  //   })
+  // )
 
+  // event = {
+  //   pubkey: store.state.keys.pub,
+  //   created_at: Math.floor(Date.now() / 1000),
+  //   kind: 3,
+  //   tags,
+  //   newTags,
+  //   content: JSON.stringify(store.state.relays)
+  // }
   event = await pool.publish({
     pubkey: store.state.keys.pub,
     created_at: Math.floor(Date.now() / 1000),
     kind: 3,
-    tags,
+    tags: newTags,
     content: JSON.stringify(store.state.relays)
   })
+  console.log(event)
 
   await store.dispatch('addEvent', {event})
 

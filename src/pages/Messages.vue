@@ -73,7 +73,12 @@
         @click.stop='scrollToBottom()'
       />
       <!-- <q-separator v-if='Object.keys(replyEvent).length' color='primary' size='1px'/> -->
-      <BasePostEntry :message-mode='replyEvent? "reply" : "message"' :event='replyEvent' @clear-event='replyEvent=null'/>
+      <BasePostEntry
+        :message-mode='replyEvent? "reply" : "message"'
+        :event='replyEvent'
+        @sent='addMessage'
+        @clear-event='replyEvent=null'
+        />
     </div>
   </q-page>
 </template>
@@ -148,41 +153,7 @@ export default {
       this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
 
       this.listener = onNewMessage(this.$route.params.pubkey, async event => {
-        if (this.messagesSet.has(event.id)) return
-        this.messagesSet.add(event.id)
-
-        await this.lock()
-        event.text = await this.getPlaintext(event)
-        this.unlock()
-        this.interpolateMessageMentions(event)
-        if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
-
-        let messageScroll = this.$refs.messageScroll
-        let scrollToBottom = 100 > Math.abs((messageScroll.scrollHeight - messageScroll.clientHeight) - messageScroll.scrollTop) ||
-          messageScroll.scrollHeight === messageScroll.clientHeight
-
-        if (this.messages.length === 0) {
-          this.messages.push(event)
-        } else {
-          let last = this.messages[this.messages.length - 1]
-          if (
-            event.pubkey === this.$store.state.keys.pub &&
-            last.pubkey === event.pubkey &&
-            last.created_at + 120 >= event.created_at
-          ) {
-            last.appended = last.appended || []
-            last.appended.push(event)
-          } else {
-            this.messages.push(event)
-          }
-        }
-
-        if (scrollToBottom) {
-          this.$store.commit('haveReadMessage', this.$route.params.pubkey)
-          this.scrollToBottom()
-        } else if (event.pubkey === this.$route.params.pubkey) {
-          this.unreadMessagesSet.add(event.id)
-        }
+        this.addMessage(event)
       })
     },
 
@@ -208,28 +179,44 @@ export default {
         this.canLoadMore = false
       }
 
-      newMessages = newMessages.filter(event => !this.messagesSet.has(event.id))
+      // newMessages = newMessages.filter(event => !this.messagesSet.has(event.id))
+      let newMessagesFiltered = []
 
       for (let i = 0; i < newMessages.length; i++) {
-        this.messagesSet.add(newMessages[i].id)
-        newMessages[i].text = await this.getPlaintext(newMessages[i])
-        this.interpolateMessageMentions(newMessages[i])
-        if (newMessages[i].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(newMessages[i])
-        if (newMessages[i].appended) {
-          for (let j = 0; j < newMessages[i].appended.length; j++) {
-            this.messagesSet.add(newMessages[i].appended[j].id)
-            newMessages[i].appended[j].text = await this.getPlaintext(newMessages[i].appended[j])
-            this.interpolateMessageMentions(newMessages[i].appended[j])
-            if (newMessages[i].appended[j].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(newMessages[i].appended[j])
+      // await newMessages.forEach(async (event) => {
+        let event = newMessages[i]
+        if (this.messagesSet.has(event.id)) return
+
+        this.messagesSet.add(event.id)
+        event.text = await this.getPlaintext(event)
+        this.interpolateMessageMentions(event)
+        if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
+        if (event.appended) {
+          for (let j = 0; j < event.appended.length; j++) {
+            this.messagesSet.add(event.appended[j].id)
+            event.appended[j].text = await this.getPlaintext(event.appended[j])
+            this.interpolateMessageMentions(event.appended[j])
+            if (event.appended[j].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event.appended[j])
           }
         }
+        newMessagesFiltered.push(event)
       }
+      //   this.messagesSet.add(newMessages[i].id)
+      //   newMessages[i].text = await this.getPlaintext(newMessages[i])
+      //   this.interpolateMessageMentions(newMessages[i])
+      //   if (newMessages[i].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(newMessages[i])
+      //   if (newMessages[i].appended) {
+      //     for (let j = 0; j < newMessages[i].appended.length; j++) {
+      //       this.messagesSet.add(newMessages[i].appended[j].id)
+      //       newMessages[i].appended[j].text = await this.getPlaintext(newMessages[i].appended[j])
+      //       this.interpolateMessageMentions(newMessages[i].appended[j])
+      //       if (newMessages[i].appended[j].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(newMessages[i].appended[j])
+      //     }
+      //   }
+      // }
 
-      if (newMessages.length === 0) {
-        this.canLoadMore = false
-      }
-
-      this.messages = newMessages.concat(this.messages)
+      // this.messages = newMessages.concat(this.messages)
+      this.messages = newMessagesFiltered.concat(this.messages)
       done(!this.canLoadMore)
     },
 
@@ -354,7 +341,45 @@ export default {
       }, datestamps[0].innerText)
       // console.log(messageScroll.scrollHeight, messageScroll.clientHeight, messageScroll.scrollTop)
       // console.log('currentDatestamp', this.currentDatestamp)
-    }
+    },
+
+    async addMessage(event) {
+        if (this.messagesSet.has(event.id)) return
+        this.messagesSet.add(event.id)
+
+        await this.lock()
+        event.text = await this.getPlaintext(event)
+        this.unlock()
+        this.interpolateMessageMentions(event)
+        if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
+
+        let messageScroll = this.$refs.messageScroll
+        let scrollToBottom = 100 > Math.abs((messageScroll.scrollHeight - messageScroll.clientHeight) - messageScroll.scrollTop) ||
+          messageScroll.scrollHeight === messageScroll.clientHeight
+
+        if (this.messages.length === 0) {
+          this.messages.push(event)
+        } else {
+          let last = this.messages[this.messages.length - 1]
+          if (
+            event.pubkey === this.$store.state.keys.pub &&
+            last.pubkey === event.pubkey &&
+            last.created_at + 120 >= event.created_at
+          ) {
+            last.appended = last.appended || []
+            last.appended.push(event)
+          } else {
+            this.messages.push(event)
+          }
+        }
+
+        if (scrollToBottom) {
+          this.$store.commit('haveReadMessage', this.$route.params.pubkey)
+          this.scrollToBottom()
+        } else if (event.pubkey === this.$route.params.pubkey) {
+          this.unreadMessagesSet.add(event.id)
+        }
+    },
   }
 }
 </script>

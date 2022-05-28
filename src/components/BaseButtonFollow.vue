@@ -15,13 +15,6 @@
       <q-tooltip>
         {{isFollowing ? "unfollow" : "follow" }}
       </q-tooltip>
-      <q-icon
-        :name='isFollowing ? "person_remove" : "person_add"'
-        :class='isFollowing ? "flip-horizontal" : ""'
-      />
-      <q-tooltip>
-        {{isFollowing ? "unfollow" : "follow" }}
-      </q-tooltip>
     </q-btn>
 </template>
 

@@ -9,6 +9,7 @@ export default function (store) {
       case 'setRelayOpt':
       case 'follow':
       case 'unfollow':
+      case 'reorderFollows':
         // make an event kind3 and publish it
         store.dispatch('publishContactList')
         break

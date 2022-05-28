@@ -30,14 +30,15 @@
       />
     </div>
     <!-- <q-list id='tribute-wrapper' class='overflow-auto' style='position: aboslute; bottom: 100%; max-height: 70vh;'> -->
-    <q-list id='tribute-wrapper' class='overflow-auto flex row z-top' style='max-height: 70vh' @click.stop>
+    <q-list id='tribute-wrapper' class='overflow-auto flex row z-top' style='max-height: 70vh' @click.stop='focusInput'>
     </q-list>
-    <q-list v-if='Object.keys(mentions).length && !sending && focus'>
-      <div class='text-bold text-caption'>tags<span v-if='$route.name === "messages"'>{{' **NOTE TAGS ARE NOT PRIVATE**'}}</span></div>
-      <div v-for='(mention, index) in mentions' :key='index' class='flex row no-wrap'>
-        {{ "#[" + mention.index + "] "+ (mention.tag[0] === "e" ? " event: " : "") + (mention.tag[0] === "p" ? " profile: " : "")}}
-        <BaseUserName v-if='mention.tag[0] === "p"' :pubkey='mention.tag[1]' :fallback='true'/>
-        <BaseMarkdown v-if='mention.tag[0] === "e"'> {{ `[&${shorten(mention.tag[1])}](/event/${mention.tag[1]})` }} </BaseMarkdown>
+    <q-list v-if='tags.length && !sending' class='q-px-sm tagged-wrapper'>
+      <div class='text-bold text-subtitle2 text-primary'>tagged<span v-if='$route.name === "messages"'>{{' **NOTE TAGS ARE NOT PRIVATE**'}}</span></div>
+      <div v-for='(tag, index) in tags' :key='index' class='flex row no-wrap q-gutter-xs'>
+        <div class='text-bold'>{{ "#[" + index + "] " }}</div>
+        <div>{{ (tag[0] === "e" ? " event: " : "") + (tag[0] === "p" ? " user: " : "")}}</div>
+        <BaseUserName v-if='tag[0] === "p"' :pubkey='tag[1]' :fallback='true'/>
+        <BaseMarkdown v-if='tag[0] === "e"'> {{ `[&${shorten(tag[1])}](/event/${tag[1]})` }} </BaseMarkdown>
       </div>
     </q-list>
       <q-form
@@ -67,19 +68,14 @@
             autogrow
             autofocus
             :label="label"
-            :disable='sending'
+            :disable='sending || mentionsUpdating'
             :loading='mentionsUpdating'
-            @update='updateCursorPosition'
             @keypress.ctrl.enter="send"
-            @keyup='updateCursorPosition'
-            @keydown='updateCursorPosition'
-            @delete='updateCursorPosition'
-            @click='updateCursorPosition'
-            @focus='focus = true'
-            @blur='focus = false'
+            @click='trigger++'
+            @keyup='trigger++'
           >
             <template #loading>
-              <div class='row justify-center q-my-md'>
+              <div class='full-width row justify-center q-my-md'>
                 <q-spinner-orbit color="accent" size='md'/>
               </div>
             </template>
@@ -167,6 +163,7 @@
 <script>
 import helpersMixin from '../utils/mixin'
 // import {getPubKeyTagWithRelay, getEventTagWithRelay, processMentions} from '../utils/helpers'
+// import {nextTick} from 'vue'
 import {getPubKeyTagWithRelay, getEventTagWithRelay, extractMentions} from '../utils/helpers'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
 import BaseButtonClear from 'components/BaseButtonClear.vue'
@@ -212,7 +209,7 @@ export default {
   data() {
     return {
       text: '',
-      cursorPosition: 0,
+      // cursorPosition: 0,
       sending: false,
       // emojiSelecting: false,
       toolSelected: '',
@@ -220,32 +217,40 @@ export default {
       sendIconTranslation: 0,
       // tributeList: [],
       tags: [],
-      focus,
+      // focus,
       mentionsUpdating: false,
       focusInput() {
-        this.$refs.input.focus()
+        setTimeout(async () => {
+          await this.$nextTick()
+          this.$refs.input.focus()
+        }, 1)
       },
+      trigger: 1,
     }
   },
 
   watch: {
+    mentions(curr, prev) {
+      if (Object.keys(curr).length < Object.keys(prev).length) {
+        // await this.$nextTick()
+        // this.trigger++
+        this.recalibrateMentionTags()
+      }
+    },
+    'text'(curr, prev) {
+      if (curr.length > prev.length) {
+        this.updateMentionsTags()
+      }
+    },
     'replyMode'(curr, prev) {
-      if (this.replyMode && curr !== prev) {
+      if (curr !== prev) {
         this.$emit('resized')
-        setTimeout(async () => {
-          await this.$nextTick()
-          this.focusInput()
-        }, 20)
+        this.focusInput()
       }
     },
     'messageMode'(curr, prev) {
-      if (this.messageMode && curr !== prev) {
-        // this.focusInput()
-        // await this.$nextTick()
-        setTimeout(async () => {
-          await this.$nextTick()
-          this.focusInput()
-        }, 20)
+      if (curr !== prev) {
+        this.focusInput()
       }
     },
   },
@@ -258,7 +263,6 @@ export default {
       return this.createMentionsProvider()
     },
     overCharLimit() {
-      // if (this.messageMode) false
       return 280 - this.text.length < 0
     },
     textValid() {
@@ -326,6 +330,16 @@ export default {
       }
       return hashtags
     },
+    cursorPosition() {
+      // only checking this.text.length to trigger recompute
+      if (this.text.length && this.trigger) return this.textarea.selectionStart
+      else return this.textarea.selectionStart
+    },
+    cursorPositionEnd() {
+      // only checking this.text.length to trigger recompute
+      if (this.text.length && this.trigger) return this.textarea.selectionEnd
+      else return this.textarea.selectionEnd
+    },
   },
 
   mounted() {
@@ -334,6 +348,7 @@ export default {
 
   beforeUnmount() {
     this.profileMentionsProvider.detach(this.textarea)
+    this.reset()
   },
 
   methods: {
@@ -346,40 +361,17 @@ export default {
         console.log('send already in progress')
         return
       }
-      this.cursorPosition = 0
       this.toolSelected = ''
       this.sending = true
       this.animateSendIcon()
       this.text = await extractMentions(this.text, this.tags)
-      // make sure mentions are sequential
-      if (Object.keys(this.mentions).length &&
-        Math.max(...Object.keys(this.mentions).map(key => key.split('_')[0])) >
-        this.tags.filter(tag => tag.length >= 2).filter((v, i, a) => a.indexOf(v) === i).length) {
-        // save copy of mentions and remove for now
-        let mentions = Object.assign({}, this.mentions)
-        this.tags = []
-        let offset = 0
-        console.log('fyi having to clean up too many mentions')
-        // now add back mentions
-        for (let index in mentions) {
-          let mention = mentions[index]
-          let idx = this.tags.findIndex(([t, v]) => t === mention.tag[0] && v === mention.tag[1])
-          // console.log('idx', idx)
-          if (idx === -1) {
-            this.tags.push(mention.tag)
-            idx = this.tags.length - 1
-          }
-          this.text = this.text.slice(0, mention.position + offset) + idx + this.text.slice(mention.position + offset + mention.length)
-          if (mention.length !== String(idx).length) offset = String(idx).length - mention.length
-        }
-      // }
-      }
+      this.recalibrateMentionTags()
       let event
       if (this.replyMode) event = await this.sendReply()
       else if (this.messageMode) event = await this.sendMessage()
       else event = await this.sendPost()
       if (event) {
-        this.interpolateEventMentions(event)
+        if (!this.messageMode) this.interpolateEventMentions(event)
         this.reset()
         this.$emit('sent', event)
         if (this.messageMode) this.$emit('clear-event')
@@ -391,7 +383,7 @@ export default {
     async sendPost() {
       this.appendHashtags()
       let tags = this.tags.map(([...v]) => [...v])
-      // console.log('tags sendPost:', tags)
+      // console.log('tags sendPost:', tags, this.tags)
       let event = await this.$store.dispatch('sendPost', {message: this.text, tags: tags})
       if (event) {
         return event
@@ -411,7 +403,6 @@ export default {
       let usableTags = this.event.tags.filter(
         ([t, v]) => (t === 'p' || t === 'e') && v
       ).map(([t, v]) => { return [t, v] })
-        // console.log('usableTags: ', usableTags)
 
       // add last 4 pubkeys mentioned
       let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v)
@@ -419,7 +410,6 @@ export default {
       for (let i = 0; i < Math.min(4, pubkeys.length); i++) {
         this.tags.push(await getPubKeyTagWithRelay(pubkeys[pubkeys.length - 1 - i]))
       }
-        // console.log('tags: ', tags)
       // plus the author of the note being replied to, if not present already
       if (!this.tags.find(([_, v]) => v === this.event.pubkey)) {
         this.tags.push(await getPubKeyTagWithRelay(this.event.pubkey))
@@ -437,7 +427,6 @@ export default {
         let last = getEventTagWithRelay(this.event)
         this.tags.push(last)
       }
-        // console.log('tags: ', tags)
 
       // remove ourselves
       this.tags = this.tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
@@ -459,19 +448,10 @@ export default {
       }
       this.appendHashtags()
       let tags = this.tags.map(([...v]) => [...v])
-      // let tags = this.tags.map((tag) => {
-      //   if (tag.length >= 3) return [tag[0], tag[1], tag[2]]
-      //   else return [tag[0], tag[1]]
-      // })
-            // console.log('text: ', this.text)
-      // tags.push(...this.hashtags)
-            // console.log('tags: ', tags)
-      // console.log('event', event)
       return await this.$store.dispatch('sendPost', {
         message: this.text,
         tags: tags
       })
-      // 07e4f77f3f1c8342f4627381832c4b796d7795e2355e5bba5eef672ee65e1d20
     },
 
   async sendMessage() {
@@ -492,35 +472,30 @@ export default {
     })
   },
 
-    async updateCursorPosition() {
-      // console.log('mentions', this.mentions)
-      // console.log('tags', this.tags)
+    async updateMentionsTags() {
+      // let endOffset = this.text.length - this.cursorPosition
+          let curPos = this.cursorPosition
+          let prevTextLength = this.text.length
+          // console.log('updateMentionsTags cursor pos start, end', curPos, this.tags)
+      // if (curPos !== curPosEnd) return
       const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})/g
-      if (this.text.match(mentionRegex)) {
+      if (this.text.toLowerCase().match(mentionRegex)) {
+        // console.log('mention found', this.text.length, this.cursorPosition)
         this.mentionsUpdating = true
         this.text = await extractMentions(this.text, this.tags)
         this.mentionsUpdating = false
+        this.focusInput()
+        this.setCursorPosition(curPos + (this.text.length - prevTextLength))
       }
-      // let interpolated = this.interpolateMentions(this.text, this.tags)
-      // this.tags = interpolated.
-      let cursorPos = this.$refs.input.$el.querySelector('textarea').selectionStart
-       if (cursorPos) {
-          this.cursorPosition = cursorPos
-      }
-      //  const mentionAnchorRegex = /#\[/g
-      //  const mentionAnchorRegex = /#\[(\d+)\]/g
-      // let matches = this.text.matchAll(mentionAnchorRegex)
-      // let mentions = {}
-      // for (let match in this.text.matchAll(mentionAnchorRegex)) {
-      //   console.log('match', match)
-        // mentions[match.group.i] = this.tags[match.group.i]
-      // }
     },
 
     insertEmoji(emoji) {
-      this.text = this.text.slice(0, this.cursorPosition) + emoji.native + this.text.slice(this.cursorPosition)
-      this.cursorPosition += emoji.native.length
-      // this.cursorPosition++
+      let curPos = this.cursorPosition
+      let text = this.text
+      text = text.slice(0, curPos) + emoji.native + text.slice(curPos)
+      this.text = text
+      this.setCursorPosition(curPos + emoji.native.length)
+      this.focusInput()
     },
 
     animateSendIcon() {
@@ -552,16 +527,55 @@ export default {
       this.tags = []
     },
 
-    upshiftTags(tags) {
-      if (this.tags.length === 0) this.tags.concat(tags)
-    },
-
     appendHashtags() {
       for (let hashtag of this.hashtags) {
         if (!this.tags.find(([_, v]) => v === hashtag)) {
           this.tags.push(['hashtag', hashtag])
         }
       }
+    },
+
+    recalibrateMentionTags() {
+      let curPos = this.cursorPosition
+      // console.log('recalibrateMentionTags cursor pos start, end', curPos, this.text.length)
+      let mentions = Object.assign({}, this.mentions)
+      // if (Object.keys(mentions).length === 0 && this.tags.length === 0) return
+      this.tags = []
+      let offset = 0
+      let text = this.text
+      // now add back mentions
+      for (let index in mentions) {
+        let mention = mentions[index]
+        let idx = this.tags.findIndex(([t, v]) => t === mention.tag[0] && v === mention.tag[1])
+        if (idx === -1) {
+          this.tags.push(mention.tag)
+          idx = this.tags.length - 1
+        }
+        if (String(idx) === mention.tag[1]) {
+          continue
+        }
+        text = text.slice(0, mention.position + offset) + idx + text.slice(mention.position + offset + mention.length)
+        if (mention.length !== String(idx).length) {
+          offset += String(idx).length - mention.length
+          if (mention.position + mention.length < curPos) {
+            // await this.setCursorPosition(curPos + String(idx).length - mention.length)
+            curPos += String(idx).length - mention.length
+          }
+        }
+      }
+      if (this.text !== text) {
+        this.text = text
+        this.setCursorPosition(curPos)
+      }
+    },
+
+    setCursorPosition(pos) {
+      // console.log('setting cursor position to ', pos)
+      setTimeout(async () => {
+        this.textarea.setSelectionRange(pos, pos)
+        this.trigger++
+      // console.log('checking cursor position', this.cursorPosition)
+      }, 1)
     },
   }
 }
@@ -597,7 +611,16 @@ export default {
 </style>
 
 <style lang='scss'>
-ul {
+#tribute-wrapper ul {
   list-style-type: none;
 }
+#tribute-wrapper .tribute-container {
+  width: 100%;
+}
+#tribute-wrapper .tribute-container .highlight {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 </style>
+
+

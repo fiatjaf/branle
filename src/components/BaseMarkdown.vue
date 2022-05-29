@@ -205,11 +205,17 @@ ul {
   padding-inline-start: 1rem;
   text-align: left;
 }
+.post-highlighted ul {
+  padding-inline-start: 1.5rem;
+}
 ol {
   list-style-type: decimal;
   list-style-position: outside;
   padding-inline-start: 1rem;
   text-align: left;
+}
+.post-highlighted ol {
+  padding-inline-start: 1.5rem;
 }
 ul ul,
 ol ul {
@@ -226,7 +232,6 @@ ul ol {
 p {
   display: inline;
 }
-
 .break-word-wrap {
   overflow-wrap: break-word;
   word-wrap: break-word;

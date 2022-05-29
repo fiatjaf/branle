@@ -127,6 +127,9 @@ div#emoji-mart-list section:first-of-type h3:first-of-type {
 .emoji-mart-emoji {
   padding: .3rem;
 }
+.emoji-mart-emoji:hover:before {
+  display: none;
+}
 button.emoji-mart-emoji {
   align-items: center;
   justify-content: flex-start;

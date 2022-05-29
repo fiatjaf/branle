@@ -66,7 +66,7 @@ export async function processMentions(event) {
 export async function extractMentions(text, tags) {
   // const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
   // const mentionRegex = /@((?<t>[a-z]{1}):{1})?(?<p>[a-f0-9]{64})\b/g
-  const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})/g
+  const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})\b/g
 
   let tagIndexMap = {}
   // event.tags.filter(([t, v]) => (t === 'p' || t === 'e') && v).forEach(([t, v], index) => tagIndexMap[v] = index)

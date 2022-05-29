@@ -144,7 +144,7 @@ export default {
 
         menuItemTemplate: item => {
           return `
-            <div class="flex row no-wrap items-center" style="gap: .2rem;">
+            <div class="flex row no-wrap items-center" style="gap: .2rem; width: 100%;">
               <div style="border-radius: 10px">
                 <img src=${this.$store.getters.avatar(item.original.value.pubkey)} style="object-fit: cover; height: 1.5rem; width: 1.5rem;"/>
               </div>

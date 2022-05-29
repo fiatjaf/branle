@@ -90,9 +90,11 @@ export default {
       if (loadedNotifications.length < 40) {
         this.reachedEnd = true
       }
-      loadedNotifications = loadedNotifications.filter(event => !this.notificationsSet.has(event.id))
+      // loadedNotifications = loadedNotifications.filter(event => !this.notificationsSet.has(event.id))
       this.interpolateEventMentions(loadedNotifications)
       loadedNotifications.forEach(event => {
+        if (this.notificationsSet.has(event.id)) return
+
         this.notificationsSet.add(event.id)
         this.addNotificationEvent(event)
         this.$store.dispatch('useProfile', {pubkey: event.pubkey, request: true})

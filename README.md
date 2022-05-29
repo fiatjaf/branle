@@ -11,12 +11,16 @@ npm install
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
+quasar dev
+# or if quasar is not installed globally
 ./node_modules/.bin/quasar dev
 ```
 
 ### Lint the files
 ```bash
-yarn run lint
+yarn lint
+# or
+npm run lint
 ```
 ### Format the files
 ```bash
@@ -27,6 +31,8 @@ npm run format
 
 ### Build the app for production
 ```bash
+quasar build
+# or if quasar is not installed globally
 ./node_modules/.bin/quasar build
 ```
 

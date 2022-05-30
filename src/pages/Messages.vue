@@ -40,7 +40,7 @@
           <div
             v-if='index === 0 || dateUTC(messages[index].created_at) !== dateUTC(messages[index - 1].created_at)'
             class='self-center text-accent datestamp'
-            :class='index === 0 ? "q-pb-md" : "q-py-md"'
+            :class='index === 0 ? "q-pb-sm" : "q-py-sm"'
           >
             {{dateUTC(event.created_at)}}
           </div>

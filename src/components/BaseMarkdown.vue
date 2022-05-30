@@ -229,8 +229,8 @@ ul ol {
   list-style-position: outside;
   margin-left: 1rem;
 }
-p {
-  display: inline;
+p:last-of-type {
+  margin: 0
 }
 .break-word-wrap {
   overflow-wrap: break-word;

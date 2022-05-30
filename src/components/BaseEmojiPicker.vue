@@ -96,6 +96,9 @@ export default {
 .emoji-mart-category{
   line-height: 0;
 }
+.emoji-mart-category .emoji-mart-emoji span {
+  cursor: pointer;
+}
 .emoji-mart-search {
   position: absolute;
   top: 0;

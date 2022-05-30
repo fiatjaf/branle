@@ -6,7 +6,7 @@
       </div>
       <div class='overflow-auto'>
         <q-card-section>
-          <div class="text-subtitle1 flex row overflow-auto">
+          <div class="text-subtitle1 flex row overflow-auto items-end q-gutter-sm">
             NIP05 identifier
           <a :href='NIP05Link' target='_'>{{ NIP05Link }}</a>
           </div>
@@ -14,6 +14,7 @@
           <q-inner-loading :showing="!NIP05Loaded">
             <q-spinner-orbit color="accent" size='2rem'/>
           </q-inner-loading>
+          <div>learn how to get NIP05 verified&nbsp;<a href='https://gist.github.com/metasikander/609a538e6a03b2f67e5c8de625baed3e' target='_'>here</a></div>
         </q-card-section>
       </div>
     </q-card>

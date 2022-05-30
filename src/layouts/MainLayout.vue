@@ -26,8 +26,6 @@
     </div>
     <q-page-sticky position="top-right" :offset="fabPos" id='navagation-buttons'>
       <q-fab
-        icon="drag_indicator"
-        active-icon="drag_indicator"
         direction="left"
         color="accent"
         class='no-margin no-padding z-top'
@@ -43,34 +41,46 @@
             click to collapse/expand or drag to move
           </q-tooltip>
         </template>
+        <template #icon>
+          <q-icon name='drag_indicator'/>
+        </template>
+        <template #active-icon>
+          <q-icon name='drag_indicator'/>
+        </template>
         <q-btn
-          @click.prevent="$router.go(1)"
+          @click.stop="forward"
           color="primary"
           unelevated
           round
           outline
           icon="keyboard_arrow_right"
           :disable="draggingFab"
-        />
+        >
+          <q-tooltip>forward</q-tooltip>
+        </q-btn>
         <q-btn
           v-if='$route.name !== "inbox" && $route.name !== "messages"'
-          @click.prevent="scrollToTop"
+          @click.stop="scrollToTop"
           color="primary"
           unelevated
           round
           outline
           icon="keyboard_double_arrow_up"
           :disable="draggingFab"
-        />
+        >
+          <q-tooltip>scroll to top</q-tooltip>
+        </q-btn>
         <q-btn
-          @click.prevent="$router.go(-1)"
+          @click.stop="back"
           color="primary"
           unelevated
           round
           outline
           icon="keyboard_arrow_left"
           :disable="draggingFab"
-        />
+        >
+          <q-tooltip>back</q-tooltip>
+        </q-btn>
       </q-fab>
     </q-page-sticky>
   </q-layout>
@@ -134,25 +144,15 @@ export default defineComponent({
       setVerticalScrollPosition(this.$refs.pageContainer.$el, 0, 500)
     },
 
-    moveBackFab (ev) {
-      this.fabBackDragged = ev.isFirst !== true && ev.isFinal !== true
-
-      this.fabBackPos = [
-        this.fabBackPos[0] + ev.delta.x,
-        this.fabBackPos[1] - ev.delta.y
-      ]
+    back() {
+      this.$router.go(-1)
     },
 
-    moveTopFab (ev) {
-      this.fabTopDragged = ev.isFirst !== true && ev.isFinal !== true
-
-      this.fabTopPos = [
-        this.fabTopPos[0] + ev.delta.x,
-        this.fabTopPos[1] + ev.delta.y
-      ]
+    forward() {
+      this.$router.go(1)
     },
 
-    moveFab (ev) {
+    moveFab(ev) {
       this.draggingFab = ev.isFirst !== true && ev.isFinal !== true
 
       this.fabPos = [

@@ -1,7 +1,7 @@
 <template>
   <div
-    class='flex row no-wrap q-gutter-sm'
-    style=''
+    class='flex row no-wrap'
+    style='gap: .3rem;'
     :class='buttonGroupClass'
     >
     <BaseButtonCopy
@@ -9,17 +9,20 @@
       button-size='sm'
       text-color='secondary'
       tooltip-text='copy pubkey'
+      @click.stop
     />
     <BaseButtonMessage
       v-if='pubkey !== $store.state.keys.pub'
       :button-to="'/messages/' + pubkey"
       button-size='sm'
       text-color='primary'
+      @click.stop
     />
     <BaseButtonFollow
       v-if='pubkey !== $store.state.keys.pub'
       :pubkey='pubkey'
       button-size='sm'
+      @click.stop
     />
   </div>
 </template>

@@ -123,13 +123,6 @@
     <div class="my-8">
       <q-btn label="Delete Local Data" color="negative" @click="hardReset" />
       <q-btn
-        v-if="getLocation().protocol === 'https:'"
-        :label="`Register ${getLocation().host} to handle web+nostr links`"
-        class="q-ml-md"
-        color="warning"
-        @click="registerHandler"
-      />
-      <q-btn
         class="q-ml-md"
         label="View your keys"
         color="primary"
@@ -295,13 +288,6 @@ export default {
           await eraseDatabase()
           window.location.reload()
         })
-    },
-    registerHandler() {
-      navigator.registerProtocolHandler(
-        'web+nostr',
-        `https://${location.host}/%s`,
-        'Branle'
-      )
     }
   }
 }

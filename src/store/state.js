@@ -12,7 +12,6 @@ const getMainnetRelays = () => {
   }
   const optional = [
     ['wss://nostr.rocks', {read: true, write: true}],
-    ['wss://relay.damus.io', {read: true, write: true}],
     ['wss://nostr.onsats.org', {read: true, write: true}],
     ['wss://nostr-relay.untethr.me	', {read: true, write: true}],
     ['wss://nostr-relay.wlvs.space', {read: true, write: true}],

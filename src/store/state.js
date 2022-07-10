@@ -4,18 +4,21 @@ const isClientUsingTor = () => window.location.hostname.endsWith('.onion')
 
 const getMainnetRelays = () => {
   const relays = {
-    'wss://rsslay.fiatjaf.com': {read: true, write: false},
+    'wss://relay.damus.io': {read: true, write: true},
     'wss://nostr-pub.wellorder.net': {read: true, write: true},
-    'wss://expensive-relay.fiatjaf.com': {read: true, write: false}
+    'wss://nostr-verified.wellorder.net': {read: true, write: false},
+    'wss://expensive-relay.fiatjaf.com': {read: true, write: false},
+    'wss://nostr-sandbox.minds.io/nostr/v1/ws': {read: true, write: false}
   }
   const optional = [
     ['wss://nostr.rocks', {read: true, write: true}],
-    ['wss://relayer.fiatjaf.com', {read: true, write: true}],
+    ['wss://relay.damus.io', {read: true, write: true}],
     ['wss://nostr.onsats.org', {read: true, write: true}],
     ['wss://nostr-relay.untethr.me	', {read: true, write: true}],
     ['wss://nostr-relay.wlvs.space', {read: true, write: true}],
     ['wss://nostr.bitcoiner.social', {read: true, write: true}],
-    ['wss://nostr-relay.freeberty.net', {read: true, write: true}]
+    ['wss://nostr.openchain.fr', {read: true, write: true}],
+    ['wss://nostr.drss.io', {read: true, write: true}]
   ]
 
   for (let i = 0; i < 3; i++) {

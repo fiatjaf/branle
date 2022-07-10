@@ -19,16 +19,6 @@ const routes = [
         name: 'settings'
       },
       {
-        path: '/messages',
-        component: () => import('pages/Chats.vue'),
-        name: 'messages'
-      },
-      {
-        path: '/messages/:pubkey',
-        component: () => import('pages/Messages.vue'),
-        name: 'chat'
-      },
-      {
         path: '/event/:eventId',
         component: () => import('pages/Event.vue'),
         name: 'event'

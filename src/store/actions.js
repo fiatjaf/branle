@@ -1,4 +1,3 @@
-import {encrypt} from 'nostr-tools/nip04'
 import {queryName} from 'nostr-tools/nip05'
 import {Notify, LocalStorage} from 'quasar'
 
@@ -82,16 +81,10 @@ export function restartMainSubscription(store) {
           authors: store.state.following.concat(store.state.keys.pub)
         },
 
-        // posts mentioning us and direct messages to us
+        // posts mentioning us
         {
-          kinds: [1, 4],
+          kinds: [1],
           '#p': [store.state.keys.pub]
-        },
-
-        // our own direct messages to other people
-        {
-          kinds: [4],
-          authors: [store.state.keys.pub]
         }
       ],
       cb: async (event, relay) => {
@@ -191,41 +184,6 @@ export async function recommendServer(store, url) {
     tags: [],
     content: url
   })
-}
-
-export async function sendChatMessage(store, {now, pubkey, text, replyTo}) {
-  if (text.length === 0) return
-
-  let ciphertext = '???'
-  try {
-    if (store.state.keys.priv) {
-      ciphertext = encrypt(store.state.keys.priv, pubkey, text)
-    } else if (
-      (await window?.nostr?.getPublicKey?.()) === store.state.keys.pub
-    ) {
-      ciphertext = await window.nostr.nip04.encrypt(pubkey, text)
-    } else {
-      throw new Error('no private key available to encrypt!')
-    }
-  } catch (err) {
-    /***/
-  }
-
-  // make event
-  let event = {
-    pubkey: store.state.keys.pub,
-    created_at: now,
-    kind: 4,
-    tags: [['p', pubkey]],
-    content: ciphertext
-  }
-  if (replyTo) {
-    event.tags.push(['e', replyTo])
-  }
-
-  event = await pool.publish(event)
-
-  store.dispatch('addEvent', {event})
 }
 
 export async function addEvent(store, {event, relay = null}) {

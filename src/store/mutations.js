@@ -143,11 +143,3 @@ export function haveReadNotifications(state) {
 export function setUnreadNotifications(state, count) {
   state.unreadNotifications = count
 }
-
-export function haveReadMessage(state, peer) {
-  state.lastMessageRead[peer] = Math.round(Date.now() / 1000)
-}
-
-export function setUnreadMessages(state, {peer, count}) {
-  state.unreadMessages[peer] = count
-}

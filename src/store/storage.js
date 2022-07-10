@@ -9,9 +9,6 @@ export default function (store) {
       case 'haveReadNotifications':
         LocalStorage.set('lastNotificationRead', state.lastNotificationRead)
         break
-      case 'haveReadMessage':
-        LocalStorage.set('lastMessageRead', state.lastMessageRead)
-        break
     }
   })
 }

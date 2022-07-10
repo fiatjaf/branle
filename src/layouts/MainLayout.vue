@@ -48,33 +48,6 @@
             </q-item>
 
             <q-item
-              v-if="$store.getters.canEncryptDecrypt"
-              v-ripple
-              clickable
-              to="/messages"
-              active-class=""
-            >
-              <q-item-section avatar>
-                <q-icon name="email" color="secondary" />
-              </q-item-section>
-
-              <q-item-section
-                :class="{'text-primary': $route.name === 'messages'}"
-              >
-                Messages
-
-                <q-badge
-                  v-if="$store.getters.unreadChats"
-                  color="primary"
-                  floating
-                  transparent
-                >
-                  {{ $store.getters.unreadChats }}
-                </q-badge>
-              </q-item-section>
-            </q-item>
-
-            <q-item
               v-ripple
               clickable
               :to="'/' + $store.state.keys.pub"
@@ -164,22 +137,6 @@
           transparent
         >
           {{ $store.state.unreadNotifications }}
-        </q-badge>
-      </q-route-tab>
-      <q-route-tab
-        v-if="$store.getters.canEncryptDecrypt"
-        icon="email"
-        to="/messages"
-        active-class=""
-        :class="{'text-primary': $route.name === 'messages'}"
-      >
-        <q-badge
-          v-if="$store.getters.unreadChats"
-          color="primary"
-          floating
-          transparent
-        >
-          {{ $store.getters.unreadChats }}
         </q-badge>
       </q-route-tab>
       <q-route-tab

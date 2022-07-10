@@ -50,9 +50,6 @@ export default function () {
     contactListCacheLRU: [], // [ pubkeys... ]
     nip05VerificationCache: {}, // { [identifier]: {pubkey, when }
 
-    lastMessageRead: LocalStorage.getItem('lastMessageRead') || {},
-    unreadMessages: {},
-
     lastNotificationRead: LocalStorage.getItem('lastNotificationRead') || 0,
     unreadNotifications: 0
   }

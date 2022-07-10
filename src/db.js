@@ -58,19 +58,6 @@ export async function dbGetHomeFeedNotes(
 export function onNewHomeFeedNote(callback = () => {}) {
   return stream('onNewHomeFeedNote', [], callback)
 }
-export async function dbGetChats(ourPubKey) {
-  return call('dbGetChats', [ourPubKey])
-}
-export async function dbGetMessages(
-  peerPubKey,
-  limit = 50,
-  since = Math.round(Date.now() / 1000)
-) {
-  return call('dbGetMessages', [peerPubKey, limit, since])
-}
-export function onNewMessage(peerPubKey, callback = () => {}) {
-  return stream('onNewMessage', [peerPubKey], callback)
-}
 export async function dbGetEvent(id) {
   return call('dbGetEvent', [id])
 }
@@ -83,14 +70,8 @@ export async function dbGetMentions(ourPubKey, limit = 40, since, until) {
 export function onNewMention(ourPubKey, callback = () => {}) {
   return stream('onNewMention', [ourPubKey], callback)
 }
-export function onNewAnyMessage(callback = () => {}) {
-  return stream('onNewAnyMessage', [], callback)
-}
 export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
   return call('dbGetUnreadNotificationsCount', [ourPubKey, since])
-}
-export async function dbGetUnreadMessages(pubkey, since) {
-  return call('dbGetUnreadMessages', [pubkey, since])
 }
 export async function dbGetProfile(pubkey) {
   return call('dbGetProfile', [pubkey])

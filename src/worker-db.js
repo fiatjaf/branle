@@ -50,20 +50,6 @@ db.upsert('_design/main', current => {
           }
         }.toString()
       },
-      messages: {
-        map: function (event) {
-          if (event.kind === 4) {
-            for (var i = 0; i < event.tags.length; i++) {
-              var tag = event.tags[i]
-              if (tag[0] === 'p') {
-                emit([tag[1], event.created_at])
-                break
-              }
-            }
-            emit([event.pubkey, event.created_at])
-          }
-        }.toString()
-      },
       contactlists: {
         map: function (event) {
           if (event.kind === 3) {
@@ -203,77 +189,6 @@ const methods = {
     return changes
   },
 
-  async dbGetChats(ourPubKey) {
-    let result = await db.query('main/messages')
-
-    let chats = result.rows
-      .map(r => r.key)
-      .reduce((acc, [peer, date]) => {
-        acc[peer] = acc[peer] || 0
-        if (date > acc[peer]) acc[peer] = date
-        return acc
-      }, {})
-
-    delete chats[ourPubKey]
-
-    return Object.entries(chats)
-      .sort((a, b) => b[1] - a[1])
-      .map(([peer, lastMessage]) => ({peer, lastMessage}))
-  },
-
-  async dbGetMessages(
-    peerPubKey,
-    limit = 50,
-    since = Math.round(Date.now() / 1000)
-  ) {
-    let result = await db.query('main/messages', {
-      include_docs: true,
-      descending: true,
-      startkey: [peerPubKey, since],
-      endkey: [peerPubKey, 0],
-      limit
-    })
-    return result.rows
-      .map(r => r.doc)
-      .reverse()
-      .reduce((acc, event) => {
-        if (!acc.length) return [event]
-        let last = acc[acc.length - 1]
-        if (
-          last.pubkey === event.pubkey &&
-          last.created_at + 120 >= event.created_at
-        ) {
-          last.appended = last.appended || []
-          last.appended.push(event)
-        } else {
-          acc.push(event)
-        }
-        return acc
-      }, [])
-  },
-
-  onNewMessage(peerPubKey, callback = () => {}) {
-    // listen for changes
-    let changes = db.changes({
-      live: true,
-      since: 'now',
-      include_docs: true,
-      filter: '_view',
-      view: 'main/messages'
-    })
-
-    changes.on('change', change => {
-      if (
-        change.doc.pubkey === peerPubKey ||
-        change.doc.tags.find(([t, v]) => t === 'p' && v === peerPubKey)
-      ) {
-        callback(change.doc)
-      }
-    })
-
-    return changes
-  },
-
   async dbGetEvent(id) {
     try {
       return await db.get(id)
@@ -326,39 +241,12 @@ const methods = {
     return changes
   },
 
-  onNewAnyMessage(callback = () => {}) {
-    // listen for changes
-    let changes = db.changes({
-      live: true,
-      since: 'now',
-      include_docs: true,
-      filter: '_view',
-      view: 'main/messages'
-    })
-
-    changes.on('change', change => {
-      callback(change.doc)
-    })
-
-    return changes
-  },
-
   async dbGetUnreadNotificationsCount(ourPubKey, since) {
     let result = await db.query('main/mentions', {
       include_docs: false,
       descending: true,
       startkey: [ourPubKey, {}],
       endkey: [ourPubKey, since]
-    })
-    return result.rows.length
-  },
-
-  async dbGetUnreadMessages(pubkey, since) {
-    let result = await db.query('main/messages', {
-      include_docs: false,
-      descending: true,
-      startkey: [pubkey, {}],
-      endkey: [pubkey, since]
     })
     return result.rows.length
   },

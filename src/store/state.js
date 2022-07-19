@@ -8,7 +8,7 @@ const getMainnetRelays = () => {
     'wss://nostr-pub.wellorder.net': {read: true, write: true},
     'wss://nostr-verified.wellorder.net': {read: true, write: false},
     'wss://expensive-relay.fiatjaf.com': {read: true, write: false},
-    'wss://nostr-sandbox.minds.io/nostr/v1/ws': {read: true, write: false}
+    'wss://relay.minds.com/nostr/v1/ws': {read: true, write: false}
   }
   const optional = [
     ['wss://nostr.rocks', {read: true, write: true}],

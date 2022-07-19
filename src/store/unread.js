@@ -1,4 +1,4 @@
-import {onNewMention, dbGetUnreadNotificationsCount} from '../db'
+import {dbGetUnreadNotificationsCount} from '../db'
 
 export default function (store) {
   const setUnreadNotifications = async () => {
@@ -11,7 +11,7 @@ export default function (store) {
     )
   }
 
-  onNewMention(store.state.keys.pub, setUnreadNotifications)
+  // onNewMention(store.state.keys.pub, setUnreadNotifications)
 
   setUnreadNotifications()
 

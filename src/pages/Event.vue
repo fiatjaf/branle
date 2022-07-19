@@ -109,7 +109,7 @@
 
 <script>
 import {pool} from '../pool'
-import {dbGetEvent, onEventUpdate} from '../db'
+import {dbGetEvent} from '../db'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 
@@ -222,16 +222,16 @@ export default {
       }
 
       // listen to changes to the event in the db so we get .seen_on updates
-      this.eventUpdates = await onEventUpdate(
-        this.$route.params.eventId,
-        event => {
-          // once we get an update from the db we know we can stop listening for relay updates
-          if (this.eventSub) this.eventSub.unsub()
+      // this.eventUpdates = await onEventUpdate(
+      //   this.$route.params.eventId,
+      //   event => {
+      //     // once we get an update from the db we know we can stop listening for relay updates
+      //     if (this.eventSub) this.eventSub.unsub()
 
-          // and just update our local event with the latest one from the db
-          this.event = event
-        }
-      )
+      //     // and just update our local event with the latest one from the db
+      //     this.event = event
+      //   }
+      // )
 
       this.listenChildren()
     },

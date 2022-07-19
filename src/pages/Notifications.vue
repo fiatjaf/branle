@@ -21,7 +21,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbGetMentions, onNewMention} from '../db'
+import {dbGetMentions} from '../db'
 
 export default {
   name: 'Notifications',
@@ -51,12 +51,12 @@ export default {
       this.$store.dispatch('useProfile', {pubkey, request: true})
     })
 
-    this.listener = onNewMention(this.$store.state.keys.pub, async event => {
-      this.notifications.unshift(event)
-      // we could trigger the timeout-to-mark-as-read here too, but we don't because
-      // we don't want to accidentaly mark everything as read for a user that leaves
-      // his screen open in this page and goes to the park
-    })
+    // this.listener = onNewMention(this.$store.state.keys.pub, async event => {
+    //   this.notifications.unshift(event)
+    //   // we could trigger the timeout-to-mark-as-read here too, but we don't because
+    //   // we don't want to accidentaly mark everything as read for a user that leaves
+    //   // his screen open in this page and goes to the park
+    // })
 
     // will mark notifications as read after 5 seconds in the page
     if (

@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "autoprefixer": "^10.4.7",
     "core-js": "^3.6.5",
     "identicon.js": "^2.3.3",
     "markdown-it": "^12.3.0",

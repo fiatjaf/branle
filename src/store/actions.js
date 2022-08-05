@@ -1,6 +1,7 @@
 import {queryName} from 'nostr-tools/nip05'
 import {Notify, LocalStorage} from 'quasar'
 
+import bus from '../bus'
 import {pool, signAsynchronously} from '../pool'
 import {dbSave, dbGetProfile, dbGetContactList} from '../db'
 import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
@@ -74,6 +75,7 @@ var mainSub = pool
 export function restartMainSubscription(store) {
   mainSub = mainSub.sub(
     {
+      skipVerification: true,
       filter: [
         // notes, profiles and contact lists of people we follow (and ourselves)
         {
@@ -187,7 +189,9 @@ export async function recommendServer(store, url) {
 }
 
 export async function addEvent(store, {event, relay = null}) {
-  await dbSave(event, relay)
+  bus.emit('event', event)
+
+  dbSave(event, relay)
 
   // do things after the event is saved
   switch (event.kind) {

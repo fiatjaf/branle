@@ -1,6 +1,8 @@
 <template>
   <q-page class="px-4 pt-6">
-    <div v-if="$store.getters.hasName($store.state.keys.pub)" class="text-xl">Hello <Name :pubkey="$store.state.keys.pub" /></div>
+    <div v-if="$store.getters.hasName($store.state.keys.pub)" class="text-xl">
+      Hello <Name :pubkey="$store.state.keys.pub" />
+    </div>
     <div v-else class="text-xl">Home</div>
 
     <Publish />
@@ -14,7 +16,8 @@
 <script>
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
-import {dbGetHomeFeedNotes, onNewHomeFeedNote} from '../db'
+import {dbGetHomeFeedNotes} from '../db'
+import bus from '../bus'
 
 export default {
   name: 'Home',
@@ -40,9 +43,9 @@ export default {
       this.notesSet.add(notes[i].id)
     }
 
-    this.listener = onNewHomeFeedNote(event => {
+    bus.on('event', event => {
+      if (event.kind !== 1) return
       if (this.notesSet.has(event.id)) return
-
       addToThread(this.homeFeed, event)
       this.notesSet.add(event.id)
     })

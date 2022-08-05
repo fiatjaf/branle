@@ -1,18 +1,15 @@
-const worker = new Worker(new URL('./worker-db.js', import.meta.url))
+import {initBackend} from 'absurd-sql/dist/indexeddb-main-thread'
 
+const worker = new Worker(new URL('./worker-db.js', import.meta.url))
 const hub = {}
 
-worker.onmessage = ev => {
-  let {id, success, error, data, stream} = JSON.parse(ev.data)
+initBackend(worker)
 
-  if (stream) {
-    console.debug('🖴', id, '~>>', data)
-    hub[id](data)
-    return
-  }
+worker.onmessage = ev => {
+  let {id, success, error, data} = JSON.parse(ev.data)
 
   if (!success) {
-    hub[id].reject(new Error(error))
+    hub[id].reject(new Error(`${id}: ${error}`))
     delete hub[id]
     return
   }
@@ -31,18 +28,6 @@ function call(name, args) {
   })
 }
 
-function stream(name, args, callback) {
-  let id = name + ' ' + Math.random().toString().slice(-4)
-  hub[id] = callback
-  console.debug('db <-', id, args)
-  worker.postMessage(JSON.stringify({id, name, args, stream: true}))
-  return {
-    cancel() {
-      worker.postMessage(JSON.stringify({id, cancel: true}))
-    }
-  }
-}
-
 export async function eraseDatabase() {
   return call('eraseDatabase', [])
 }
@@ -55,20 +40,11 @@ export async function dbGetHomeFeedNotes(
 ) {
   return call('dbGetHomeFeedNotes', [limit, since])
 }
-export function onNewHomeFeedNote(callback = () => {}) {
-  return stream('onNewHomeFeedNote', [], callback)
-}
 export async function dbGetEvent(id) {
   return call('dbGetEvent', [id])
 }
-export async function onEventUpdate(id, callback = () => {}) {
-  return stream('onEventUpdate', [id], callback)
-}
 export async function dbGetMentions(ourPubKey, limit = 40, since, until) {
   return call('dbGetMentions', [ourPubKey, limit, since, until])
-}
-export function onNewMention(ourPubKey, callback = () => {}) {
-  return stream('onNewMention', [ourPubKey], callback)
 }
 export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
   return call('dbGetUnreadNotificationsCount', [ourPubKey, since])
@@ -82,3 +58,8 @@ export async function dbGetContactList(pubkey) {
 export async function dbGetRelayForPubKey(pubkey) {
   return call('dbGetRelayForPubKey', [pubkey])
 }
+export async function dbExec(sql) {
+  return call('dbExec', [sql])
+}
+
+window.sql = dbExec

@@ -171,6 +171,7 @@ export default {
 
       this.sub = pool.sub(
         {
+          skipVerification: true,
           filter: [
             {
               authors: [this.$route.params.pubkey],

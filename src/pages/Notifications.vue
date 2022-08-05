@@ -20,8 +20,9 @@
 </template>
 
 <script>
+import bus from '../bus'
 import helpersMixin from '../utils/mixin'
-import {dbGetMentions, onNewMention} from '../db'
+import {dbGetMentions} from '../db'
 
 export default {
   name: 'Notifications',
@@ -51,7 +52,10 @@ export default {
       this.$store.dispatch('useProfile', {pubkey, request: true})
     })
 
-    this.listener = onNewMention(this.$store.state.keys.pub, async event => {
+    bus.on('event', event => {
+      if (event.kind !== 1) return
+      if (event.tags.find(tag => tag[1] !== this.$store.state.keys.pub)) return
+
       this.notifications.unshift(event)
       // we could trigger the timeout-to-mark-as-read here too, but we don't because
       // we don't want to accidentaly mark everything as read for a user that leaves

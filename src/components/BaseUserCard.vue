@@ -3,7 +3,7 @@
     clickable
     unelevated
     outlined
-    class='no-padding flex row justify-start items-center'
+    class='no-padding flex row justify-start items-center cursor-pointer'
     :class='(alignRight ? "text-right reverse" : "text-left") +
       (headerMode ? " header-mode" : "") +
       ((!hasTouch && !headerMode && actionButtons) ? " hidden-action-buttons" : "")'
@@ -15,20 +15,22 @@
         :pubkey="pubkey"
         :align-right='alignRight'
         :size='headerMode ? "10rem" : "lg"'
-        :show-verified='!headerMode'
         :class='headerMode ? "self-center" : ""'
       />
     </div>
     <q-item-section
-      :class='(headerMode ? "self-start" : "") + largeMode'
+      :class='headerMode ? "self-start" : ""'
       :style='!headerMode ? "white-space: nowrap; overflow: auto;" : ""'
     >
       <BaseUserName
         :pubkey="pubkey"
         :header-mode='headerMode'
-        :show-verified='headerMode'
+        :show-verified='true'
+        :class='headerMode ? " text-h6" : ""'
+        :wrap='headerMode'
+        :align-right='alignRight'
       />
-      <div caption class='text-secondary pubkey'>{{ shorten(pubkey) }}</div>
+      <div class='text-secondary pubkey' style='opacity: .9; font-size: 95%; font-weight: 300'>{{ shorten(pubkey) }}</div>
       <BaseMarkdown v-if='headerMode' >
         {{ $store.getters.profileDescription(pubkey) }}
       </BaseMarkdown>
@@ -65,11 +67,11 @@ export default defineComponent({
       required: false,
       default: false
     },
-    largeMode: {
-      type: String,
-      required: false,
-      default: ''
-    },
+    // largeMode: {
+    //   type: String,
+    //   required: false,
+    //   default: null
+    // },
     headerMode: {
       type: Boolean,
       required: false,

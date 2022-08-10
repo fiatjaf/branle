@@ -20,7 +20,11 @@
     :label='verbose ? "relays" : ""'
     dense
     align="left"
-  />
+  >
+    <q-tooltip v-if='!verbose'>
+      seen on relays
+    </q-tooltip>
+  </q-btn>
 </template>
 
 <script>

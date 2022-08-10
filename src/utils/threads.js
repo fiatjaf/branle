@@ -27,6 +27,9 @@ function searchAndUpdateThreads(threads, route, ...events) {
   // 3) reply of reply
   // ---------------------------
   // filter just tagged event ids from tags
+  if (events[events.length - 1].replies?.length) events[0].latest_created_at = events[events.length - 1].replies.reduce((acc, curr) =>
+    Math.max(acc, curr[0].latest_created_at), events[events.length - 1].latest_created_at)
+  else events[0].latest_created_at = events[events.length - 1].latest_created_at
   let event = events[0]
   let refs = calcReplyTags(event, route)
   let unshiftThreads = []
@@ -72,46 +75,39 @@ function searchAndUpdateThreads(threads, route, ...events) {
       }
     }
   }
-  // if (event.id === '86fa22d6a3523e2fb7d261fb94ce8ba163a289179870dbf8fdedae47a525a44e') {
-  //   console.log('threads: ', threads)
-  //   console.log(unshiftThreads, pushThreads, insertThreads, replyInsertThreads)
-  // }
+
   if (unshiftThreads.length === 0 && pushThreads.length === 0 && insertThreads.length === 0 && replyInsertThreads.length === 0) return false
   if (pushThreads.length > 1 || insertThreads.length > 1 || (pushThreads.length && insertThreads.length)) {
-    // console.log('pushThreads:', pushThreads, 'insertThreads', insertThreads)
     return false
   }
-  // let origEvents = Object.assign({}, events)
-  // let origThreads = Object.assign({}, threads)
-  // let origThreadLists = Array.from([unshiftThreads, pushThreads, insertThreads, replyInsertThreads])
-
-  if (unshiftThreads.length === 1 && events.length === 1) threads[unshiftThreads[0]].unshift(event)
-  else if (unshiftThreads.length >= 1) {
-    if (events.length > 1) {
-      event.replies.push(events.slice(1))
-    }
-    unshiftThreads.sort()
-    for (let j = unshiftThreads.length - 1; j >= 0; j--) {
-      event.replies.push(threads[unshiftThreads[j]])
-      threads.splice(unshiftThreads[j], 1)
-      pushThreads = pushThreads.map(i => i > j ? i - 1 : i)
-      insertThreads = insertThreads.map(({thread, threadIndex}) => thread > j ? {thread: thread - 1, threadIndex} : {thread, threadIndex})
-      replyInsertThreads = replyInsertThreads.map(i => i > j ? i - 1 : i)
-    }
-    events = [event]
-    if (pushThreads.length === 0 && insertThreads.length === 0 && replyInsertThreads.length === 0) {
-      addSorted(threads, events, (a, b) => a[a.length - 1].created_at < b[b.length - 1].created_at)
-      return true
+  if (unshiftThreads.length) {
+    if (unshiftThreads.length === 1 && events.length === 1) {
+      let thread = threads[unshiftThreads[0]]
+      thread.unshift(event)
+      if (thread[thread.length - 1].replies?.length) thread[0].latest_created_at = thread[thread.length - 1].replies.reduce((acc, curr) =>
+        Math.max(acc, curr[0].latest_created_at), thread[thread.length - 1].latest_created_at)
+      else thread[0].latest_created_at = thread[thread.length - 1].latest_created_at
+    } else if (unshiftThreads.length >= 1) {
+      if (events.length > 1) {
+        event.replies.push(events.slice(1))
+      }
+      unshiftThreads.sort()
+      for (let j = unshiftThreads.length - 1; j >= 0; j--) {
+        event.replies.push(threads[unshiftThreads[j]])
+        threads.splice(unshiftThreads[j], 1)
+        pushThreads = pushThreads.map(i => i > j ? i - 1 : i)
+        insertThreads = insertThreads.map(({thread, threadIndex}) => thread > j ? {thread: thread - 1, threadIndex} : {thread, threadIndex})
+        replyInsertThreads = replyInsertThreads.map(i => i > j ? i - 1 : i)
+      }
+      event.latest_created_at = event.replies.reduce((acc, curr) => Math.max(acc, curr[0].latest_created_at), event.latest_created_at)
+      events = [event]
+      if (pushThreads.length === 0 && insertThreads.length === 0 && replyInsertThreads.length === 0) {
+        addSorted(threads, events, (a, b) => a[0].latest_created_at < b[0].latest_created_at)
+        return true
+      }
     }
   }
-  // let currThreads = Object.assign({}, threads)
-  //   if (event.id === 'c8432ecd26e10d400b62709a0bad3f1c39ff885cca9bdf8841fb69ed045b7e8e') log('after upshift',
-  //         events, origEvents,
-  //         [unshiftThreads, pushThreads, insertThreads, replyInsertThreads],
-  //         origThreadLists,
-  //         currThreads,
-  //         origThreads,
-  //       )
+
   if (pushThreads.length) {
     let thread = threads[pushThreads[0]]
     if (thread[thread.length - 1].replies?.length) {
@@ -121,11 +117,14 @@ function searchAndUpdateThreads(threads, route, ...events) {
         insertThreads = insertThreads.map(({thread, threadIndex}) => thread > unshiftThreads[0] ? {thread: thread - 1, threadIndex} : {thread, threadIndex})
         replyInsertThreads = replyInsertThreads.map(i => i > unshiftThreads[0] ? i - 1 : i)
       } else thread[thread.length - 1].replies.push(events)
+      thread[0].latest_created_at = thread[thread.length - 1].replies.reduce((acc, curr) =>
+        Math.max(acc, curr[0].latest_created_at), thread[thread.length - 1].latest_created_at)
     } else {
       if (unshiftThreads.length === 1 && events.length === 1) {
-        threads[pushThreads[0]].push(...threads[unshiftThreads[0]])
+        thread.push(...threads[unshiftThreads[0]])
         threads.splice(unshiftThreads[0], 1)
-      } else threads[pushThreads[0]].push(...events)
+      } else thread.push(...events)
+      thread[0].latest_created_at = thread[thread.length - 1].latest_created_at
     }
     return true
   }
@@ -133,12 +132,16 @@ function searchAndUpdateThreads(threads, route, ...events) {
     let thread = threads[insertThreads[0].thread]
     let index = insertThreads[0].threadIndex
     if (!thread[index].replies) thread[index].replies = []
-    thread[index].replies.push(thread.slice(index + 1))
+    let slicedReply = thread.slice(index + 1)
+    slicedReply[0].latest_created_at = slicedReply[slicedReply.length - 1].latest_created_at
+    thread[index].replies.push(slicedReply)
     thread.splice(index + 1, thread.length - index)
     if (unshiftThreads.length === 1 && events.length === 1) {
       thread[index].replies.push(threads[unshiftThreads[0]])
       threads.splice(unshiftThreads[0], 1)
     } else thread[index].replies.push(events)
+    thread[0].latest_created_at = thread[thread.length - 1].replies.reduce((acc, curr) =>
+      Math.max(acc, curr[0].latest_created_at), thread[thread.length - 1].latest_created_at)
     return true
   }
   if (replyInsertThreads.length) {
@@ -148,11 +151,17 @@ function searchAndUpdateThreads(threads, route, ...events) {
         let inserted = searchAndUpdateThreads(thread[thread.length - 1].replies, route, ...threads[unshiftThreads[0]])
         if (inserted) {
           threads.splice(unshiftThreads[0], 1)
+          thread[0].latest_created_at = thread[thread.length - 1].replies.reduce((acc, curr) =>
+            Math.max(acc, curr[0].latest_created_at), thread[thread.length - 1].latest_created_at)
           return true
         }
       } else {
         let inserted = searchAndUpdateThreads(thread[thread.length - 1].replies, route, ...events)
-        if (inserted) return true
+        if (inserted) {
+          thread[0].latest_created_at = thread[thread.length - 1].replies.reduce((acc, curr) =>
+            Math.max(acc, curr[0].latest_created_at), thread[thread.length - 1].latest_created_at)
+          return true
+        }
       }
     }
   }
@@ -161,12 +170,18 @@ function searchAndUpdateThreads(threads, route, ...events) {
 }
 
 export function addToThread(threads, event, route = '') {
-  if (Array.isArray(event)) {
-    if (searchAndUpdateThreads(threads, route, event)) return
-    addSorted(threads, event, (a, b) => a[a.length - 1].created_at < b[b.length - 1].created_at)
-    return
-  }
+  // if (Array.isArray(event)) {
+  //   console.log('addToThread using array as event', event)
+  //   if (event[event.length - 1].replies?.length) event[0].latest_created_at = event[event.length - 1].replies.reduce((acc, curr) =>
+  //     Math.max(acc, curr[0].latest_created_at), event[event.length - 1].latest_created_at)
+  //   else event[0].latest_created_at = event[event.length - 1].latest_created_at
+  //   if (searchAndUpdateThreads(threads, route, event)) return
+  //   addSorted(threads, event, (a, b) => a[0].latest_created_at < b[0].latest_created_at)
+  //   // addSorted(threads, event, (a, b) => a[a.length - 1].created_at < b[b.length - 1].created_at)
+  //   return
+  // }
   event.replies = []
-  if (searchAndUpdateThreads(threads, route, event)) return
-  addSorted(threads, [event], (a, b) => a[a.length - 1].created_at < b[b.length - 1].created_at)
+  event.latest_created_at = event.created_at
+  if (searchAndUpdateThreads(threads, route, event)) threads.sort((a, b) => Number(b[0].latest_created_at) - Number(a[0].latest_created_at))
+  else addSorted(threads, [event], (a, b) => a[0].latest_created_at < b[0].latest_created_at)
 }

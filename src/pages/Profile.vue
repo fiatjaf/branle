@@ -10,7 +10,7 @@
       :breakpoint="0"
     >
       <q-tab name="posts" label='posts' />
-      <q-tab name="following" label='following' />
+      <q-tab name="follows" label='follows' />
     </q-tabs>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="posts" class='no-padding'>
@@ -19,10 +19,10 @@
         </div>
       </q-tab-panel>
 
-      <q-tab-panel name="following" class='no-padding'>
-        <div v-if="!$store.getters.contacts($route.params.pubkey)">not following anyone</div>
+      <q-tab-panel name="follows" class='no-padding'>
+        <div v-if="!follows">{{ $t('noFollows') }}</div>
         <div v-else class="flex column relative">
-          <q-btn
+          <!-- <q-btn
             v-if="$store.getters.hasMoreContacts($route.params.pubkey)"
             :name="showAllContacts ? 'show less' : 'show all'"
             :label="showAllContacts ? 'show less' : 'show all'"
@@ -32,18 +32,15 @@
             outline
             size='sm'
             @click="showAllContacts = !showAllContacts"
-          />
+          /> -->
           <div class='q-pl-sm'>
             <BaseUserCard
-              v-for="(user) in $store.getters.contacts(
-                $route.params.pubkey,
-                !showAllContacts
-              )"
+              v-for="(user) in follows"
               :key="user.pubkey"
               :pubkey="user.pubkey"
             />
           </div>
-          <q-btn
+          <!-- <q-btn
             v-if='!showAllContacts && $store.getters.hasMoreContacts($route.params.pubkey)'
             icon='more_vert'
             size='xl'
@@ -51,7 +48,7 @@
             flat
             dense
             @click="showAllContacts = true"
-          />
+          /> -->
         </div>
       </q-tab-panel>
     </q-tab-panels>
@@ -83,6 +80,12 @@ export default defineComponent({
     }
   },
 
+  computed: {
+    follows() {
+      return this.$store.getters.contacts(this.$route.params.pubkey)
+    }
+  },
+
   activated() {
     this.start()
   },
@@ -93,29 +96,6 @@ export default defineComponent({
 
   methods: {
     start() {
-      if (this.$route.params.pubkey.toLowerCase().match(/^[0-9a-f]{64}$/)) {
-        // ok, it's a pubkey, the default cause
-      } else if (
-        this.$route.params.pubkey
-          .toLowerCase()
-          .match(/^web\+nostr:[0-9a-f]{64}$/)
-      ) {
-        // it's a web+nostr pubkey link
-        this.$router.push('/' + this.$route.params.pubkey.slice(-64))
-        return
-      } else if (
-        this.$route.params.pubkey
-          .toLowerCase()
-          .match(/^web\+nostr:event:[0-9a-f]{64}$/)
-      ) {
-        // it's a web+nostr event link
-        this.$router.push('/event/' + this.$route.params.pubkey.slice(-64))
-        return
-      } else {
-        // it's something we don't understand
-        return
-      }
-
       this.listen()
       this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey, request: true})
       this.$store.dispatch('useContacts', {pubkey: this.$route.params.pubkey, request: true})

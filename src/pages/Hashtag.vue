@@ -49,7 +49,7 @@ export default defineComponent({
         {
           filter: [
             {
-              '#hashtag': [this.$route.params.hashtagId],
+              '#hashtag': [this.$route.params.hashtagId.toLowerCase()],
               kinds: [1, 2]
             }
           ],

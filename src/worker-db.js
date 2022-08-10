@@ -120,6 +120,14 @@ const methods = {
     return await db.destroy()
   },
 
+  async destroyStreams() {
+    for (let id in streams) {
+      streams[id].cancel()
+      delete streams[id]
+    }
+    return true
+  },
+
   // general function for saving an event, with granular logic for each kind
   //
   async dbSave(event, relay) {
@@ -347,7 +355,7 @@ const methods = {
     let result = await db.query('main/mentions', {
       include_docs: false,
       descending: true,
-      startkey: [ourPubKey, {}],
+      startkey: [ourPubKey, Math.round(Date.now() / 1000)],
       endkey: [ourPubKey, since]
     })
     return result.rows.filter((v, i, a) => a.indexOf(v) === i).length
@@ -357,7 +365,7 @@ const methods = {
     let result = await db.query('main/messages', {
       include_docs: true,
       descending: true,
-      startkey: [pubkey, {}],
+      startkey: [pubkey, Math.round(Date.now() / 1000)],
       endkey: [pubkey, since]
     })
     return result.rows.filter(r => r.doc.pubkey === pubkey).length

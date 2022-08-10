@@ -27,7 +27,7 @@
       </div>
 
       <div class="text-h2" style="opacity:.4">
-        Oops. Nothing here...
+        {{ $t('notFound') }}
       </div>
     </div>
     <img

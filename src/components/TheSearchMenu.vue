@@ -8,7 +8,7 @@
           v-model="searchingProfile"
           class='no-padding searchingProfile'
           outlined
-          label='search profiles'
+          :label='$t("searchProfiles")'
           dense
           color='secondary'
           :hint='validSearch ? "enter user public key or NIP05 identifier" : "INVALID FORMAT! enter user public key or NIP05 identifier"'
@@ -36,11 +36,11 @@
       </q-form>
     <div v-if='domainMode'>
       <div class='flex row justify-between no-wrap'>
-        <h2 class='text-h6 text-bold q-my-none'> {{ domain }} users</h2>
+        <h2 class='text-h6 text-bold q-my-none'> {{ domain }} {{ $t('users') }}</h2>
         <q-btn icon='close' @click.stop='domainMode = false' />
       </div>
       <div v-if='domainDefaultPubkey'>
-        <h2 class='text-caption text-bold q-my-none'> NIP05 maintainer </h2>
+        <h2 class='text-caption text-bold q-my-none'> {{ $t('nip05Maintainer') }} </h2>
         <BaseUserCard :pubkey='domainDefaultPubkey'/>
       </div>
         <q-list class='q-pt-xs q-pl-sm' style='overflow-y: auto; max-height: 40vh;'>
@@ -52,18 +52,18 @@
         <q-separator color='accent' />
     </div>
     </q-card-section>
-      <div class='flex row justify-between no-wrap'>
-        <h2 class='text-h5 text-bold q-my-none'> following </h2>
+      <div v-if='$store.state.keys.pub' class='flex row justify-between no-wrap'>
+        <h2 class='text-h5 text-bold q-my-none'> {{ $t('follows') }} </h2>
         <div>
           <q-btn v-if='!reordering' flat icon='reorder' @click.stop='reorderFollowing'>
-            <q-tooltip>reorder following list</q-tooltip>
+            <q-tooltip>{{ $t('reorderFollows') }}</q-tooltip>
           </q-btn>
           <q-btn v-if='reordering' flat icon='close' @click.stop='cancelReorder'>
-            <q-tooltip>cancel</q-tooltip>
+            <q-tooltip>{{ $t('cancel') }}</q-tooltip>
           </q-btn>
         </div>
       </div>
-    <q-card-section class='no-padding' style='overflow-y: auto;'>
+    <q-card-section v-if='$store.state.keys.pub' class='no-padding' style='overflow-y: auto;'>
       <div v-if='$store.state.following.length' class='q-mt-xs q-pl-sm'>
         <q-list v-if="!reordering">
           <BaseUserCard
@@ -82,8 +82,8 @@
             <!-- <div>{{element.name}}</div> -->
           <template #header>
             <div class='flex row justify-between items-start'>
-              <span>drag and drop to reorder</span>
-              <q-btn outline size='sm' icon='save' label='save' color='secondary' @click.stop='saveReorder'/>
+              <span>{{ $t('dragDropReorder') }}</span>
+              <q-btn outline size='sm' icon='save' :label='$t("save")' color='secondary' @click.stop='saveReorder'/>
             </div>
           </template>
           <template #item="{element}">
@@ -93,7 +93,7 @@
         </Draggable>
       </div>
       <div v-else>
-        When you follow someone they will show up here.
+        {{ $t('noFollows') }}
       </div>
     </q-card-section>
   </div>

@@ -1,13 +1,13 @@
 <template>
   <q-layout>
-    <TheKeyInitializationDialog/>
+    <TheKeyInitializationDialog v-if='!$store.state.keys.pub'/>
     <div id='layout-container' :ripple='false'>
       <div id='left-drawer' class='flex justify-end'>
         <TheUserMenu/>
       </div>
 
       <div id='middle-page'>
-        <q-page-container v-if="$store.state.keys.pub"  ref='pageContainer'>
+        <q-page-container ref='pageContainer'>
           <!-- <router-view :key='$route.path' /> -->
           <router-view v-slot="{ Component }">
             <keep-alive  >
@@ -58,15 +58,15 @@
         >
           <q-tooltip>forward</q-tooltip>
         </q-btn>
+          <!-- v-if='$route.name !== "inbox" && $route.name !== "messages"' -->
         <q-btn
-          v-if='$route.name !== "inbox" && $route.name !== "messages"'
           @click.stop="scrollToTop"
           color="primary"
           unelevated
           round
           outline
           icon="keyboard_double_arrow_up"
-          :disable="draggingFab"
+          :disable='draggingFab || $route.name === "inbox" || $route.name === "messages"'
         >
           <q-tooltip>scroll to top</q-tooltip>
         </q-btn>
@@ -90,6 +90,7 @@
 import { defineComponent} from 'vue'
 import { scroll } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
+import { destroyStreams } from '../db'
 import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
@@ -111,12 +112,29 @@ export default defineComponent({
     }
   },
 
+  // computed: {
+  //   showKeyInitialization() {
+  //     if (['profile', 'event', 'hashtag', 'feed'].includes(this.$route.name)) return false
+  //     return true
+  //   },
+  // },
+
   mounted() {
+    if (this.$store.state.keys.pub) {
+      // keys already set up
+      this.$store.dispatch('launch')
+      // this.initializeKeys = false
+    } else {
+      this.$store.dispatch('launchWithoutKey')
+    }
     document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll)
     this.$router.beforeEach((to, from) => { this.preserveScrollPos(to, from) })
     this.$router.afterEach((to, from) => { this.restoreScrollPos(to, from) })
     let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
     if (pageRect) this.fabPos[0] = pageRect.right - pageRect.width
+    window.onbeforeunload = async () => {
+      await destroyStreams()
+    }
   },
 
   beforeUnmount() {

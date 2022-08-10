@@ -46,7 +46,7 @@
 
         <div v-if='isEmbeded' class='flex row justify-between q-gutter-md' :class='sent ? "reverse" : ""'>
           <BaseUserName :pubkey='evt.pubkey' :fallback='true' />
-          <span> {{niceDate(event.created_at)}} </span>
+          <span> {{niceDateUTC(event.created_at)}} </span>
         </div>
         <BaseMarkdown>
           {{ evt.interpolated.text }}
@@ -238,21 +238,25 @@ export default {
 }
 .message-sent .message-bubble {
 }
-.message-sent .first-message {
+.message-sent .first-message,
+.message-received .message-sent .first-message {
   border-top-left-radius: .8rem;
   border-top-right-radius: 0rem;
 }
-.message-sent .last-message {
+.message-sent .last-message,
+.message-received .message-sent .first-message {
   border-bottom-left-radius: .8rem;
   border-bottom-right-radius: 0;
 }
 .message-received .message-bubble {
 }
-.message-received .first-message {
+.message-received .first-message,
+.message-sent .message-received .first-message {
   border-top-right-radius: .8rem;
   border-top-left-radius: 0rem;
 }
-.message-received .last-message {
+.message-received .last-message,
+.message-sent .message-received .first-message {
   border-bottom-right-radius:  .8rem;
   border-bottom-left-radius:  0rem;
 }

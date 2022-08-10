@@ -28,7 +28,7 @@
           </div>
     </div>
     <div ref='messageScroll' class='col overflow-auto' @scroll='updateCurrentDatestamp'>
-      <q-infinite-scroll @load="loadMore" reverse>
+      <q-infinite-scroll @load="loadMore" reverse ref='messagesScroll'>
         <!-- <q-intersection
           @visibility='test'
           > -->
@@ -76,7 +76,7 @@
       <BasePostEntry
         :message-mode='replyEvent? "reply" : "message"'
         :event='replyEvent'
-        @sent='addMessage'
+        @sent='messageSent'
         @clear-event='replyEvent=null'
         />
     </div>
@@ -131,7 +131,10 @@ export default {
   },
 
   async deactivated() {
-    if (this.listener) this.listener.cancel()
+    if (this.listener) {
+      this.listener.cancel()
+      this.listener = null
+    }
   },
 
   methods: {
@@ -146,9 +149,17 @@ export default {
     },
 
     async start() {
-      this.messagesSet = new Set()
+      // this.messagesSet = new Set()
       if (this.listener) this.listener.cancel()
 
+      if (this.$store.state.unreadMessages[this.$route.params.pubkey]) {
+        let newMessages = await dbGetMessages(
+          this.$route.params.pubkey,
+          this.$store.state.unreadMessages[this.$route.params.pubkey]
+        )
+        let newMessagesFiltered = await this.processMessages(newMessages)
+        this.messages.push(...newMessagesFiltered)
+      }
       this.$store.commit('haveReadMessage', this.$route.params.pubkey)
       this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
       this.listener = onNewMessage(this.$route.params.pubkey, async event => {
@@ -168,38 +179,38 @@ export default {
     },
 
     async loadMore(_, done) {
-      let newMessages = await dbGetMessages(
+      let loadedMessages = await dbGetMessages(
         this.$route.params.pubkey,
         50,
         this.messages[0]?.created_at - 1 || ''
       )
 
-      if (newMessages.length < 50) {
+      if (loadedMessages.length < 50) {
         this.canLoadMore = false
       }
 
       // newMessages = newMessages.filter(event => !this.messagesSet.has(event.id))
-      let newMessagesFiltered = []
+      let loadedMessagesFiltered = await this.processMessages(loadedMessages)
 
-      for (let i = 0; i < newMessages.length; i++) {
-      // await newMessages.forEach(async (event) => {
-        let event = newMessages[i]
-        if (this.messagesSet.has(event.id)) return
+      // for (let i = 0; i < newMessages.length; i++) {
+      // // await newMessages.forEach(async (event) => {
+      //   let event = newMessages[i]
+      //   if (this.messagesSet.has(event.id)) return
 
-        this.messagesSet.add(event.id)
-        event.text = await this.getPlaintext(event)
-        this.interpolateMessageMentions(event)
-        if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
-        if (event.appended) {
-          for (let j = 0; j < event.appended.length; j++) {
-            this.messagesSet.add(event.appended[j].id)
-            event.appended[j].text = await this.getPlaintext(event.appended[j])
-            this.interpolateMessageMentions(event.appended[j])
-            if (event.appended[j].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event.appended[j])
-          }
-        }
-        newMessagesFiltered.push(event)
-      }
+      //   this.messagesSet.add(event.id)
+      //   event.text = await this.getPlaintext(event)
+      //   this.interpolateMessageMentions(event)
+      //   if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
+      //   if (event.appended) {
+      //     for (let j = 0; j < event.appended.length; j++) {
+      //       this.messagesSet.add(event.appended[j].id)
+      //       event.appended[j].text = await this.getPlaintext(event.appended[j])
+      //       this.interpolateMessageMentions(event.appended[j])
+      //       if (event.appended[j].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event.appended[j])
+      //     }
+      //   }
+      //   newMessagesFiltered.push(event)
+      // }
       //   this.messagesSet.add(newMessages[i].id)
       //   newMessages[i].text = await this.getPlaintext(newMessages[i])
       //   this.interpolateMessageMentions(newMessages[i])
@@ -215,8 +226,33 @@ export default {
       // }
 
       // this.messages = newMessages.concat(this.messages)
-      this.messages = newMessagesFiltered.concat(this.messages)
+      this.messages = loadedMessagesFiltered.concat(this.messages)
       done(!this.canLoadMore)
+    },
+
+    async processMessages(messages) {
+      let messagesFiltered = []
+
+      for (let i = 0; i < messages.length; i++) {
+      // await messages.forEach(async (event) => {
+        let event = messages[i]
+        if (this.messagesSet.has(event.id)) return
+
+        this.messagesSet.add(event.id)
+        event.text = await this.getPlaintext(event)
+        this.interpolateMessageMentions(event)
+        if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
+        if (event.appended) {
+          for (let j = 0; j < event.appended.length; j++) {
+            this.messagesSet.add(event.appended[j].id)
+            event.appended[j].text = await this.getPlaintext(event.appended[j])
+            this.interpolateMessageMentions(event.appended[j])
+            if (event.appended[j].tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event.appended[j])
+          }
+        }
+        messagesFiltered.push(event)
+      }
+      return messagesFiltered
     },
 
     async getPlaintext(event) {
@@ -340,6 +376,11 @@ export default {
       }, datestamps[0].innerText)
       // console.log(messageScroll.scrollHeight, messageScroll.clientHeight, messageScroll.scrollTop)
       // console.log('currentDatestamp', this.currentDatestamp)
+    },
+
+    async messageSent(event) {
+      await this.addMessage(event)
+      this.replyEvent = null
     },
 
     async addMessage(event) {

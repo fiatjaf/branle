@@ -3,31 +3,38 @@
     :class='compactMode ? "flex row no-wrap items-center compact-menu" : "text-right"'
     :dense='compactMode'
   >
-    <BaseUserCard
-      v-if='$store.state.keys.pub && !compactMode'
-      :pubkey='$store.state.keys.pub'
-      :align-right='true'
-      large-mode='gt-sm'
-      class='text-accent q-mr-sm'
-      />
     <q-item
-      v-if='$store.state.keys.pub && compactMode'
-      class='col flex justify-center no-padding'
+      v-if='$store.state.keys.pub'
+      class='col no-padding flex items-center'
+      :class="compactMode ? 'justify-center' : 'justify-end'"
       clickable
-      v-ripple
       @click='toProfile($store.state.keys.pub)'
     >
-      <q-avatar
+      <BaseUserCard
+        v-if='!compactMode'
+        :pubkey='$store.state.keys.pub'
+        :align-right='true'
+        class='text-accent q-mr-sm gt-sm'
+      />
+      <BaseUserAvatar
+        v-if='!compactMode'
+        :pubkey="$store.state.keys.pub"
+        :align-right='true'
+        :show-verified='true'
+        size='lg'
+        class='text-accent q-mr-sm lt-md'
+      />
+      <BaseUserAvatar
+        v-if='$store.state.keys.pub && compactMode'
+        :pubkey="$store.state.keys.pub"
+        :align-right='true'
+        :show-verified='true'
         size='1.5rem'
-        rounded
-        class='q-mx-auto'
-      >
-        <img :src="$store.getters.avatar($store.state.keys.pub)"/>
-      </q-avatar>
+      />
     </q-item>
     <q-separator v-if='!compactMode' color='accent' spaced/>
     <q-item
-      v-for='item in userMenuItems'
+      v-for='item in filteredUserMenuItems'
       clickable
       class='menu-item'
       :dense='compactMode'
@@ -40,7 +47,7 @@
     >
       <q-item-section v-if='!compactMode' class='gt-sm text-uppercase'>
         <div>
-          {{ item.title }}
+          {{ $t(item.title) }}
         </div>
       </q-item-section>
 
@@ -83,9 +90,20 @@
         :class='compactMode ? "col justify-center" : "q-my-md justify-end"'
       >
         <BaseButtonPost
+          v-if='$store.state.keys.pub'
           :is-open='post'
           :verbose='true'
           @open='post = !post'
+          :outline='!compactMode'
+          :flat='compactMode'
+          color='primary'
+          :size='compactMode ? "sm" : "lg"'
+          :class='compactMode ? "" : "q-px-sm"'
+        />
+        <BaseButtonSetUser
+          v-if='!$store.state.keys.pub'
+          :to="{ name: 'settings' }"
+          :verbose='true'
           :outline='!compactMode'
           :flat='compactMode'
           color='primary'
@@ -100,10 +118,10 @@
       transition-show='slide-up'
       transition-hide='slide-down'
     >
-      <q-card unelevated class='flex column no-wrap post-entry'
+      <q-card unelevated class='flex column no-wrap post-entry relative-position'
       >
-        <div class='flex row justify-end'>
-          <q-btn icon="close" flat dense v-close-popup/>
+        <div class='absolute-top-right'>
+          <q-btn class='z-top' icon="close" flat dense v-close-popup/>
         </div>
         <BasePostEntry class='q-pa-md' @sent='post = false'/>
         <div class='compact-user-menu-space'/>
@@ -118,6 +136,7 @@ import { defineComponent } from 'vue'
 import helpersMixin from '../utils/mixin'
 import BaseUserCard from 'components/BaseUserCard.vue'
 import BaseButtonPost from 'components/BaseButtonPost.vue'
+import BaseButtonSetUser from 'components/BaseButtonSetUser.vue'
 
 export default defineComponent({
   name: 'TheUserMenu',
@@ -133,67 +152,68 @@ export default defineComponent({
     return {
       post: false,
       position: 'bottom',
-      userMenuItems: [],
+      userMenuItems: [
+        {
+          title: 'feed',
+          icon: 'newspaper',
+          to: '/feed',
+          match: 'feed',
+        },
+        {
+          title: 'notifications',
+          badge: 'state.unreadNotifications',
+          icon: 'notifications',
+          to: '/notifications',
+          match: 'notifications',
+        },
+        {
+          title: 'messages',
+          badge: 'getters.unreadChats',
+          icon: 'mail_lock',
+          to: '/messages/inbox',
+          match: 'messages',
+        },
+        // {
+        //   title: 'lists',
+        //   // caption: 'forum.quasar.dev',
+        //   icon: 'list',
+        //   to: '/lists',
+        // },
+        // {
+        //   title: 'profile',
+        //   icon: 'account_circle',
+        //   to: '/' + this.$store.state.keys.pub,
+        //   match: this.$store.state.keys.pub,
+        // },
+        {
+          title: 'settings',
+          icon: 'settings',
+          to: '/settings',
+          match: 'settings',
+        },
+        {
+          title: 'follow',
+          icon: 'search',
+          to: '/follow',
+          match: 'follow',
+          compactMenuOnly: true,
+        },
+      ],
     }
   },
 
   components: {
     BaseUserCard,
     BaseButtonPost,
+    BaseButtonSetUser,
   },
 
-  mounted() {
-const userMenuItems = [
-  {
-    title: 'feed',
-    icon: 'newspaper',
-    to: '/feed',
-    match: 'feed'
-  },
-  {
-    title: 'notifications',
-    badge: 'state.unreadNotifications',
-    icon: 'notifications',
-    to: '/notifications',
-    match: 'notifications',
-  },
-  {
-    title: 'messages',
-    badge: 'getters.unreadChats',
-    icon: 'mail_lock',
-    to: '/messages/inbox',
-    match: 'messages',
-  },
-  // {
-  //   title: 'lists',
-  //   // caption: 'forum.quasar.dev',
-  //   icon: 'list',
-  //   to: '/lists',
-  // },
-  {
-    title: 'profile',
-    icon: 'account_circle',
-    to: '/' + this.$store.state.keys.pub,
-    match: this.$store.state.keys.pub,
-  },
-  {
-    title: 'settings',
-    icon: 'settings',
-    to: '/settings',
-    match: 'settings',
-  },
-  {
-    title: 'follow',
-    icon: 'search',
-    to: '/follow',
-    match: 'follow',
-    compactMenuOnly: true,
-  },
-]
-  this.userMenuItems = userMenuItems.filter((item) => {
-        if (item.compactMenuOnly) return this.compactMode
-        return true
-      })
+  computed: {
+    filteredUserMenuItems() {
+      if (!this.$store.state.keys.pub) return this.userMenuItems.filter(item => item.title === 'feed')
+      if (!this.compactMode) return this.userMenuItems.filter(item => !item.compactMenuOnly)
+      return this.userMenuItems
+    }
   },
 })
 </script>

@@ -1,13 +1,13 @@
 <template>
-  <q-dialog v-model="initializeKeys" persistent>
+  <q-dialog v-model="showKeyInitialization" persistent>
     <q-card class="q-pb-xl q-pt-md q-pl-sm q-pr-sm">
       <q-card-section class="intro">
         <h1 class="text-h6">welcome to astral</h1>
-        <p>
+        <BaseMarkdown>
           astral is a decentralized, censorship resistant social platform
-          powered by the Nostr protocol. in order to participate in the Nostr
+          powered by the [Nostr](https://github.com/fiatjaf/nostr) protocol. in order to participate in the Nostr
           network you will need to a public key and private key pair:
-        </p>
+        </BaseMarkdown>
 
         <q-list bordered padding class="q-mt-sm q-mb-sm">
           <q-item>
@@ -39,15 +39,15 @@
         <p>
           if you don't have a Nostr key pair you can either
           <strong>generate</strong> a new key pair or just take a
-          <strong>look around</strong> using astral's public key.
+          <strong>look around</strong>.
         </p>
         <q-btn-group spread unelevated class='q-gutter-xl'>
-          <q-btn size="sm" outline @click="generate" color="primary"
-            >generate</q-btn
-          >
-          <q-btn size="sm" outline color="primary" @click="getAstralPublicKey"
-            >look around</q-btn
-          >
+          <q-btn size="sm" outline @click="generate" color="primary">
+            generate
+          </q-btn>
+          <q-btn size="sm" outline color="primary" :to='{ name: "feed" }'>
+            look around
+          </q-btn>
         </q-btn-group>
       </q-card-section>
       <q-form @submit="proceed">
@@ -61,6 +61,7 @@
               :outline="!watchOnly"
               value="true"
               @click="watchOnly = true"
+              :disable='isBech32Sec'
             />
             <q-btn
               size="sm"
@@ -69,6 +70,7 @@
               :outline="watchOnly"
               value="false"
               @click="watchOnly = false"
+              :disable='isBech32Pub'
             />
           </q-btn-group>
           <q-input
@@ -116,8 +118,12 @@
           </q-input>
         </q-card-section>
       </q-form>
+      <div v-if='isBeck32Key(key)'>
+      {{ hexKey }}
+      </div>
     </q-card>
   </q-dialog>
+  <!-- <q-fab-action color="primary" label="login/create user" /> -->
 </template>
 
 <script>
@@ -125,10 +131,23 @@ import { defineComponent } from 'vue'
 import helpersMixin from '../utils/mixin'
 import { validateWords } from 'nostr-tools/nip06'
 import { generatePrivateKey } from 'nostr-tools'
+import { decode } from 'bech32-buffer'
+import BaseMarkdown from 'components/BaseMarkdown.vue'
 
 export default defineComponent({
   name: 'TheKeyInitializationDialog',
   mixins: [helpersMixin],
+
+  components: {
+    BaseMarkdown,
+  },
+
+  // props: {
+  //   initializeKeys: {
+  //     type: Boolean,
+  //     default: true
+  //   }
+  // },
 
   setup() {
     return {
@@ -140,20 +159,37 @@ export default defineComponent({
 
   data() {
     return {
-      initializeKeys: true,
+      // initializeKeys: true,
       watchOnly: false,
       key: null,
-      hasExtension: false,
+      // hasExtension: false,
     }
   },
+
+  // watch: {
+  //   $route(curr, prev) {
+  //     if (this.showKeyInitialization) this.initializeKeys = true
+  //     else this.initializeKeys = false
+  //   },
+  // },
 
   computed: {
     icon() {
       return document.getElementById('icon').href
     },
 
+    showKeyInitialization() {
+      if (['profile', 'event', 'hashtag', 'feed'].includes(this.$route.name)) return false
+      return true
+    },
+
+    hasExtension() {
+      if (window.nostr) return true
+      return false
+    },
+
     isKeyKey() {
-      if (this.isKey(this.key)) return true
+      if (this.isKey(this.hexKey)) return true
       return false
     },
 
@@ -162,24 +198,57 @@ export default defineComponent({
       if (validateWords(this.key?.toLowerCase())) return true
       return false
     },
+
+    hexKey() {
+      // npub1xtscya34g58tk0z605fvr788k263gsu6cy9x0mhnm87echrgufzsevkk5s
+      // nsec1xtscya34g58tk0z605fvr788k263gsu6cy9x0mhnm87echrgufzs46ahj9
+      // 32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245
+      if (this.isBeck32Key(this.key)) {
+        let { data } = decode(this.key.toLowerCase())
+        return this.toHexString(data)
+      }
+      return this.key?.toLowerCase()
+    },
+
+    isBech32Pub() {
+      if (this.isBeck32Key(this.key)) {
+        let { prefix } = decode(this.key.toLowerCase())
+        return prefix === 'npub'
+      }
+      return false
+    },
+
+    isBech32Sec() {
+      if (this.isBeck32Key(this.key)) {
+        let { prefix } = decode(this.key.toLowerCase())
+        return prefix === 'nsec'
+      }
+      return false
+    },
   },
 
-  async created() {
-    if (this.$store.state.keys.pub) {
-      // keys already set up
-      this.$store.dispatch('launch')
-      this.initializeKeys = false
-    } else {
-      // keys not set up, offer the option to try to get a pubkey from window.nostr
-      setTimeout(() => {
-        if (window.nostr) {
-          this.hasExtension = true
-        }
-      }, 1000)
-    }
-  },
+  // async start() {
+    // if (!this.$store.state.keys.pub) {
+    //   // keys not set up, offer the option to try to get a pubkey from window.nostr
+      // setTimeout(() => {
+      //   if (window.nostr) {
+      //     this.hasExtension = true
+      //     console.log('window has nostr')
+      //   }
+      // }, 1000)
+      //     console.log('getFromExtension', this.getFromExtension)
+    // }
+    // if (this.$store.state.keys.pub) this.initializeKeys = false
+    // console.log('start')
+  // },
 
   methods: {
+    // setInitializeKeys(evt) {
+    //   if (this.hideKeyInitialization) this.initializeKeys = false
+    //   else if (this.$store.state.keys.pub) this.initializeKeys = false
+    //   else if (!this.hideKeyInitialization) this.initializeKeys = true
+    // },
+
     async getFromExtension() {
       try {
         this.key = await window.nostr.getPublicKey()
@@ -193,12 +262,12 @@ export default defineComponent({
       }
     },
 
-    getAstralPublicKey() {
-      this.key =
-        '2df69cd0c6ab95e08f466abe7b39bb64e744ee31ffc3041f270bdfec2a37ec06'
-      this.watchOnly = true
-      this.focusKeyInput()
-    },
+    // getAstralPublicKey() {
+    //   this.key =
+    //     '2df69cd0c6ab95e08f466abe7b39bb64e744ee31ffc3041f270bdfec2a37ec06'
+    //   this.watchOnly = true
+    //   this.focusKeyInput()
+    // },
 
     generate() {
       this.key = generatePrivateKey()
@@ -207,7 +276,7 @@ export default defineComponent({
     },
 
     proceed() {
-      let key = this.key?.toLowerCase()
+      let key = this.hexKey
 
       var keys = {}
       if (validateWords(key)) {
@@ -229,8 +298,31 @@ export default defineComponent({
     },
 
     isKey(key) {
-      return key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)
+      if (key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)) return true
+      return false
     },
+
+    isBeck32Key(key) {
+      if (typeof key !== 'string') return false
+      try {
+        let { prefix, data } = decode(key.toLowerCase())
+        if (!['npub', 'nsec'].includes(prefix)) return false
+        if (prefix === 'npub') this.watchOnly = true
+        if (prefix === 'nsec') this.watchOnly = false
+        if (!this.isKey(this.toHexString(data))) return false
+      } catch (error) {
+        return false
+      }
+      return true
+    },
+
+    toHexString(buffer) {
+      return buffer.reduce((s, byte) => {
+        let hex = byte.toString(16)
+        if (hex.length === 1) hex = '0' + hex
+        return s + hex
+      }, '')
+    }
   },
 })
 </script>

@@ -1,12 +1,13 @@
 <template>
   <div :class='(bordered ? "bordered-avatar" : "") + (hoverEffect ? " hovered-avatar" : "")'>
     <q-avatar :rounded='!round' class='relative-position' :size='size' @click.stop="toProfile(pubkey)">
-      <img :src="$store.getters.avatar(pubkey)" />
-      <div :class='alignRight ? "icon-right" : "icon-left"'>
-      <BaseButtonNIP05
-        v-if='showVerified'
-        :pubkey='pubkey'
-      />
+      <img :src="$store.getters.avatar(pubkey)"/>
+      <div :class='alignRight ? "icon-right" : "icon-left"' class='q-pt-xs'>
+        <BaseButtonNIP05
+          v-if='showVerified'
+          :pubkey='pubkey'
+          button-size='xs'
+        />
       </div>
     </q-avatar>
   </div>

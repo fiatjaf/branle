@@ -3,13 +3,32 @@ import {shorten} from './helpers'
 // import { stringify } from 'JSON'
 import {date} from 'quasar'
 const { formatDate } = date
-// const { startOfDate, formatDate } = date
-// const { buildDate, formatDate } = date
-import TimeAgo from 'javascript-time-ago'
-import en from 'javascript-time-ago/locale/en.json'
 
-TimeAgo.addDefaultLocale(en)
-const timeAgo = new TimeAgo('en-US')
+
+function formatDateI18n(date, format) {
+  return formatDate(date, format, {
+    days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    daysShort: ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'],
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  })
+}
+
+function formatDateUTC(value, verbose = false) {
+  let date = new Date(value * 1000)
+  let dateUtc = new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    )
+  let now = Date.now()
+  if (now - dateUtc.getTime() < (1000 * 60 * 60 * 24 * 365) && now > dateUtc.getTime()) {
+    if (verbose) return formatDateI18n(dateUtc, 'ddd D MMMM')
+    return formatDateI18n(dateUtc, 'D MMMM')
+  }
+  if (verbose) return formatDateI18n(dateUtc, 'ddd D MMMM YYYY')
+  return formatDateI18n(dateUtc, 'D MMMM YYYY')
+}
 
 export default {
   methods: {
@@ -39,34 +58,38 @@ export default {
 
     shorten,
 
-    niceDate(value) {
-      // if (value + 60 * 60 /* an hour */ > Date.now() / 1000) {
-      //   return relative(value * 1000)
-      // }
+    // niceDate(value) {
+    //   // if (value + 60 * 60 /* an hour */ > Date.now() / 1000) {
+    //   //   return relative(value * 1000)
+    //   // }
 
-      // return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
-      let niceDateString = timeAgo.format(value * 1000, 'twitter-now')
-      if (niceDateString.includes(' ')) return niceDateString
-      else return niceDateString + ' ago'
+    //   // return date.formatDate(value * 1000, 'YYYY MMM D h:mm A')
+    //   let niceDateString = timeAgo.format(value * 1000, 'twitter-now')
+    //   if (niceDateString.includes(' ')) return niceDateString
+    //   else return niceDateString + ' ago'
+    // },
+
+    niceDateUTC(value) {
+      let now = Math.floor(Date.now() / 1000)
+      if (value > now) return formatDateUTC(value)
+      if (value === now) return this.$t('now')
+      let seconds = now - value
+      if (seconds < 60) return `${seconds}${this.$t('s')}`
+      let minutes = Math.floor(seconds / 60)
+      if (minutes < 60) return `${minutes}${this.$t('m')}`
+      let hours = Math.floor(minutes / 60)
+      if (hours < 24) return `${hours}${this.$t('h')}`
+      return formatDateUTC(value)
     },
 
     dateUTC(value) {
-      let date = new Date(value * 1000)
-      let dateUtc = new Date(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate(),
-        // date.getUTCHours(),
-        // date.getUTCMinutes(),
-        )
-      let now = Date.now()
-      if (now - dateUtc.getTime() < (1000 * 60 * 60 * 24 * 365)) return formatDate(dateUtc, 'ddd Do MMMM')
-      return formatDate(dateUtc, 'ddd Do MMMM YYYY')
+      return formatDateUTC(value, true)
     },
+
 
     timeUTC(value) {
       let date = new Date(value * 1000)
-      return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')} UTC`
+      return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')} ${this.$t('UTC')}`
     },
 
     interpolateMentions(text, tags) {

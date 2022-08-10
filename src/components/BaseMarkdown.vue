@@ -10,7 +10,7 @@ import subscript from 'markdown-it-sub'
 import superscript from 'markdown-it-sup'
 import deflist from 'markdown-it-deflist'
 import taskLists from 'markdown-it-task-lists'
-import markdownHighlightJs from 'markdown-it-highlightjs'
+// import markdownHighlightJs from 'markdown-it-highlightjs'
 import emoji from 'markdown-it-emoji'
 // import linkPreview from 'markdown-it-link-preview'
 
@@ -25,7 +25,7 @@ md.use(subscript)
   .use(superscript)
   .use(deflist)
   .use(taskLists)
-  .use(markdownHighlightJs)
+  // .use(markdownHighlightJs)
   .use(emoji)
   .use(md => {
     md.core.ruler.before('normalize', 'auto-imager', state => {
@@ -58,7 +58,7 @@ md.use(subscript)
         trimmed.endsWith('.jpeg') ||
         trimmed.endsWith('.jpg')
       ) {
-        return `<img src="${src}" style="max-width: 90%">`
+        return `<img src="${src}" style="max-width: 90%; max-height: 30%">`
       } else if (
         trimmed.endsWith('.mp4') ||
         trimmed.endsWith('.webm') ||

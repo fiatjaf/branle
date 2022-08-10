@@ -17,6 +17,13 @@ export function hasName(state) {
   }
 }
 
+export function name(state) {
+  return pubkey => {
+    let {name} = state.profilesCache[pubkey] || {}
+    return name
+  }
+}
+
 export function displayName(state, getters) {
   return pubkey => {
     let {name, nip05} = state.profilesCache[pubkey] || {}
@@ -27,7 +34,7 @@ export function displayName(state, getters) {
   }
 }
 
-export function isVerifiedNIP05(state) {
+export function NIP05Id(state) {
   return pubkey => {
     let {nip05} = state.profilesCache[pubkey] || {}
     return nip05
@@ -50,9 +57,13 @@ export function profileDescription(state) {
   }
 }
 
+// export function contacts(state) {
+//   return (pubkey, short = true) =>
+//     state.contactListCache[pubkey]?.slice(0, short ? 6 : Math.inf)
+// }
 export function contacts(state) {
-  return (pubkey, short = true) =>
-    state.contactListCache[pubkey]?.slice(0, short ? 6 : Math.inf)
+  return (pubkey) =>
+    state.contactListCache[pubkey]
 }
 
 export function hasMoreContacts(state) {

@@ -20,7 +20,11 @@
       :label='verbose ? "info" : ""'
       dense
       align="left"
-    />
+  >
+    <q-tooltip v-if='!verbose'>
+      metadata
+    </q-tooltip>
+  </q-btn>
 </template>
 
 <script>

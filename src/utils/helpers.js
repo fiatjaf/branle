@@ -63,36 +63,36 @@ export async function processMentions(event) {
   return event
 }
 
-export async function extractMentions(text, tags) {
-  // const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
-  // const mentionRegex = /@((?<t>[a-z]{1}):{1})?(?<p>[a-f0-9]{64})\b/g
-  const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})\b/g
+// export async function extractMentions(text, tags) {
+//   // const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
+//   // const mentionRegex = /@((?<t>[a-z]{1}):{1})?(?<p>[a-f0-9]{64})\b/g
+//   const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})\b/g
 
-  let tagIndexMap = {}
-  // event.tags.filter(([t, v]) => (t === 'p' || t === 'e') && v).forEach(([t, v], index) => tagIndexMap[v] = index)
-  for (let match of text.matchAll(mentionRegex)) {
-    let type = null
-    if (match.groups.t === '&') type = 'e'
-    else if (match.groups.t === '@') type = 'p'
-    else return
-    let pubkey = match.groups.p
-    let idx = tags.findIndex(([t, v]) => t === type && v === pubkey)
-    if (idx !== -1) {
-      tagIndexMap[pubkey] = idx
-    } else {
-      if (type === 'e') tags.push(['e', pubkey])
-      else tags.push(await getPubKeyTagWithRelay(pubkey))
-      tagIndexMap[pubkey] = tags.length - 1
-    }
-  }
+//   let tagIndexMap = {}
+//   // event.tags.filter(([t, v]) => (t === 'p' || t === 'e') && v).forEach(([t, v], index) => tagIndexMap[v] = index)
+//   for (let match of text.matchAll(mentionRegex)) {
+//     let type = null
+//     if (match.groups.t === '&') type = 'e'
+//     else if (match.groups.t === '@') type = 'p'
+//     else return
+//     let pubkey = match.groups.p
+//     let idx = tags.findIndex(([t, v]) => t === type && v === pubkey)
+//     if (idx !== -1) {
+//       tagIndexMap[pubkey] = idx
+//     } else {
+//       if (type === 'e') tags.push(['e', pubkey])
+//       else tags.push(await getPubKeyTagWithRelay(pubkey))
+//       tagIndexMap[pubkey] = tags.length - 1
+//     }
+//   }
 
-  text = text.replace(
-    mentionRegex,
-    (_, __, pubkey) => `#[${tagIndexMap[pubkey]}]`
-  )
+//   text = text.replace(
+//     mentionRegex,
+//     (_, __, pubkey) => `#[${tagIndexMap[pubkey]}]`
+//   )
 
-  return text
-}
+//   return text
+// }
 
 export async function getPubKeyTagWithRelay(pubkey) {
   var base = ['p', pubkey]

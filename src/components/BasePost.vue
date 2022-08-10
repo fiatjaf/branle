@@ -30,9 +30,6 @@
     class='relative-position'
   >
     <div v-if="isReply" class="is-reply-connector"></div>
-    <!-- <q-avatar :size='replyDepth ? "sm" : ""' style='z-index: 1;' @click.stop="toProfile(event.pubkey)">
-      <img :src="$store.getters.avatar(event.pubkey)" />
-    </q-avatar> -->
       <BaseUserAvatar
         :pubkey='event.pubkey'
         size='1.5rem'
@@ -97,9 +94,10 @@
           {{ event.interpolated.text }}
         </BaseMarkdown>
         <BaseRelayRecommend v-else-if="event.kind === 2" :url="event.content" />
+        <BaseMarkdown v-else> {{ cleanEvent }} </BaseMarkdown>
         <div
           v-if='!isEmbeded && (isQuote || isRepost)'
-          class='reposts flex column q-my-sm q-mr-sm q-pa-sm'
+          class='reposts flex column q-my-sm q-pa-sm'
           :clickable='false'
         >
           <BasePost
@@ -113,104 +111,102 @@
           />
         </div>
       </q-item-label>
-      <!-- <q-separator v-if='replying' color='primary' size='1px' spaced/> -->
       <div
-        v-if='!isRepost'
-        class='flex row items-center no-wrap'
+        v-if='!isRepost && $store.state.keys.pub && (replyDepth !== -1)'
+        class='flex row items-center no-wrap reply-buttons'
         :color="replying ? 'primary' : ''"
         :class='replying ? "justify-between" : "justify-end"'
       >
-        <div class='text-primary text-thin col q-pl-xs' style='letter-spacing: .05rem;'>{{replyMode}}</div>
+        <div class='text-primary text-thin col q-pl-xs' style=' font-size: 90%; font-weight: 300;'>{{replyMode}}</div>
           <!-- @reply="replying = !replying" -->
-        <div>
-        <q-btn-toggle
-          v-model='replyMode'
-          v-if='!isRepost && replyMode'
-          class='no-padding no-margin'
-          unelevated
-          :dense='postContentWidth < 350'
-          flat
-          toggle-color='primary'
-          :size='highlighted ? "md" : "sm"'
-          @click.stop
-          :options="[
-            {value: 'embed', slot: 'embed'},
-            {value: 'repost', slot: 'repost'},
-            {value: 'quote', slot: 'quote'},
-            {value: 'reply', slot: 'reply'},
-            ]"
-        >
-          <template #embed>
-            <q-icon name='link' >
+        <div class='flex row no-wrap'>
+          <q-tabs
+            v-model='replyMode'
+            class='no-padding no-margin'
+            unelevated
+            dense
+            flat
+            active-color='primary'
+            :size='highlighted ? "md" : "sm"'
+            @click.stop
+          >
+            <q-tab name='embed' class='no-padding'>
+              <q-icon name='link' >
+                <q-tooltip>
+                  embed
+                </q-tooltip>
+              </q-icon>
+            </q-tab>
+            <q-tab name='repost' class='no-padding'>
+              <q-icon name='repeat' >
+                <q-tooltip>
+                  repost
+                </q-tooltip>
+              </q-icon>
+            </q-tab>
+            <q-tab name='quote' class='no-padding'>
+              <q-icon name='format_quote' >
+                <q-tooltip>
+                  quote
+                </q-tooltip>
+              </q-icon>
+            </q-tab>
+            <q-tab name='reply' class='no-padding'>
+              <q-icon name='chat_bubble_outline' class='flip-horizontal' >
+                <q-tooltip>
+                  reply
+                </q-tooltip>
+              </q-icon>
+            </q-tab>
+          </q-tabs>
+          <div class='flex row no-wrap items-center'>
+            <q-separator v-if='replyMode' color='primary' size='1px' vertical spaced :class='highlighted ? "q-mt-sm" : "q-mt-xs"'/>
+            <q-btn
+              v-if='replyMode'
+              icon="close"
+              color='primary'
+              flat
+              dense
+              @click.stop='replyMode = null'
+              :size='highlighted ? "md" : "sm"'
+            >
               <q-tooltip>
-                embed
+                cancel
               </q-tooltip>
-            </q-icon>
-          </template>
-          <template #repost>
-            <q-icon name='repeat' >
-              <q-tooltip>
-                repost
-              </q-tooltip>
-            </q-icon>
-          </template>
-          <template #quote>
-            <q-icon name='format_quote' >
-              <q-tooltip>
-                quote
-              </q-tooltip>
-            </q-icon>
-          </template>
-          <template #reply>
-            <q-icon name='chat_bubble_outline' class='flip-horizontal' >
-              <q-tooltip>
-                reply
-              </q-tooltip>
-            </q-icon>
-          </template>
-          <!-- <q-tab v-if='replying' name="embed" icon='link' />
-          <q-tab v-if='replying' name="repost" icon='repeat' />
-          <q-tab v-if='replying' name="quote" icon='format_quote'/>
-          <q-tab name="reply" @click.stop='toggleReplying'>
-          </q-tab> -->
-          <!-- <template #reply>
-          </template> -->
-        </q-btn-toggle>
-            <BaseButtonPost
-              :is-open='replying'
-              :button-size='highlighted ? "sm" : "xs"'
-              @click.stop='toggleReplying'
-            />
+            </q-btn>
+          </div>
         </div>
       </div>
+      <!-- <q-separator v-if='replyMode' color='primary' size='1px' /> -->
           <!-- <Reply v-if="event" :event="event"/> -->
       </q-item-section>
-      <q-item-section v-if="replying" class='no-padding no-margin full-width' ref='replyContent'>
-      <q-tab-panels
-        v-model="replyPanel"
-        class='no-padding full-width overflow-hidden'
-        style='background-color: inherit;'
-        @transition='calcConnectorValues(10)'
-      >
-      <q-tab-panel name="embed" class='no-padding full-width overflow-auto' @click.stop>
-        <span class='text-caption full-width'>
-          copy the formatted event ID below and paste it in any post to embed this event
-        </span>
-          <BaseButtonCopy :button-text="'&' + event.id" color='primary' flat tooltip-text='copy event ID'/>
-        <span class='text-primary full-width'>
-          {{ '&' + event.id }}
-        </span>
-      </q-tab-panel>
-      <q-tab-panel name="reply" class='no-padding'>
-        <BasePostEntry
-          :event="event"
-          :reply-mode='replyMode'
-          @sent="replySent"
-          @resized='calcConnectorValues(10)'
-        />
-      </q-tab-panel>
-      </q-tab-panels>
+      <q-item-section v-if="replyMode" class='full-width new-reply-box' ref='replyContent'>
+        <q-tab-panels
+          v-model="replyPanel"
+          class='no-padding full-width overflow-hidden'
+          style='background-color: inherit;'
+          @transition='calcConnectorValues(10)'
+        >
+          <q-tab-panel name="embed" class='no-padding full-width overflow-auto' @click.stop>
+            <span class='text-caption full-width'>
+              copy the formatted event ID below and paste it in any post to embed this event
+            </span>
+              <BaseButtonCopy :button-text="'&' + event.id" color='primary' flat tooltip-text='copy event ID'/>
+            <span class='text-primary full-width'>
+              {{ '&' + event.id }}
+            </span>
+          </q-tab-panel>
+          <q-tab-panel name="reply" class='q-pa-sm'>
+            <BasePostEntry
+              :event="event"
+              :reply-mode='replyMode'
+              @sent="replySent"
+              @resized='calcConnectorValues(10)'
+            />
+          </q-tab-panel>
+        </q-tab-panels>
       </q-item-section>
+      <!-- <q-separator v-if='replyMode' color='primary' size='1px' class='q-mt-sm'/> -->
 
       <q-item v-if='hasReplyChildren' class='no-padding no-border no-margin column full-width' >
       <div v-for="thread in event.replies" :key="thread[0].id" ref="childReplyContent">
@@ -230,9 +226,10 @@ import { defineComponent } from 'vue'
 // import VueForceNextTick from 'vue-force-next-tick'
 import {nextTick} from 'vue'
 import {pool} from '../pool'
+import {cleanEvent} from '../utils/event'
 import {dbGetEvent} from '../db'
 import helpersMixin from '../utils/mixin'
-import BaseButtonPost from 'components/BaseButtonPost.vue'
+// import BaseButtonPost from 'components/BaseButtonPost.vue'
 import BaseButtonRelays from 'components/BaseButtonRelays.vue'
 import BaseButtonInfo from 'components/BaseButtonInfo.vue'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
@@ -251,7 +248,7 @@ export default defineComponent({
     isEmbeded: {type: Boolean, default: false},
   },
   components: {
-    BaseButtonPost,
+    // BaseButtonPost,
     BaseButtonRelays,
     BaseButtonInfo,
     BaseButtonCopy,
@@ -269,9 +266,8 @@ export default defineComponent({
       reposts: [],
       eventSub: null,
       replyMode: '',
-      // replyPanel: '',
       resizing: false,
-      // rerenderKey: 0,
+      trigger: 1,
     }
   },
 
@@ -350,7 +346,11 @@ export default defineComponent({
       if (this.replyMode === 'embed') return 'embed'
       else if (this.replyMode) return 'reply'
       else return ''
-    }
+    },
+
+    cleanEvent() {
+      return JSON.stringify(cleanEvent(this.event), null, '\n\t')
+    },
   },
 
   mounted() {
@@ -368,6 +368,7 @@ export default defineComponent({
 
   activated() {
     this.calcConnectorValues()
+    this.trigger++
   },
 
   methods: {
@@ -427,14 +428,11 @@ export default defineComponent({
       if (this.replyMode === '') {
         this.replying = true
         this.replyMode = 'reply'
-        // this.replyPanel = 'reply'
       } else {
         this.replyMode = ''
-        // this.replyPanel = ''
         this.replying = false
       }
       this.calcConnectorValues(10)
-      // this.$emit('resized')
     },
 
     replySent(event) {
@@ -479,6 +477,11 @@ export default defineComponent({
         },
         'event-browser'
       )
+    },
+
+    niceDate(timestamp) {
+      if (this.trigger) return this.niceDateUTC(timestamp)
+      return this.niceDateUTC(timestamp)
     }
 
       // listen to changes to the event in the db so we get .seen_on updates
@@ -497,6 +500,7 @@ export default defineComponent({
 })
 </script>
   <!-- background-color: rgba(255, 255, 255, 0.2); -->
+  <!-- background: rgba(255, 255, 255, 0.1); -->
 <style lang="scss" scoped>
 .post-padding {
   box-sizing: border-box;
@@ -511,7 +515,6 @@ export default defineComponent({
 .post-highlighted {
   width: '100%';
   font-size: 1.2rem;
-  background: rgba(255, 255, 255, 0.1);
   border: 0;
 }
 .post-highlighted .reposts {
@@ -576,6 +579,13 @@ export default defineComponent({
   left: calc((100% / 2) - 1px);
   background: $accent;
   z-index: 0;
+}
+
+.new-reply-box {
+  border: 1px dashed $primary;
+  border-radius: .4rem;
+  padding: .3rem .3rem 0;
+  margin: 0 0 .3rem;
 }
 
 @media screen and (min-width: 600px) {

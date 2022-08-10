@@ -12,14 +12,14 @@
       @click.stop
     />
     <BaseButtonMessage
-      v-if='pubkey !== $store.state.keys.pub'
+      v-if='(pubkey !== $store.state.keys.pub) && ($store.state.keys.pub)'
       :button-to="'/messages/' + pubkey"
       button-size='sm'
       text-color='primary'
       @click.stop
     />
     <BaseButtonFollow
-      v-if='pubkey !== $store.state.keys.pub'
+      v-if='(pubkey !== $store.state.keys.pub) && ($store.state.keys.pub)'
       :pubkey='pubkey'
       button-size='sm'
       @click.stop

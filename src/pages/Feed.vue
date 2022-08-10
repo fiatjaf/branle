@@ -3,8 +3,8 @@
     <div
       class='home-feed-header flex column'
     >
-      <div class="text-h5 text-bold q-py-md">feed</div>
-      <BasePostEntry />
+      <div class="text-h5 text-bold q-py-md">{{ $t('feed') }}</div>
+      <!-- <BasePostEntry v-if='$store.state.keys.pub'/> -->
     </div>
     <!-- <q-separator color='accent' size='2px'/> -->
     <q-tabs
@@ -95,7 +95,7 @@
         </div>
       </q-tab-panel>
 
-      <q-tab-panel v-if='botsFeed.length' name="bots" class='no-padding'>
+      <q-tab-panel v-if='botsFeed.length' name="bots" class='no-padding hide-scrollbar'>
         <div>
           <q-virtual-scroll :items='botsFeed' virtual-scroll-item-size="110" ref='botsFeedScroll'>
             <template #default="{ item }">
@@ -210,6 +210,7 @@ export default {
         if (this.followsFeedSet.has(event.id)) continue
         this.followsFeedSet.add(event.id)
         addToThread(loadedThreads, event, 'feed')
+        // loadedThreads.sort((a, b) => a[0].latest_created_at < b[0].latest_created_at)
       }
       this.followsFeed.push(...loadedThreads)
       this.loadingMore = false
@@ -251,16 +252,22 @@ export default {
             }
           ],
           cb: async (event, relay) => {
-            if (this.globalFeedSet.has(event.id)) return
+            // if (this.globalFeedSet.has(event.id)) return
 
-            // this.$store.dispatch('useProfile', {
-            //   pubkey: event.pubkey,
-            //   request: true
-            // })
-            this.interpolateEventMentions(event)
-            this.globalFeedSet.add(event.id)
-            if (this.bots.includes(event.pubkey)) addToThread(this.botsFeed, event)
-            else addToThread(this.globalFeed, event, 'feed')
+            // // this.$store.dispatch('useProfile', {
+            // //   pubkey: event.pubkey,
+            // //   request: true
+            // // })
+            // this.interpolateEventMentions(event)
+            // this.globalFeedSet.add(event.id)
+            // if (this.bots.includes(event.pubkey)) {
+            //   addToThread(this.botsFeed, event)
+            //   this.botsFeed.sort((a, b) => a[0].latest_created_at < b[0].latest_created_at)
+            // } else {
+            //   addToThread(this.globalFeed, event, 'feed')
+            //   this.globalFeed.sort((a, b) => a[0].latest_created_at < b[0].latest_created_at)
+            // }
+            this.addEventGlobal(event)
             return
           }
         },
@@ -281,9 +288,11 @@ export default {
       if (this.globalFeedSet.has(event.id)) return
       this.interpolateEventMentions(event)
       this.globalFeedSet.add(event.id)
-      // addToThread(this.globalFeed, event, 'feed')
-      if (this.bots.includes(event.pubkey)) addToThread(this.botsFeed, event)
-      else addToThread(this.globalFeed, event, 'feed')
+      if (this.bots.includes(event.pubkey)) {
+        addToThread(this.botsFeed, event)
+      } else {
+        addToThread(this.globalFeed, event, 'feed')
+      }
     },
   }
 }
@@ -294,5 +303,9 @@ export default {
 }
 .q-tabs {
   border-bottom: 1px solid $accent
+}
+
+.q-page::-webkit-scrollbar {
+  width: 0px;
 }
 </style>

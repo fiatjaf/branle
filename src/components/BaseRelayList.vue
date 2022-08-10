@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <span class="text-h6 text-bold">relays</span>
+      <span class="text-bold" style='font-size: 1.1rem;'>relays</span>
       &nbsp;&lpar;
       <span class='text-secondary'>
         <q-icon name='visibility' size='xs' dense/>

@@ -63,12 +63,29 @@ export async function launch(store) {
       color: 'info'
     })
   })
-
   // preload our own profile from the db
   await store.dispatch('useProfile', {pubkey: store.state.keys.pub})
 
   // start listening for nostr events
   store.dispatch('restartMainSubscription')
+}
+
+export async function launchWithoutKey(store) {
+  // var {relays} = store.state
+
+  // // update store state
+  // store.commit('setRelays', relays)
+
+  // setup pool
+  for (let url in store.state.relays) {
+    pool.addRelay(url, store.state.relays[url])
+  }
+  pool.onNotice((notice, relay) => {
+    Notify.create({
+      message: `Relay ${relay.url} says: ${notice}`,
+      color: 'info'
+    })
+  })
 }
 
 var mainSub = pool
@@ -183,6 +200,7 @@ export async function setMetadata(store, metadata) {
   })
 
   store.dispatch('addEvent', {event})
+  store.commit('addProfileToCache', { pubkey: store.state.keys.pub, ...metadata })
 }
 
 export async function recommendServer(store, url) {
@@ -297,7 +315,7 @@ export async function useProfile(store, {pubkey, request = false}) {
         sub.unsub()
         sub = null
         resolve()
-      }, 1000)
+      }, 6000)
     })
   }
 
@@ -352,7 +370,7 @@ export async function useContacts(store, {pubkey, request = false}) {
         sub.unsub()
         sub = null
         resolve()
-      }, 1000)
+      }, 6000)
     })
   }
 }
@@ -419,7 +437,6 @@ export async function publishContactList(store) {
     tags: newTags,
     content: JSON.stringify(store.state.relays)
   })
-  console.log(event)
 
   await store.dispatch('addEvent', {event})
 

@@ -20,12 +20,12 @@
     </q-card>
   </q-dialog>
     <q-btn
-      v-if="$store.getters.isVerifiedNIP05(pubkey)"
+      v-if="$store.getters.NIP05Id(pubkey)"
       icon="verified"
       color="accent"
       flat
       dense
-      size='xs'
+      :size='buttonSize'
       class='no-padding'
       clickable
       @click.stop="openNIP05"
@@ -45,6 +45,7 @@ export default {
   mixins: [helpersMixin],
   props: {
     pubkey: {type: String, required: true},
+    buttonSize: {type: String, default: 'xs'}
   },
 
   data() {
@@ -57,7 +58,7 @@ export default {
   computed: {
     NIP05Link() {
       let [name, domain] = this.$store.getters
-        .displayName(this.pubkey)
+        .NIP05Id(this.pubkey)
         .split('@')
       if (!domain) {
         domain = name

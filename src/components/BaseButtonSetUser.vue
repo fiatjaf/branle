@@ -3,22 +3,19 @@
     unelevated
     clickable
     :size='buttonSize'
-    class='button-post'
+    class='button-set-user'
     dense
-    @click='$emit("open")'
   >
     <div
       v-if='verbose'
       class='gt-sm'
       style='font-size: 1rem; font-weight: 700; letter-spacing: .05rem;'
     >
-      <span v-if='!isOpen'>&nbsp;{{ $t('post') }}&nbsp;</span>
-      <span v-if='isOpen'>&nbsp;{{ $t('close') }}&nbsp;</span>
+      <span>&nbsp;{{ $t('setUser') }}&nbsp;</span>
     </div>
     <q-icon
-      :name="isOpen ? 'close' : 'chat_bubble_outline'"
-      :class='verbose ? "" : "flip-horizontal"'
-      :color='isOpen ? "" : "primary"'
+      name='login'
+      color='primary'
       :size='buttonSize'
     />
   </q-btn>
@@ -28,13 +25,8 @@
 import { defineComponent } from 'vue'
 
 export default defineComponent({
-  name: 'BaseButtonPost',
-  emits: ['open'],
+  name: 'BaseButtonSetUser',
   props: {
-    isOpen: {
-      type: Boolean,
-      required: true
-    },
     // buttonColor: {
     //   type: String,
     //   required: false,
@@ -66,10 +58,10 @@ export default defineComponent({
 </script>
 
 <style>
-.button-post {
+.button-set-user {
   opacity: .6;
 }
-.button-post:hover {
+.button-set-user:hover {
   opacity: 1;
 }
 </style>

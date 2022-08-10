@@ -1,8 +1,8 @@
 <template>
   <q-page>
     <div class="text-h5 text-bold q-py-md full-width flex row justify-start">
-      inbox
-      <q-btn
+      {{ $t('inbox') }}
+      <!-- <q-btn
         v-if='allChatsNeverRead'
         label="mark all as read"
         color="secondary"
@@ -10,7 +10,7 @@
         outline
         dense
         @click.stop='markAllAsRead'
-      />
+      /> -->
     </div>
     <q-separator color='accent' size='2px'/>
 
@@ -20,7 +20,7 @@
       </div>
       <q-item
         v-for="chat in chats"
-        :key="chat.peer + (allChatsNeverRead ? '_' : '')"
+        :key="chat.peer"
         v-ripple
         clickable
         class='flex row no-padding no-margin justify-between items-center q-gutter-xs'
@@ -38,7 +38,7 @@
         </q-badge>
         </div>
         <label class='no-padding text-right'>
-          {{ niceDate(chat.lastMessage) }}
+          {{ niceDateUTC(chat.lastMessage) }}
         </label>
       </q-item>
     </q-list>
@@ -82,6 +82,7 @@ export default {
     this.chats.forEach(({peer}) =>
       this.$store.dispatch('useProfile', {pubkey: peer})
     )
+    if (this.allChatsNeverRead) this.chats.forEach(({peer}) => this.$store.commit('haveReadMessage', peer))
     this.loading = false
   },
 

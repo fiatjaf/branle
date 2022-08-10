@@ -6,7 +6,7 @@ export function cleanEvent(event) {
     kind: event.kind,
     tags: event.tags,
     content: event.content,
-    sig: event.sig
+    sig: event.sig,
   }
 }
 

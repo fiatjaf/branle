@@ -46,6 +46,9 @@ function stream(name, args, callback) {
 export async function eraseDatabase() {
   return call('eraseDatabase', [])
 }
+export async function destroyStreams() {
+  return call('destroyStreams', [])
+}
 export async function dbSave(event, relay) {
   return call('dbSave', [event, relay])
 }

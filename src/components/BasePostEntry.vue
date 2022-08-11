@@ -229,9 +229,9 @@
         >
           <!-- <q-item-label v-if='!replyMode'>relay&nbsp;</q-item-label> -->
           <q-icon name="send" :style='"transform: translateX(" + sendIconTranslation + "px);"'/>
-          <q-tooltip>
+          <!-- <q-tooltip>
             send
-          </q-tooltip>
+          </q-tooltip> -->
         </q-btn>
       </q-btn-group>
     </div>
@@ -359,13 +359,15 @@ export default {
     },
     textValid() {
       if (this.replyMode === 'repost') return true
+      if (this.links.length) return true
       if (!this.text.length) return false
       if (this.messageMode) return true
       if (this.overCharLimit) return false
       return true
     },
-    inputWidth() {
-      return this.$refs.input?.$el?.clientWidth
+    postEntryWidth() {
+      // return this.$refs.input?.$el?.clientWidth
+      return this.$refs.postEntry?.$el?.clientWidth
     },
     toolboxWidth() {
       if (this.toolSelected) return this.$refs.toolbox?.$el?.clientWidth
@@ -403,7 +405,6 @@ export default {
       let matches = this.text.matchAll(hashtagRegex)
       let hashtags = []
       for (let match of matches) {
-        console.log('match', match)
         hashtags.push(match.groups.i.toLowerCase())
       }
       return hashtags
@@ -437,7 +438,8 @@ export default {
 
   methods: {
     updateText(e) {
-      this.text = e.target.textContent
+      if (e) this.text = e.target.textContent
+      else this.text = this.textarea.textContent
       this.updateReadonlyInput()
       this.updateReadonlyHightlightInput()
     },
@@ -487,12 +489,11 @@ export default {
     async sendReply() {
       // build tags
       // let tags = []
-      if (this.replyMode === 'repost' && this.text) this.text = ''
+      if (this.replyMode === 'repost' && this.text) this.textarea.innerHTML = ''
 
       // save copy of mentions and remove for now
       // let mentions = Object.assign({}, this.mentions())
       let tags = []
-      let text = this.text
       let textarea = this.textarea.cloneNode(true)
 
       // remove invalid tags and/or not p/e
@@ -518,7 +519,7 @@ export default {
         // if quote or repost, only tag this event and add mention to text
         let last = getEventTagWithRelay(this.event)
         tags.push(last)
-        text += ` #[${tags.length - 1}]`
+        // text += ` #[${tags.length - 1}]`
         textarea.append(` #[${tags.length - 1}]`)
       } else {
         // add the first and the last events being replied to
@@ -528,7 +529,8 @@ export default {
         tags.push(last)
       }
 
-      text = this.formatMentionsForPublishing(tags, textarea)
+      // let text = this.textarea.innerText
+      let text = this.formatMentionsForPublishing(tags, textarea)
       this.appendHashtags(tags)
       text = this.appendLinks(text)
       return await this.$store.dispatch('sendPost', {
@@ -667,7 +669,8 @@ export default {
         // this.text = await this.extractMentions(this.text, this.tags)
         await this.extractMentions(this.textarea, this.tags)
         // this.textarea.innerHTML = this.text
-        this.text = this.textarea.innerHTML
+        // this.text = this.textarea.innerHTML
+        this.updateText()
         if (start.el.nodeName === '#text' && start.pos > start.el.length)
           this.setCaret(start.el, start.el.length)
         else this.setCaret(start.el, start.pos)
@@ -707,6 +710,7 @@ export default {
         start.el.insertBefore(textNode, start.el.firstChild)
         this.setCaret(textNode, insertedText.length)
       }
+      this.updateText()
       this.updateReadonlyInput()
       this.updateReadonlyHightlightInput()
     },
@@ -724,7 +728,7 @@ export default {
           return
         }
         this.sendIconTranslation += 3
-        if (this.sendIconTranslation > 50) this.sendIconTranslation -= (this.inputWidth + 40)
+        if (this.sendIconTranslation > 50) this.sendIconTranslation -= (this.postEntryWidth + 40)
       }, 50)
     },
 
@@ -740,6 +744,7 @@ export default {
     reset() {
       this.closeTools()
       this.text = ''
+      this.textarea.innerHTML = ''
       this.tags = []
       this.links = []
       this.focusInput()
@@ -754,7 +759,7 @@ export default {
     },
 
     appendLinks(text) {
-      for (let link in this.links) {
+      for (let link of this.links) {
         if (link.name) text = text + `\n[${link.name}](${link.url})`
         else text = text + `\n${link.url}`
       }
@@ -845,7 +850,6 @@ export default {
           child.innerHTML = span.outerHTML
           return child.outerHTML
         }).join('')
-        console.log('contents', highlightFragment.childNodes, htmlContent)
 
         let span = document.createElement('span')
         span.innerHTML = htmlContent
@@ -861,10 +865,8 @@ export default {
     charPos(char, el = this.textarea) {
     // Loop through all child nodes
       for (var node of el.childNodes) {
-        console.log('node', node, 'char', char)
         if (node.nodeType === 3) { // we have a text node
           if (node.length >= char) {
-              console.log('return', { el: node, pos: char, char: -1 })
               return { el: node, pos: char, char: -1 }
           } else {
               char -= node.length
@@ -899,7 +901,6 @@ export default {
       text = text.replace(
         urlRegex,
         (url) => {
-          console.log('match values', url)
           this.addLink({ url })
           return ''
         }

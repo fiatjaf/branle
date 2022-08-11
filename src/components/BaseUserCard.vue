@@ -1,6 +1,6 @@
 <template>
   <q-item
-    clickable
+    :clickable='clickable'
     unelevated
     outlined
     class='no-padding flex row justify-start items-center cursor-pointer'
@@ -66,6 +66,11 @@ export default defineComponent({
       type: Boolean,
       required: false,
       default: false
+    },
+    clickable: {
+      type: Boolean,
+      required: false,
+      default: true
     },
     // largeMode: {
     //   type: String,

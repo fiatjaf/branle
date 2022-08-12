@@ -1,6 +1,6 @@
 # branle
 
-a twitter-like [nostr](https://github.com/fiatjaf/nostr) client.
+an experimental twitter-like [nostr](https://github.com/fiatjaf/nostr) client using [absurd-sql](https://github.com/jlongster/absurd-sql).
 
 https://user-images.githubusercontent.com/1653275/149637874-5ae1e400-1de0-42f1-9946-c4cec19347ed.mp4
 

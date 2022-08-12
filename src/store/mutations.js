@@ -66,6 +66,20 @@ export function unfollow(state, key) {
   if (idx >= 0) state.following.splice(idx, 1)
 }
 
+var homeFeedNoteExists = {}
+export function addToHomeFeed(state, event) {
+  if (event.id in homeFeedNoteExists) return
+  homeFeedNoteExists[event.id] = true
+
+  for (let i = 0; i < state.homeFeedNotes.length; i++) {
+    if (state.homeFeedNotes[i].created_at < event.created_at) {
+      state.homeFeedNotes.splice(i, 0, event)
+      return
+    }
+  }
+  state.homeFeedNotes.push(event)
+}
+
 export function addProfileToCache(
   state,
   {pubkey, name, about, picture, nip05}

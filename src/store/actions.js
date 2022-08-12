@@ -191,20 +191,21 @@ export async function recommendServer(store, url) {
 export async function addEvent(store, {event, relay = null}) {
   bus.emit('event', event)
 
-  dbSave(event, relay)
-
   // do things after the event is saved
   switch (event.kind) {
     case 0:
       // this will reset the profile cache for this URL
+      dbSave(event, relay)
       store.dispatch('useProfile', {pubkey: event.pubkey})
       break
     case 1:
+      store.commit('addToHomeFeed', event)
       break
     case 2:
       break
     case 3:
       // this will reset the profile cache for this URL
+      dbSave(event, relay)
       store.dispatch('useContacts', event.pubkey)
       break
     case 4:

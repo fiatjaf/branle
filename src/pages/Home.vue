@@ -16,7 +16,6 @@
 <script>
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
-import {dbGetHomeFeedNotes} from '../db'
 import bus from '../bus'
 
 export default {
@@ -33,7 +32,7 @@ export default {
   },
 
   async mounted() {
-    let notes = await dbGetHomeFeedNotes(50)
+    let notes = this.$store.state.homeFeedNotes.slice(0, 50)
     if (notes.length > 0) {
       this.reachedEnd = false
     }
@@ -63,12 +62,12 @@ export default {
         return
       }
 
-      let loadedNotes = await dbGetHomeFeedNotes(
-        50,
+      let loadedNotes = this.$store.state.homeFeedNotes.slice(
         Math.min.apply(
           Math,
           this.homeFeed.flat().map(event => event.created_at)
-        ) - 1
+        ),
+        50
       )
       if (loadedNotes.length === 0) {
         this.reachedEnd = true

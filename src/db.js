@@ -34,12 +34,6 @@ export async function eraseDatabase() {
 export async function dbSave(event, relay) {
   return call('dbSave', [event, relay])
 }
-export async function dbGetHomeFeedNotes(
-  limit = 50,
-  since = Math.round(Date.now() / 1000)
-) {
-  return call('dbGetHomeFeedNotes', [limit, since])
-}
 export async function dbGetEvent(id) {
   return call('dbGetEvent', [id])
 }

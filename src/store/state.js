@@ -45,6 +45,7 @@ export default function () {
 
     relays, // { [url]: {} }
     following: [], // [ pubkeys... ]
+    homeFeedNotes: [],
 
     profilesCache: {}, // { [pubkey]: {name, about, picture, ...} }
     profilesCacheLRU: [], // [ pubkeys... ]

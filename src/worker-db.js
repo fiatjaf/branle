@@ -108,22 +108,6 @@ async function run() {
 
     // db queries
     // ~
-    getHomeFeedNotesStmt: db.prepare(`
-      SELECT * FROM events
-      WHERE kind = 1 AND created_at <= :since
-      ORDER BY created_at DESC
-      LIMIT :limit
-    `),
-    dbGetHomeFeedNotes(limit = 50, since = Math.round(Date.now() / 1000)) {
-      this.getHomeFeedNotesStmt.bind({':limit': limit, ':since': since})
-      var events = []
-      while (this.getHomeFeedNotesStmt.step()) {
-        events.push(eventFromRow(this.getHomeFeedNotesStmt.get()))
-      }
-      this.getHomeFeedNotesStmt.reset()
-      return events
-    },
-
     getEventStmt: db.prepare(`SELECT * FROM events WHERE id = :id`),
     dbGetEvent(id) {
       try {

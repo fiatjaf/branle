@@ -74,12 +74,50 @@ async function run() {
     tagsInsertStmt: db.prepare(
       `INSERT OR IGNORE INTO tags (event_id, tag, value) VALUES (:event_id, :tag, :value)`
     ),
-    seenInsert: db.prepare(
+    seenInsertStmt: db.prepare(
       `INSERT OR IGNORE INTO seen (event_id, relay) VALUES (:event_id, :relay)`
     ),
+    getOldStmt: db.prepare(
+      `SELECT id FROM events WHERE kind = :kind AND pubkey = :pubkey`
+    ),
+    deleteFromSeenStmt: db.prepare(`DELETE FROM seen WHERE event_id = :id`),
+    deleteFromTagsStmt: db.prepare(`DELETE FROM tags WHERE event_id = :id`),
+    deleteFromEventsStmt: db.prepare(`DELETE FROM events WHERE id = :id`),
     dbSave(event, relay) {
       db.run('BEGIN TRANSACTION')
       try {
+        if (
+          event.kind === 0 ||
+          event.kind === 3 ||
+          (event.kind >= 10000 && event.kind < 20000)
+        ) {
+          // is replaceable
+          let previous = this.dbGetMetaEvent(event.kind, event.pubkey)
+
+          // if this is replaceable and not the newest, abort here
+          if (previous && previous.created_at > event.created_at) {
+            db.run('ROLLBACK')
+            return
+          }
+
+          // otherwise delete the old stuff for this kind and pubkey
+          this.getOldStmt.bind({':kind': event.kind, ':pubkey': event.pubkey})
+          while (this.getOldStmt.step()) {
+            let [id] = this.getOldStmt.get()
+            this.deleteFromSeenStmt.bind({':id': id})
+            this.deleteFromSeenStmt.step()
+            this.deleteFromSeenStmt.reset()
+            this.deleteFromTagsStmt.bind({':id': id})
+            this.deleteFromTagsStmt.step()
+            this.deleteFromTagsStmt.reset()
+            this.deleteFromEventsStmt.bind({':id': id})
+            this.deleteFromEventsStmt.step()
+            this.deleteFromEventsStmt.reset()
+          }
+          this.getOldStmt.reset()
+        }
+
+        // proceed to add
         this.eventInsertStmt.run({
           ':id': event.id,
           ':pubkey': event.pubkey,
@@ -102,6 +140,11 @@ async function run() {
         this.seenInsertStmt.run({':event_id': event.id, ':relay': relay})
         db.run('COMMIT')
       } catch (err) {
+        this.deleteFromSeenStmt.reset()
+        this.deleteFromTagsStmt.reset()
+        this.deleteFromEventsStmt.reset()
+        this.getOldStmt.reset()
+        console.log('FAILED TO INSERT', err)
         db.run('ROLLBACK')
       }
     },
@@ -132,6 +175,7 @@ async function run() {
         this.getMentionsStmt.reset()
         return events
       } catch (err) {
+        this.getMentionsStmt.reset()
         return []
       }
     },
@@ -156,6 +200,8 @@ async function run() {
       SELECT * FROM events
       WHERE pubkey = :pubkey
         AND kind = :kind
+        ORDER BY created_at DESC
+        LIMIT 1
     `),
     dbGetMetaEvent(kind, pubkey) {
       try {
@@ -165,7 +211,33 @@ async function run() {
         this.getMetaEventStmt.reset()
         return event
       } catch (err) {
+        this.getMetaEventStmt.reset()
         return null
+      }
+    },
+
+    getMetaEventSeenStmt: db.prepare(`
+      SELECT relay FROM seen
+      WHERE event_id IN (
+        SELECT id FROM events
+          WHERE pubkey = :pubkey
+          AND kind = :kind
+          ORDER BY created_at DESC
+          LIMIT 1
+      )
+    `),
+    dbGetMetaEventSeen(kind, pubkey) {
+      try {
+        this.getMetaEventSeenStmt.bind({':kind': kind, ':pubkey': pubkey})
+        var relays = []
+        while (this.getMetaEventSeenStmt.step()) {
+          relays.push(this.getMetaEventSeenStmt.get()[0])
+        }
+        this.getMetaEventSeenStmt.reset()
+        return relays
+      } catch (err) {
+        this.getMetaEventSeenStmt.reset()
+        return []
       }
     },
 

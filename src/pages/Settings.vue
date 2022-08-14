@@ -119,7 +119,7 @@
           </template>
         </q-input>
       </q-form>
-      <q-form>
+      <q-form class="mx-3 my-3">
         <q-btn
           label="Save"
           color="primary"

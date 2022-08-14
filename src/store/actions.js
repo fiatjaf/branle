@@ -197,11 +197,9 @@ export async function recommendServer(store, url) {
 export async function addEvent(store, {event, relay = null}) {
   bus.emit('event', event)
 
-  // do things after the event is saved
   switch (event.kind) {
     case 0:
-      // this will reset the profile cache for this URL
-      dbSave(event, relay)
+      await dbSave(event, relay)
       store.dispatch('useProfile', {pubkey: event.pubkey})
       break
     case 1:
@@ -210,14 +208,13 @@ export async function addEvent(store, {event, relay = null}) {
     case 2:
       break
     case 3:
-      // this will reset the profile cache for this URL
-      dbSave(event, relay)
+      await dbSave(event, relay)
       store.dispatch('useContacts', event.pubkey)
       break
     case 4:
       break
     case 10001:
-      dbSave(event, relay)
+      await dbSave(event, relay)
       break
   }
 }

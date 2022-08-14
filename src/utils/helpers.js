@@ -1,4 +1,4 @@
-import {dbGetMetaEvent} from '../db'
+import {dbGetMetaEventSeen} from '../db'
 
 export function shorten(str) {
   return str ? str.slice(0, 3) + '…' + str.slice(-4) : ''
@@ -56,19 +56,10 @@ export async function processMentions(event) {
 
 export async function getPubKeyTagWithRelay(pubkey) {
   var base = ['p', pubkey]
-  let event = await dbGetMetaEvent(0, pubkey)
-  if (event && event.seen_on && event.seen_on.length) {
-    let random = event.seen_on[Math.floor(Math.random() * event.seen_on.length)]
+  let seenOn = await dbGetMetaEventSeen(0, pubkey)
+  if (seenOn.length) {
+    let random = seenOn[Math.floor(Math.random() * seenOn.length)]
     base.push(random)
   }
   return base
-}
-
-export function getEventTagWithRelay(event) {
-  if (event.seen_on && event.seen_on.length) {
-    let random = event.seen_on[Math.floor(Math.random() * event.seen_on.length)]
-    return ['e', event.id, random]
-  }
-
-  return ['e', event.id]
 }

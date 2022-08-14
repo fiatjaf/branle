@@ -40,8 +40,11 @@ export async function dbGetMentions(ourPubKey, limit = 40, since, until) {
 export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
   return call('dbGetUnreadNotificationsCount', [ourPubKey, since])
 }
-export async function dbGetMetaEvent(pubkey) {
-  return call('dbGetMetaEvent', [pubkey])
+export async function dbGetMetaEvent(kind, pubkey) {
+  return call('dbGetMetaEvent', [kind, pubkey])
+}
+export async function dbGetMetaEventSeen(kind, pubkey) {
+  return call('dbGetMetaEventSeen', [kind, pubkey])
 }
 export async function dbExec(sql) {
   return call('dbExec', [sql])

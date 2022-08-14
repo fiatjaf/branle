@@ -58,7 +58,7 @@
           />
         </div>
         <div v-if="replying" class="mt-4">
-          <Reply v-if="event" :event="event" />
+          <Reply v-if="event" :event="event" :seen-on-relay="seenOn[0]" />
         </div>
       </div>
       <div v-else class="font-mono text-slate-400 p-8">
@@ -66,11 +66,11 @@
       </div>
     </div>
 
-    <div v-if="event?.seen_on?.length">
+    <div v-if="seenOn?.length">
       <q-separator class="my-2" />
       <div class="text-lg mx-4 mt-6 mb-4">Seen on</div>
       <ul class="mb-2 pl-4 text-md list-disc">
-        <li v-for="relay in event.seen_on" :key="relay">
+        <li v-for="relay in seenOn" :key="relay">
           <span class="text-accent opacity-65">
             {{ relay }}
           </span>
@@ -130,18 +130,19 @@ export default {
       childrenThreads: [],
       childrenSeen: new Map(),
       childrenSub: null,
-      eventUpdates: null
+      eventUpdates: null,
+      seenOn: []
     }
   },
 
   computed: {
     missingFrom() {
-      if (!this.event || !this.event.seen_on) return []
+      if (!this.event || !this.seenOn) return []
 
       return Object.entries(this.$store.state.relays)
         .filter(([_, __, write]) => write === '')
         .map(([url, _, __]) => url)
-        .filter(url => this.event.seen_on.indexOf(url) === -1)
+        .filter(url => this.seenOn.indexOf(url) === -1)
     },
     content() {
       return this.interpolateMentions(this.event.content, this.event.tags)
@@ -211,7 +212,7 @@ export default {
         'event-browser'
       )
 
-      // listen to changes to the event in the db so we get .seen_on updates
+      // listen to changes to the event in the db so we get .seenOn updates
       bus.on('event', event => {
         if (event.id === this.$route.params.eventId) {
           this.event = event
@@ -233,13 +234,7 @@ export default {
             }
           ],
           cb: async (event, relay) => {
-            let existing = this.childrenSeen.get(event.id)
-            if (existing) {
-              existing.seen_on.push(relay)
-              return
-            }
-
-            event.seen_on = [relay]
+            this.seenOn.push(relay)
             this.childrenSeen.set(event.id, event)
 
             this.$store.dispatch('useProfile', {pubkey: event.pubkey})

@@ -19,13 +19,14 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {getPubKeyTagWithRelay, getEventTagWithRelay} from '../utils/helpers'
+import {getPubKeyTagWithRelay} from '../utils/helpers'
 
 export default {
   mixins: [helpersMixin],
 
   props: {
-    event: {type: Object, required: true}
+    event: {type: Object, required: true},
+    seenOnRelay: {type: String, required: false, default: undefined}
   },
 
   data() {
@@ -77,7 +78,7 @@ export default {
       // add the first and the last event ids
       let first = usableTags.find(([t, v]) => t === 'e')
       if (first) tags.push(first)
-      let last = getEventTagWithRelay(this.event)
+      let last = ['e', this.event.id, this.seenOnRelay].filter(x => x)
       tags.push(last)
 
       // remove ourselves

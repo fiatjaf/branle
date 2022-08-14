@@ -44,7 +44,10 @@
     <div class="my-8">
       <div class="text-lg p-4">Relays</div>
       <q-list class="mb-3">
-        <q-item v-for="(opts, url) in $store.state.relays" :key="url">
+        <q-item
+          v-for="([url, r, w], idx) in changedRelays || $store.state.relays"
+          :key="url"
+        >
           <q-item-section class="opacity-75">
             <div class="flex-inline">
               <q-btn
@@ -54,7 +57,7 @@
                 icon="cancel"
                 size="xs"
                 :disable="!$store.getters.canSignEventsAutomatically"
-                @click="removeRelay(url)"
+                @click="removeRelay(url, idx)"
               />
               {{ url }}
               <q-btn
@@ -73,10 +76,10 @@
             <div class="flex-inline">
               <span
                 class="cursor-pointer tracking-wide"
-                :class="{'font-bold': opts.read, 'text-secondary': opts.read}"
+                :class="{'font-bold': r == '', 'text-secondary': r == ''}"
                 @click="
                   $store.getters.canSignEventsAutomatically
-                    ? setRelayOpt(url, 'read', !opts.read)
+                    ? setRelay(idx, 1 /* read is idx 1 */, r == '' ? '!' : '')
                     : null
                 "
               >
@@ -84,10 +87,10 @@
               </span>
               <span
                 class="cursor-pointer tracking-wide"
-                :class="{'font-bold': opts.write, 'text-secondary': opts.write}"
+                :class="{'font-bold': w == '', 'text-secondary': w == ''}"
                 @click="
                   $store.getters.canSignEventsAutomatically
-                    ? setRelayOpt(url, 'write', !opts.write)
+                    ? setRelay(idx, 2 /* write is idx 2 */, w == '' ? '!' : '')
                     : null
                 "
               >
@@ -115,6 +118,14 @@
             />
           </template>
         </q-input>
+      </q-form>
+      <q-form>
+        <q-btn
+          label="Save"
+          color="primary"
+          :disable="changedRelays === null"
+          @click="saveRelays"
+        />
       </q-form>
     </div>
 
@@ -170,6 +181,7 @@
 import {LocalStorage} from 'quasar'
 import {nextTick} from 'vue'
 import {queryName} from 'nostr-tools/nip05'
+import {normalizeRelayURL} from 'nostr-tools/relay'
 
 import helpersMixin from '../utils/mixin'
 import {eraseDatabase} from '../db'
@@ -185,6 +197,7 @@ export default {
     return {
       keysDialog: false,
       addingRelay: '',
+      changedRelays: null,
       metadata: {
         name,
         picture,
@@ -252,10 +265,12 @@ export default {
       this.$store.dispatch('setMetadata', this.metadata)
     },
     addRelay() {
-      this.$store.commit('addRelay', this.addingRelay)
+      this.changedRelays =
+        this.changedRelays || this.$store.state.relays.concat([])
+      this.changedRelays.push([normalizeRelayURL(this.addingRelay), '', ''])
       this.addingRelay = ''
     },
-    removeRelay(url) {
+    removeRelay(url, idx) {
       this.$q
         .dialog({
           title: 'Are you sure?',
@@ -263,11 +278,20 @@ export default {
           cancel: true
         })
         .onOk(() => {
-          this.$store.commit('removeRelay', url)
+          this.changedRelays =
+            this.changedRelays || this.$store.state.relays.concat([])
+          this.changedRelays.splice(idx, 1)
         })
     },
-    setRelayOpt(url, opt, value) {
-      this.$store.commit('setRelayOpt', {url, opt, value})
+    setRelay(idx, opt, value) {
+      this.changedRelays =
+        this.changedRelays || this.$store.state.relays.concat([])
+      this.changedRelays[idx][opt] = value
+    },
+    saveRelays() {
+      this.$store.commit('setRelays', this.changedRelays)
+      this.changedRelays = null
+      this.$store.dispatch('publishRelaysList')
     },
     shareRelay(url) {
       this.hasJustSharedRelay = true

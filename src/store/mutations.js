@@ -1,5 +1,4 @@
 import {getPublicKey} from 'nostr-tools'
-import {normalizeRelayURL} from 'nostr-tools/relay'
 import {
   seedFromWords,
   generateSeedWords,
@@ -25,30 +24,6 @@ export function setKeys(state, {mnemonic, priv, pub} = {}) {
 
 export function setRelays(state, relays) {
   state.relays = relays
-}
-
-export function addRelay(state, url) {
-  try {
-    normalizeRelayURL(url)
-    new URL(url)
-  } catch (err) {
-    return
-  }
-
-  state.relays[url] = {
-    read: true,
-    write: true
-  }
-}
-
-export function removeRelay(state, url) {
-  delete state.relays[url]
-}
-
-export function setRelayOpt(state, {url, opt, value}) {
-  if (url in state.relays) {
-    state.relays[url][opt] = value
-  }
 }
 
 export function setFollowing(state, following) {

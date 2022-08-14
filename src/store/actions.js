@@ -1,9 +1,9 @@
 import {queryName} from 'nostr-tools/nip05'
-import {Notify, LocalStorage} from 'quasar'
+import {Notify} from 'quasar'
 
 import bus from '../bus'
 import {pool, signAsynchronously} from '../pool'
-import {dbSave, dbGetProfile, dbGetContactList} from '../db'
+import {dbSave, dbGetMetaEvent} from '../db'
 import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
 
@@ -29,23 +29,23 @@ export async function launch(store) {
     pool.registerSigningFunction(signAsynchronously)
   }
 
-  // translate localStorage into a kind3 event -- or load relays and following from event
-  let contactList = await dbGetContactList(store.state.keys.pub)
+  // our current stuff before loading events
   var {relays, following} = store.state
+
+  // load list of people we're following from kind3 event
+  let contactList = await dbGetMetaEvent(3, store.state.keys.pub)
   if (contactList) {
-    try {
-      relays = JSON.parse(contactList.content)
-    } catch (err) {
-      /***/
-    }
     following = contactList.tags
       .filter(([t, v]) => t === 'p' && v)
       .map(([_, v]) => v)
-  } else {
-    // get stuff from localstorage and save to store -- which will trigger the eventize
-    // plugin to create and publish a contactlist event
-    relays = LocalStorage.getItem('relays') || relays
-    following = LocalStorage.getItem('following') || following
+  }
+
+  // load list of relays from kind10001 event
+  let relayList = await dbGetMetaEvent(10001, store.state.keys.pub)
+  if (relayList) {
+    relays = relayList.tags
+      .filter(([t, _, __]) => t.startsWith('ws://') || t.startsWith('wss://'))
+      .filter(tag => tag.length === 3)
   }
 
   // update store state
@@ -53,9 +53,9 @@ export async function launch(store) {
   store.commit('setRelays', relays)
 
   // setup pool
-  for (let url in store.state.relays) {
-    pool.addRelay(url, store.state.relays[url])
-  }
+  store.state.relays.forEach(([url, read, write]) => {
+    pool.addRelay(url, {read: read === '', write: write === ''})
+  })
   pool.onNotice((notice, relay) => {
     Notify.create({
       message: `Relay ${relay.url} says: ${notice}`,
@@ -87,6 +87,12 @@ export function restartMainSubscription(store) {
         {
           kinds: [1],
           '#p': [store.state.keys.pub]
+        },
+
+        // our relays
+        {
+          kinds: [10001],
+          authors: [store.state.keys.pub]
         }
       ],
       cb: async (event, relay) => {
@@ -102,7 +108,7 @@ export function restartMainSubscription(store) {
               // we got a new contact list from ourselves
               // we must update our local relays and following lists
               // if we don't have any local lists yet
-              let local = await dbGetContactList(store.state.keys.pub)
+              let local = await dbGetMetaEvent(3, store.state.keys.pub)
               if (!local || local.created_at < event.created_at) {
                 var relays, following
                 try {
@@ -210,6 +216,9 @@ export async function addEvent(store, {event, relay = null}) {
       break
     case 4:
       break
+    case 10001:
+      dbSave(event, relay)
+      break
   }
 }
 
@@ -226,7 +235,7 @@ export async function useProfile(store, {pubkey, request = false}) {
   }
 
   // fetch from db and add to cache
-  let event = await dbGetProfile(pubkey)
+  let event = await dbGetMetaEvent(0, pubkey)
   if (event) {
     metadata = metadataFromEvent(event)
   } else if (request) {
@@ -278,7 +287,7 @@ export async function useContacts(store, pubkey) {
     store.commit('addContactListToCache', store.state.contactListCache[pubkey])
   } else {
     // fetch from db and add to cache
-    let event = await dbGetContactList(pubkey)
+    let event = await dbGetMetaEvent(3, pubkey)
     if (event) {
       store.commit('addContactListToCache', event)
     }
@@ -287,7 +296,7 @@ export async function useContacts(store, pubkey) {
 
 export async function publishContactList(store) {
   // extend the existing tags
-  let event = await dbGetContactList(store.state.keys.pub)
+  let event = await dbGetMetaEvent(3, store.state.keys.pub)
   var tags = event?.tags || []
 
   // remove contacts that we're not following anymore
@@ -310,13 +319,30 @@ export async function publishContactList(store) {
     created_at: Math.floor(Date.now() / 1000),
     kind: 3,
     tags,
-    content: JSON.stringify(store.state.relays)
+    content: ''
   })
 
   await store.dispatch('addEvent', {event})
 
   Notify.create({
-    message: 'Updated and published list of followed keys and relays.',
+    message: 'Updated and published list of contacts.',
+    color: 'positive'
+  })
+}
+
+export async function publishRelaysList(store) {
+  let event = await pool.publish({
+    pubkey: store.state.keys.pub,
+    created_at: Math.floor(Date.now() / 1000),
+    kind: 10001,
+    tags: store.state.relays,
+    content: ''
+  })
+
+  await store.dispatch('addEvent', {event})
+
+  Notify.create({
+    message: 'Updated and published list of relays.',
     color: 'positive'
   })
 }

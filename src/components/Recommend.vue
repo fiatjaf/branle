@@ -37,7 +37,10 @@ export default {
           cancel: true
         })
         .onOk(() => {
-          this.$store.commit('addRelay', this.url)
+          let changedRelays = this.$store.state.relays.concat([])
+          changedRelays.push([this.url, '', ''])
+          this.$store.commit('setRelays', changedRelays)
+          this.dispatch('publishRelaysList')
         })
     }
   }

@@ -3,21 +3,21 @@ import {LocalStorage} from 'quasar'
 const isClientUsingTor = () => window.location.hostname.endsWith('.onion')
 
 const getMainnetRelays = () => {
-  const relays = {
-    'wss://relay.damus.io': {read: true, write: true},
-    'wss://nostr-pub.wellorder.net': {read: true, write: true},
-    'wss://nostr-verified.wellorder.net': {read: true, write: false},
-    'wss://expensive-relay.fiatjaf.com': {read: true, write: false},
-    'wss://relay.minds.com/nostr/v1/ws': {read: true, write: false}
-  }
+  const relays = [
+    ['wss://relay.damus.io', '', ''],
+    ['wss://nostr-pub.wellorder.net', '', ''],
+    ['wss://nostr-verified.wellorder.net', '', '!'],
+    ['wss://expensive-relay.fiatjaf.com', '', '!'],
+    ['wss://relay.minds.com/nostr/v1/ws', '', '!']
+  ]
   const optional = [
-    ['wss://nostr.rocks', {read: true, write: true}],
-    ['wss://nostr.onsats.org', {read: true, write: true}],
-    ['wss://nostr-relay.untethr.me	', {read: true, write: true}],
-    ['wss://nostr-relay.wlvs.space', {read: true, write: true}],
-    ['wss://nostr.bitcoiner.social', {read: true, write: true}],
-    ['wss://nostr.openchain.fr', {read: true, write: true}],
-    ['wss://nostr.drss.io', {read: true, write: true}]
+    ['wss://nostr.rocks', '', ''],
+    ['wss://nostr.onsats.org', '', ''],
+    ['wss://nostr-relay.untethr.me', '', ''],
+    ['wss://nostr-relay.wlvs.space', '', ''],
+    ['wss://nostr.bitcoiner.social', '', ''],
+    ['wss://nostr.openchain.fr', '', ''],
+    ['wss://nostr.drss.io', '', '']
   ]
 
   for (let i = 0; i < 3; i++) {
@@ -30,12 +30,11 @@ const getMainnetRelays = () => {
   return relays
 }
 
-const getTorRelays = () => ({
-  'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {
-    read: true,
-    write: true
-  }
-})
+const getTorRelays = () => [
+  'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion',
+  '',
+  ''
+]
 
 export default function () {
   const relays = isClientUsingTor() ? getTorRelays() : getMainnetRelays()
@@ -43,7 +42,7 @@ export default function () {
   return {
     keys: LocalStorage.getItem('keys') || {}, // {priv, pub }
 
-    relays, // { [url]: {} }
+    relays, // [url, read, write]
     following: [], // [ pubkeys... ]
     homeFeedNotes: [],
 

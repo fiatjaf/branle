@@ -110,7 +110,6 @@
 <script>
 import {pool} from '../pool'
 import bus from '../bus'
-import {dbGetEvent} from '../db'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 
@@ -137,12 +136,11 @@ export default {
 
   computed: {
     missingFrom() {
-      // filter out events we don't have locally as they are from people we don't follow
       if (!this.event || !this.event.seen_on) return []
 
       return Object.entries(this.$store.state.relays)
-        .filter(([_, prefs]) => prefs.write)
-        .map(([url, _]) => url)
+        .filter(([_, __, write]) => write === '')
+        .map(([url, _, __]) => url)
         .filter(url => this.event.seen_on.indexOf(url) === -1)
     },
     content() {
@@ -197,30 +195,21 @@ export default {
     },
 
     async listen() {
-      this.event = await dbGetEvent(this.$route.params.eventId)
-      if (this.event) {
-        this.$store.dispatch('useProfile', {
-          pubkey: this.event.pubkey,
-          request: true
-        })
-        this.listenAncestors()
-      } else {
-        this.eventSub = pool.sub(
-          {
-            filter: {ids: [this.$route.params.eventId]},
-            cb: async event => {
-              this.eventSub.unsub()
-              this.event = event
-              this.$store.dispatch('useProfile', {
-                pubkey: this.event.pubkey,
-                request: true
-              })
-              this.listenAncestors()
-            }
-          },
-          'event-browser'
-        )
-      }
+      this.eventSub = pool.sub(
+        {
+          filter: {ids: [this.$route.params.eventId]},
+          cb: async event => {
+            this.eventSub.unsub()
+            this.event = event
+            this.$store.dispatch('useProfile', {
+              pubkey: this.event.pubkey,
+              request: true
+            })
+            this.listenAncestors()
+          }
+        },
+        'event-browser'
+      )
 
       // listen to changes to the event in the db so we get .seen_on updates
       bus.on('event', event => {

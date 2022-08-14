@@ -34,23 +34,14 @@ export async function eraseDatabase() {
 export async function dbSave(event, relay) {
   return call('dbSave', [event, relay])
 }
-export async function dbGetEvent(id) {
-  return call('dbGetEvent', [id])
-}
 export async function dbGetMentions(ourPubKey, limit = 40, since, until) {
   return call('dbGetMentions', [ourPubKey, limit, since, until])
 }
 export async function dbGetUnreadNotificationsCount(ourPubKey, since) {
   return call('dbGetUnreadNotificationsCount', [ourPubKey, since])
 }
-export async function dbGetProfile(pubkey) {
-  return call('dbGetProfile', [pubkey])
-}
-export async function dbGetContactList(pubkey) {
-  return call('dbGetContactList', [pubkey])
-}
-export async function dbGetRelayForPubKey(pubkey) {
-  return call('dbGetRelayForPubKey', [pubkey])
+export async function dbGetMetaEvent(pubkey) {
+  return call('dbGetMetaEvent', [pubkey])
 }
 export async function dbExec(sql) {
   return call('dbExec', [sql])

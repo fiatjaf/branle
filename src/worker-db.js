@@ -108,17 +108,6 @@ async function run() {
 
     // db queries
     // ~
-    getEventStmt: db.prepare(`SELECT * FROM events WHERE id = :id`),
-    dbGetEvent(id) {
-      try {
-        let event = eventFromRow(this.getEventStmt.get({':id': id}))
-        this.getEventStmt.reset()
-        return event
-      } catch (err) {
-        return null
-      }
-    },
-
     getMentionsStmt: db.prepare(`
       SELECT * FROM events
       INNER JOIN tags ON tags.event_id = events.id
@@ -163,28 +152,17 @@ async function run() {
       return results.length > 0 ? results[0] : 0
     },
 
-    getProfileStmt: db.prepare(
-      `SELECT * FROM events WHERE pubkey = :pubkey AND kind = 0`
-    ),
-    dbGetProfile(pubkey) {
-      try {
-        let event = eventFromRow(this.getProfileStmt.get({':pubkey': pubkey}))
-        this.getProfileStmt.reset()
-        return event
-      } catch (err) {
-        return null
-      }
-    },
-
-    getContactListStmt: db.prepare(`
+    getMetaEventStmt: db.prepare(`
       SELECT * FROM events
       WHERE pubkey = :pubkey
-        AND kind = 3
+        AND kind = :kind
     `),
-    dbGetContactList(pubkey) {
+    dbGetMetaEvent(kind, pubkey) {
       try {
-        let event = eventFromRow(this.getProfileStmt.get({':pubkey': pubkey}))
-        this.getContactListStmt.reset()
+        let event = eventFromRow(
+          this.getMetaEventStmt.get({':kind': kind, ':pubkey': pubkey})
+        )
+        this.getMetaEventStmt.reset()
         return event
       } catch (err) {
         return null

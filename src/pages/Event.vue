@@ -109,7 +109,6 @@
 
 <script>
 import {pool} from '../pool'
-import bus from '../bus'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 
@@ -128,7 +127,7 @@ export default {
       event: null,
       eventSub: null,
       childrenThreads: [],
-      childrenSeen: new Map(),
+      childrenSet: new Set(),
       childrenSub: null,
       eventUpdates: null,
       seenOn: []
@@ -176,6 +175,7 @@ export default {
 
   methods: {
     start() {
+      this.seenOn = []
       this.listen()
       window.addEventListener('scroll', this.detectedUserActivity)
       window.addEventListener('click', this.detectedUserActivity)
@@ -199,32 +199,32 @@ export default {
       this.eventSub = pool.sub(
         {
           filter: {ids: [this.$route.params.eventId]},
-          cb: async event => {
-            this.eventSub.unsub()
-            this.event = event
-            this.$store.dispatch('useProfile', {
-              pubkey: this.event.pubkey,
-              request: true
-            })
-            this.listenAncestors()
+          cb: async (event, relay) => {
+            this.seenOn.push(relay)
+
+            // only do this once
+            if (this.seenOn.length === 1) {
+              this.event = event
+              this.$store.dispatch('useProfile', {
+                pubkey: this.event.pubkey,
+                request: true
+              })
+              setTimeout(() => {
+                this.eventSub.unsub()
+              }, 2000)
+              this.listenAncestors()
+            }
           }
         },
         'event-browser'
       )
-
-      // listen to changes to the event in the db so we get .seenOn updates
-      bus.on('event', event => {
-        if (event.id === this.$route.params.eventId) {
-          this.event = event
-        }
-      })
 
       this.listenChildren()
     },
 
     listenChildren() {
       this.childrenThreads = []
-      this.childrenSeen = new Map()
+      this.childrenSet = new Set()
       this.childrenSub = pool.sub(
         {
           filter: [
@@ -234,11 +234,14 @@ export default {
             }
           ],
           cb: async (event, relay) => {
-            this.seenOn.push(relay)
-            this.childrenSeen.set(event.id, event)
+            if (this.childrenSet.has(event.id)) return
 
-            this.$store.dispatch('useProfile', {pubkey: event.pubkey})
-
+            // only do this once for each children
+            this.childrenSet.add(event.id)
+            this.$store.dispatch('useProfile', {
+              pubkey: event.pubkey,
+              request: true
+            })
             addToThread(this.childrenThreads, event)
             return
           }
@@ -264,6 +267,7 @@ export default {
             cb: async event => {
               if (this.ancestorsSet.has(event.id)) return
 
+              // only do this once for each ancestor
               this.$store.dispatch('useProfile', {
                 pubkey: event.pubkey,
                 request: true

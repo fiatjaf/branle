@@ -37,7 +37,7 @@ export function isVerifiedNIP05(state) {
 export function avatar(state) {
   return pubkey => {
     if (state.profilesCache[pubkey]?.picture) {
-      return `/avatar-proxy?url=${state.profilesCache[pubkey].picture}`
+      return `/.netlify/functions/avatar-proxy?url=${state.profilesCache[pubkey].picture}`
     }
     return 'data:image/png;base64,' + new Identicon(pubkey, 40).toString()
   }

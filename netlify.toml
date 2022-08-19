@@ -12,3 +12,7 @@
   [headers.values]
     Cross-Origin-Opener-Policy = "same-origin"
     Cross-Origin-Embedder-Policy = "require-corp"
+
+[[edge-functions]]
+  path = "/avatar"
+  function = "avatar-proxy"

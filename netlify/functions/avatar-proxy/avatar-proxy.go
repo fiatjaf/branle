@@ -26,6 +26,7 @@ func handler(request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResp
 			Headers: map[string]string{
 				"Content-Type":   resp.Header.Get("Content-Type"),
 				"Content-Length": resp.Header.Get("Content-Length"),
+				"Cache-Control":  "public, max-age=31536000, immutable",
 			},
 			Body:            base64.StdEncoding.EncodeToString(body),
 			IsBase64Encoded: true,

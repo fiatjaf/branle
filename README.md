@@ -4,6 +4,8 @@ an experimental twitter-like [nostr](https://github.com/fiatjaf/nostr) client us
 
 https://user-images.githubusercontent.com/1653275/149637874-5ae1e400-1de0-42f1-9946-c4cec19347ed.mp4
 
+_branle_ assumes it will be deployed to [Netlify](https://netlify.com/). If you want to deploy it elsewhere in your own machine you'll have to find a way to mimic the custom headers and avatar proxy function. See [netlify.toml](netlify.toml).
+
 ## Install the dependencies
 ```bash
 yarn
@@ -12,28 +14,6 @@ yarn
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
 ./node_modules/.bin/quasar dev
-```
-
-### Lint the files
-```bash
-yarn run lint
-```
-
-### Build the app for production
-```bash
-./node_modules/.bin/quasar build
-```
-
-## Docker
-
-### Build the docker image
-```bash
-docker build -t branle .
-```
-
-### Run the container
-```bash
-docker run -d -p 8080:80 --name branle branle
 ```
 
 ### Customize the brand

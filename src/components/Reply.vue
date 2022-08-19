@@ -6,7 +6,6 @@
       autogrow
       autofocus
       label="Reply to this note"
-      maxlength="280"
       @keypress.ctrl.enter="sendReply"
     >
     </q-input>

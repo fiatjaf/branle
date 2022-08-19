@@ -8,7 +8,6 @@
           autogrow
           autofocus
           label="What's happening?"
-          maxlength="280"
           @keypress.ctrl.enter="sendPost"
         >
           <template #before>
@@ -45,7 +44,7 @@ export default {
 
   data() {
     return {
-      text: '',
+      text: ''
     }
   },
 

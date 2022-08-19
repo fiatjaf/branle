@@ -184,7 +184,6 @@ import {queryName} from 'nostr-tools/nip05'
 import {normalizeRelayURL} from 'nostr-tools/relay'
 
 import helpersMixin from '../utils/mixin'
-import {eraseDatabase} from '../db'
 
 export default {
   name: 'Settings',
@@ -309,7 +308,20 @@ export default {
         })
         .onOk(async () => {
           LocalStorage.clear()
-          await eraseDatabase()
+
+          await indexedDB.databases().then(dbs => {
+            let promises = dbs.map(
+              db =>
+                new Promise((resolve, reject) => {
+                  var req = indexedDB.deleteDatabase(db.Name)
+                  req.onsuccess = resolve
+                  req.onerror = reject
+                  req.onblocked = reject
+                })
+            )
+            Promise.all(promises).then(console.log).catch(console.error)
+          })
+
           window.location.reload()
         })
     }

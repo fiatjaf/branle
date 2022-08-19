@@ -28,9 +28,6 @@ function call(name, args) {
   })
 }
 
-export async function eraseDatabase() {
-  return call('eraseDatabase', [])
-}
 export async function dbSave(event, relay) {
   return call('dbSave', [event, relay])
 }

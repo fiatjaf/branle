@@ -56,16 +56,6 @@ async function run() {
   }
 
   const methods = {
-    // delete everything
-    //
-    eraseDatabase() {
-      return db.run(`
-        DROP TABLE tags;
-        DROP TABLE events;
-        DROP TABLE seen;
-      `)
-    },
-
     // general function for saving an event, with granular logic for each kind
     //
     eventInsertStmt: db.prepare(

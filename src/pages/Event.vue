@@ -29,7 +29,7 @@
           </div>
         </div>
         <div
-          class="text-xl my-4 font-sans break-words text-justify"
+          class="text-xl my-4 font-sans break-words"
           style="hyphens: auto !important"
         >
           <Markdown>{{ content }}</Markdown>

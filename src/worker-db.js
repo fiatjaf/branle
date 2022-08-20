@@ -1,5 +1,6 @@
 import initSqlJs from '@jlongster/sql.js'
 import {SQLiteFS} from 'absurd-sql'
+import debounce from 'debounce'
 import IndexedDBBackend from 'absurd-sql/dist/indexeddb-backend'
 
 import sqlWasm from '@jlongster/sql.js/dist/sql-wasm.wasm'
@@ -73,69 +74,80 @@ async function run() {
     deleteFromSeenStmt: db.prepare(`DELETE FROM seen WHERE event_id = :id`),
     deleteFromTagsStmt: db.prepare(`DELETE FROM tags WHERE event_id = :id`),
     deleteFromEventsStmt: db.prepare(`DELETE FROM events WHERE id = :id`),
+    saveQueue: {},
     dbSave(event, relay) {
-      db.run('BEGIN TRANSACTION')
+      if (event.id in this.saveQueue) {
+        this.saveQueue[event.id].relays[relay] = true
+      } else {
+        this.saveQueue[event.id] = {event, relays: {[relay]: true}}
+      }
+      this.actuallySaveEventually()
+    },
+    actuallySave() {
+      let events = Object.values(this.saveQueue)
+      this.saveQueue = {}
       try {
-        if (
-          event.kind === 0 ||
-          event.kind === 3 ||
-          (event.kind >= 10000 && event.kind < 20000)
-        ) {
-          // is replaceable
-          let previous = this.dbGetMetaEvent(event.kind, event.pubkey)
+        events.forEach(({event, relays}) => {
+          if (
+            event.kind === 0 ||
+            event.kind === 3 ||
+            (event.kind >= 10000 && event.kind < 20000)
+          ) {
+            // is replaceable
+            let previous = this.dbGetMetaEvent(event.kind, event.pubkey)
 
-          // if this is replaceable and not the newest, abort here
-          if (previous && previous.created_at > event.created_at) {
-            db.run('ROLLBACK')
-            return
+            // if this is replaceable and not the newest, abort here
+            if (previous && previous.created_at > event.created_at) {
+              return
+            }
+
+            // otherwise delete the old stuff for this kind and pubkey
+            this.getOldStmt.bind({':kind': event.kind, ':pubkey': event.pubkey})
+            while (this.getOldStmt.step()) {
+              let [id] = this.getOldStmt.get()
+              this.deleteFromSeenStmt.bind({':id': id})
+              this.deleteFromSeenStmt.step()
+              this.deleteFromSeenStmt.reset()
+              this.deleteFromTagsStmt.bind({':id': id})
+              this.deleteFromTagsStmt.step()
+              this.deleteFromTagsStmt.reset()
+              this.deleteFromEventsStmt.bind({':id': id})
+              this.deleteFromEventsStmt.step()
+              this.deleteFromEventsStmt.reset()
+            }
+            this.getOldStmt.reset()
           }
 
-          // otherwise delete the old stuff for this kind and pubkey
-          this.getOldStmt.bind({':kind': event.kind, ':pubkey': event.pubkey})
-          while (this.getOldStmt.step()) {
-            let [id] = this.getOldStmt.get()
-            this.deleteFromSeenStmt.bind({':id': id})
-            this.deleteFromSeenStmt.step()
-            this.deleteFromSeenStmt.reset()
-            this.deleteFromTagsStmt.bind({':id': id})
-            this.deleteFromTagsStmt.step()
-            this.deleteFromTagsStmt.reset()
-            this.deleteFromEventsStmt.bind({':id': id})
-            this.deleteFromEventsStmt.step()
-            this.deleteFromEventsStmt.reset()
-          }
-          this.getOldStmt.reset()
-        }
-
-        // proceed to add
-        this.eventInsertStmt.run({
-          ':id': event.id,
-          ':pubkey': event.pubkey,
-          ':kind': event.kind,
-          ':created_at': event.created_at,
-          ':content': event.content,
-          ':tags_full': JSON.stringify(event.tags),
-          ':sig': event.sig
-        })
-        event.tags
-          .filter(tag => tag.length >= 2)
-          .filter(tag => tag[0].length === 1)
-          .forEach(tag =>
-            this.tagsInsertStmt.run({
-              ':event_id': event.id,
-              ':tag': tag[0],
-              ':value': tag[1]
-            })
+          // proceed to add
+          this.eventInsertStmt.run({
+            ':id': event.id,
+            ':pubkey': event.pubkey,
+            ':kind': event.kind,
+            ':created_at': event.created_at,
+            ':content': event.content,
+            ':tags_full': JSON.stringify(event.tags),
+            ':sig': event.sig
+          })
+          event.tags
+            .filter(tag => tag.length >= 2)
+            .filter(tag => tag[0].length === 1)
+            .forEach(tag =>
+              this.tagsInsertStmt.run({
+                ':event_id': event.id,
+                ':tag': tag[0],
+                ':value': tag[1]
+              })
+            )
+          Object.keys(relays).forEach(relay =>
+            this.seenInsertStmt.run({':event_id': event.id, ':relay': relay})
           )
-        this.seenInsertStmt.run({':event_id': event.id, ':relay': relay})
-        db.run('COMMIT')
+        })
       } catch (err) {
         this.deleteFromSeenStmt.reset()
         this.deleteFromTagsStmt.reset()
         this.deleteFromEventsStmt.reset()
         this.getOldStmt.reset()
         console.log('FAILED TO INSERT', err)
-        db.run('ROLLBACK')
       }
     },
 
@@ -235,6 +247,8 @@ async function run() {
       return db.exec(sql, params)
     }
   }
+
+  methods.actuallySaveEventually = debounce(methods.actuallySave, 15000)
 
   // db is initialized now, execute all in the query and run them immediately from here onwards
   self.onmessage = handleMessage

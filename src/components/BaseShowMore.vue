@@ -33,8 +33,7 @@ export default {
   },
   methods: {
     showMore() {
-      if (this.replies && this.replies.length) this.toEvent(this.root, this.replies)
-      else this.toEvent(this.root)
+      this.toEvent(this.root)
     }
   }
 }

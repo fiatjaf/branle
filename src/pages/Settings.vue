@@ -2,15 +2,23 @@
   <q-page>
     <div class="text-h5 text-bold q-py-md">{{ $t('settings') }}</div>
     <q-separator color='accent' size='2px'/>
-    <q-form class="q-gutter-md" @submit="setMetadata">
-      <!-- <div class="text-lg p-4">Profile</div> -->
-      <q-input v-model="metadata.name" filled type="text" label="Name">
+    <q-form class="q-gutter-md q-pt-sm" @submit="setMetadata">
+      <div v-if='editingMetadata' class='flex justify-between' style='display: flex; gap: .2rem;'>
+        <q-btn label="save" color="primary" size="sm" type="submit"/>
+        <q-btn label="cancel" color="negative" size="sm" @click='cancel("metadata")'/>
+      </div>
+      <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
+          {{ $t('profile') }}
+          <q-btn v-if='!editingMetadata' label="edit" color="primary" size="sm" @click='editingMetadata = true'/>
+      </div>
+      <q-input v-model="metadata.name" filled type="text" label="Name" :disable='!editingMetadata'>
         <template #before>
           <q-icon name="alternate_email" />
         </template>
       </q-input>
       <q-input
         v-model="metadata.about"
+        :disable='!editingMetadata'
         filled
         autogrow
         type="text"
@@ -19,6 +27,7 @@
       />
       <q-input
         v-model.trim="metadata.picture"
+        :disable='!editingMetadata'
         filled
         type="text"
         label="Picture URL"
@@ -30,30 +39,38 @@
       </q-input>
       <q-input
         v-model.trim="metadata.nip05"
+        :disable='!editingMetadata'
         filled
         type="text"
         label="NIP-05 Identifier"
         maxlength="50"
       />
-      <q-btn label="Save" type="submit" color="primary" />
     </q-form>
     <q-separator color='accent' spaced/>
-    <div class="my-8">
+    <div>
+      <div v-if='editingRelays' class='flex justify-between' style='display: flex; gap: .2rem;'>
+        <q-btn label="save" color="primary" size="sm" @click='saveRelays'/>
+        <q-btn label="cancel" color="negative" size="sm" @click='cancel("relays")'/>
+      </div>
       <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
         {{ $t('relays') }}
-        <div class="text-normal flex row no-wrap" style='font-size: .9rem;'>
-          <div style='width: 3.4em; text-align: center;'>read</div>
-          <div style='width: 3.4em; text-align: center;'>write</div>
+        <div class="text-normal flex row no-wrap" style='font-size: .9rem; gap: .4rem;'>
+          <q-btn v-if='!editingRelays' label="edit" color="primary" size="sm" @click='editingRelays = true'/>
+          <div v-if='editingRelays'>read</div>
+          <div v-if='editingRelays'>write</div>
         </div>
       </div>
-      <q-list class="mb-3">
-        <q-item v-for="([url]) in activeRelays" :key="url" class='flex justify-between items-center no-wrap no-padding'>
+      <q-list class='flex column q-pt-xs' style='gap: .2rem;'>
+        <q-item
+          v-for="(url) in Object.keys(relays)"
+          :key="url"
+          class='flex justify-between items-center no-wrap no-padding'
+          style='min-height: 1.2rem'
+        >
           <div>
-              {{ url }}
-          </div>
-          <div class="flex no-wrap items-center">
               <q-btn
-                color="primary"
+                v-if='relays[url].read || relays[url].write'
+                color="secondary"
                 size="sm"
                 label="Share"
                 :disable="
@@ -62,92 +79,42 @@
                 "
                 @click="shareRelay(url)"
               />
-              <q-toggle
-                v-model='editedRelays[url].read'
-                color='secondary'
-                size='sm'
-                class='no-padding'
-                @click='toggleEditingRelays'
-              />
-              <q-toggle
-                v-model='editedRelays[url].write'
-                color='secondary'
-                size='sm'
-                class='no-padding'
-                @click='toggleEditingRelays'
-              />
-              <!-- <span
-                class="cursor-pointer tracking-wide"
-                :class="{'font-bold': opts.read, 'text-secondary': opts.read}"
-                @click="
-                  $store.getters.canSignEventsAutomatically
-                    ? setRelayOpt(url, 'read', !opts.read)
-                    : null
-                "
-              >
-                {{ $t('read') }}
-              </span>
-              <span
-                class="cursor-pointer tracking-wide"
-                :class="{'font-bold': opts.write, 'text-secondary': opts.write}"
-                @click="
-                  $store.getters.canSignEventsAutomatically
-                    ? setRelayOpt(url, 'write', !opts.write)
-                    : null
-                "
-              >
-                {{ $t('write') }}
-              </span> -->
-          </div>
-        </q-item>
-        <q-item v-for="([url]) in inactiveRelays" :key="url" class='flex justify-between items-center no-wrap no-padding'>
-          <div>
-              {{ url }}
-          </div>
-          <div class="flex no-wrap items-center">
-              <!-- <q-btn
-                color="primary"
-                size="sm"
-                label="Share"
-                :disable="
-                  hasJustSharedRelay ||
-                  !$store.getters.canSignEventsAutomatically
-                "
-                @click="shareRelay(url)"
-              /> -->
               <q-btn
+                v-if='editingRelays && !relays[url].read && !relays[url].write'
                 color="negative"
                 label='remove'
                 size="sm"
                 :disable="!$store.getters.canSignEventsAutomatically"
                 @click="removeRelay(url)"
               />
+              {{ url }}
+          </div>
+          <div class="flex no-wrap items-center" style='gap: .6rem;'>
               <q-toggle
-                v-model='editedRelays[url].read'
-                color='secondary'
+                v-if='editingRelays'
+                v-model='relays[url].read'
+                color='primary'
                 size='sm'
+                dense
                 class='no-padding'
-                @click='toggleEditingRelays'
               />
               <q-toggle
-                v-model='editedRelays[url].write'
-                color='secondary'
+                v-if='editingRelays'
+                v-model='relays[url].write'
+                color='primary'
                 size='sm'
+                dense
                 class='no-padding'
-                @click='toggleEditingRelays'
               />
-              </div>
+          </div>
         </q-item>
       </q-list>
-      <div>
-        <q-btn label="save" color="primary" :disable='!editingRelays' @click='setRelayOpt'/>
-        <q-btn label="reset" color="secondary" :disable='!editingRelays' @click='cloneRelays'/>
-      </div>
-      <q-form @submit="addRelay">
+      <q-form v-if='editingRelays' class='q-py-xs' @submit="addRelay">
         <q-input
           v-model="addingRelay"
-          class="mx-3"
           filled
+          dense
+          autofocus
           label="Add a relay"
           :disable="!$store.getters.canSignEventsAutomatically"
         >
@@ -156,41 +123,20 @@
               label="Add"
               type="submit"
               color="primary"
-              class="ml-3"
+              size="sm"
               @click="addRelay"
             />
           </template>
         </q-input>
       </q-form>
-      <!-- <div class="text-bold" style='font-size: 1.1rem;'>{{ $t('inactiveRelays') }}</div>
-      <q-list class="mb-3">
-        <q-item v-for="([url]) in inactiveRelays" :key="url">
-          <q-item-section>
-            <div class="flex justify-between">
-              {{ url }}
-              <q-btn
-                color="negative"
-                label='remove'
-                size="sm"
-                :disable="!$store.getters.canSignEventsAutomatically"
-                @click="removeRelay(url)"
-              />
-            </div>
-          </q-item-section>
-        </q-item>
-      </q-list> -->
     </div>
 
     <q-separator color='accent' spaced/>
 
-    <div class="my-8">
+    <div class="flex no-wrap" style='gap: .2rem;'>
       <q-btn label="Delete Local Data" color="negative" @click="hardReset" />
-      <q-btn
-        class="q-ml-md"
-        label="View your keys"
-        color="primary"
-        @click="keysDialog = true"
-      />
+      <q-btn label="View your keys" color="primary" @click="keysDialog = true" />
+      <q-btn label="dev tools" color='secondary' :to='{ name: "devTools"}' />
     </div>
 
     <q-dialog v-model="keysDialog">
@@ -235,7 +181,7 @@ import {nextTick} from 'vue'
 import {queryName} from 'nostr-tools/nip05'
 
 import helpersMixin from '../utils/mixin'
-import {eraseDatabase} from '../db'
+import {dbErase} from '../query'
 
 export default {
   name: 'Settings',
@@ -247,16 +193,16 @@ export default {
 
     return {
       keysDialog: false,
-      relays: {},
-      editedRelays: {},
-      editingRelays: false,
-      addingRelay: '',
+      editingMetadata: false,
       metadata: {
         name,
         picture,
         about,
         nip05
       },
+      relays: {},
+      editingRelays: false,
+      addingRelay: '',
       unsubscribe: null,
       hasJustSharedRelay: false
     }
@@ -265,35 +211,7 @@ export default {
   watch: {
     '$store.state.relays'(curr, prev) {
       if (curr !== prev) this.cloneRelays()
-    }
-  },
-
-  computed: {
-    storeRelays() {
-      // if (Object.keys(this.$store.state.relays).length) return this.$store.state.relays
-      // return {}
-      return this.$store.state.relays || {}
     },
-    activeRelays() {
-      return Object.entries(this.relays).filter(([url, opts]) => opts.read === true || opts.write === true)
-      // return Object.entries(this.relays).filter(([url, opts]) => opts.read === true || opts.write === true)
-    },
-    inactiveRelays() {
-      return Object.entries(this.relays).filter(([url, opts]) => opts.read === false && opts.write === false)
-      // return Object.entries(this.relays).filter(([url, opts]) => opts.read === false && opts.write === false)
-    },
-    activeRelaysCopy() {
-      return Object.entries(this.storeRelays).filter(([url, opts]) => opts.read === true || opts.write === true)
-    },
-    inactiveRelaysCopy() {
-      return Object.entries(this.storeRelays).filter(([url, opts]) => opts.read === false && opts.write === false)
-    },
-    // editingRelays() {
-    //   if (this.activeRelays.filter(([url, opts]) =>
-    //     this.editedRelays[url].read !== opts.read ||
-    //     this.editedRelays[url].write !== opts.write).length) return true
-    //   return false
-    // }
   },
 
   mounted() {
@@ -330,7 +248,6 @@ export default {
       }
     })
     this.cloneRelays()
-    console.log(this.relays)
   },
 
   beforeUnmount() {
@@ -338,15 +255,13 @@ export default {
   },
 
   methods: {
+    cloneMetadata() {
+      let {name, picture, about, nip05} = this.$store.state.profilesCache[this.$store.state.keys.pub]
+      this.metadata = {name, picture, about, nip05}
+      console.log('cloneMeta', this.metadata)
+    },
     cloneRelays() {
       this.relays = JSON.parse(JSON.stringify(this.$store.state.relays))
-      this.editedRelays = JSON.parse(JSON.stringify(this.$store.state.relays))
-    },
-    toggleEditingRelays(value, evt) {
-      if (Object.entries(this.editedRelays).filter(([url, opts]) =>
-        this.relays[url].read !== opts.read ||
-        this.relays[url].write !== opts.write).length) this.editingRelays = true
-      else this.editingRelays = false
     },
     async setMetadata() {
       if (this.metadata.nip05 === '') this.metadata.nip05 = undefined
@@ -368,7 +283,7 @@ export default {
       this.$store.dispatch('setMetadata', this.metadata)
     },
     addRelay() {
-      this.$store.commit('addRelay', this.addingRelay)
+      this.relays[this.addingRelay] = { read: true, write: true }
       this.addingRelay = ''
     },
     removeRelay(url) {
@@ -379,23 +294,27 @@ export default {
           cancel: true
         })
         .onOk(() => {
-          this.$store.commit('removeRelay', url)
+          delete this.relays[url]
         })
     },
-    setRelayOpt() {
-      console.log('setRelayOpt')
-      if (this.$store.getters.canSignEventsAutomatically) Object.entries(this.editedRelays)
-        .forEach(([url, opts]) => {
-          if (this.relays[url].read !== opts.read) this.$store.commit('setRelayOpt', {url, opt: 'read', value: opts.read})
-          if (this.relays[url].write !== opts.write) this.$store.commit('setRelayOpt', {url, opt: 'write', value: opts.write})
-        })
+    saveRelays() {
+      if (this.$store.getters.canSignEventsAutomatically) this.$store.commit('saveRelays', this.relays)
     },
-    // setRelayOpt(url, opt, value) {
-    //   this.$store.commit('setRelayOpt', {url, opt, value})
-    // },
+    cancel(section) {
+      if (section === 'metadata') {
+        this.editingMetadata = false
+        this.cloneMetadata()
+        return
+      }
+      if (section === 'relays') {
+        this.editingRelays = false
+        this.cloneRelays()
+        return
+      }
+    },
     shareRelay(url) {
       this.hasJustSharedRelay = true
-      this.$store.dispatch('recommendServer', url)
+      this.$store.dispatch('recommendRelay', url)
       setTimeout(() => {
         this.hasJustSharedRelay = false
       }, 5000)
@@ -409,7 +328,8 @@ export default {
         })
         .onOk(async () => {
           LocalStorage.clear()
-          await eraseDatabase()
+          // await eraseDatabase()
+          await dbErase()
           window.location.reload()
         })
     },

@@ -29,7 +29,6 @@
 
 <script>
 import { defineComponent } from 'vue'
-// import {onEventUpdate} from '../db'
 import BaseRelayList from 'components/BaseRelayList.vue'
 
 export default defineComponent({

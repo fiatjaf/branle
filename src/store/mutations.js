@@ -5,6 +5,7 @@ import {
   generateSeedWords,
   privateKeyFromSeed
 } from 'nostr-tools/nip06'
+// import Vuex from 'vuex'
 
 export function setKeys(state, {mnemonic, priv, pub} = {}) {
   if (!mnemonic && !priv && !pub) {
@@ -51,6 +52,11 @@ export function setRelayOpt(state, {url, opt, value}) {
   }
 }
 
+export function saveRelays(state, relays) {
+  console.log('mutations save relays')
+  state.relays = relays
+}
+
 export function setFollowing(state, following) {
   state.following = following
 }
@@ -90,7 +96,7 @@ export function addProfileToCache(
   }
 
   // removing older stuff if necessary
-  if (state.profilesCacheLRU.length > 150) {
+  if (state.profilesCacheLRU.length > 1500) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
   }

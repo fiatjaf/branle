@@ -1,7 +1,7 @@
 <template>
   <div :class='(bordered ? "bordered-avatar" : "") + (hoverEffect ? " hovered-avatar" : "")'>
     <q-avatar :rounded='!round' class='relative-position' :size='size' @click.stop="toProfile(pubkey)">
-      <img :src="$store.getters.avatar(pubkey)"/>
+      <img :src="$store.getters.avatar(pubkey)" crossorigin/>
       <div :class='alignRight ? "icon-right" : "icon-left"' class='q-pt-xs'>
         <BaseButtonNIP05
           v-if='showVerified'

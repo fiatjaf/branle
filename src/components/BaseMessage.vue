@@ -19,12 +19,12 @@
           (idx === sequence.length - 1 ? " last-message" : "")'
       >
         <div
-          v-if='!isEmbeded && evt.taggedEvents && render'
+          v-if='!isEmbeded && taggedEvents[evt.id] && render'
           class='flex column text-left full-width q-pb-xs embeded-message'
           style='display: block;'
           :clickable='false'
         >
-          <div v-for='(taggedEvent, index) in evt.taggedEvents' :key='taggedEvent.id + "_" + index + "_" + render'>
+          <div v-for='(taggedEvent) in taggedEvents[evt.id]' :key='taggedEvent.id + "_" + taggedEvents[evt.id].length + "_" + render'>
             <div v-if='taggedEvent.kind === 1 || taggedEvent.kind === 2' class='reposts'>
               <BasePost
                 :event='taggedEvent'
@@ -39,6 +39,7 @@
               class='no-padding no-margin'
               :is-embeded='true'
               clickable
+              @mounted="$emit('mounted')"
               @click.capture.prevent.stop
             />
           </div>
@@ -61,7 +62,6 @@
         >
           <q-list dense class='flex column q-gutter-xs q-pa-xs'>
             <div v-close-popup>
-              <!-- <q-item-section>reply</q-item-section> -->
               <BaseButtonReply
                 button-class='text-accent full-width justify-start'
                 :verbose='true'
@@ -69,7 +69,6 @@
               />
             </div>
             <div v-close-popup>
-              <!-- <div-section>copy</div-section> -->
               <BaseButtonCopy
                 button-class='text-accent full-width justify-start'
                 :button-text='evt.interpolated.text'
@@ -77,7 +76,6 @@
               />
             </div>
             <div >
-              <!-- <div-section>info</div-section> -->
               <BaseButtonInfo
                 button-class='text-accent full-width justify-start'
                 :event='evt'
@@ -87,7 +85,6 @@
               />
             </div>
             <div>
-              <!-- <div-section>relays</div-section> -->
               <BaseButtonRelays
                 button-class='text-accent full-width justify-start'
                 :event='evt'
@@ -105,10 +102,7 @@
 
 <script>
 import { useQuasar } from 'quasar'
-// import {decrypt} from 'nostr-tools/nip04'
 import helpersMixin from '../utils/mixin'
-// import {pool} from '../pool'
-// import {dbGetEvent} from '../db'
 import BaseButtonRelays from 'components/BaseButtonRelays.vue'
 import BaseButtonInfo from 'components/BaseButtonInfo.vue'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
@@ -117,7 +111,7 @@ import BaseMarkdown from 'components/BaseMarkdown.vue'
 
 export default {
   name: 'BaseMessage',
-  emits: ['reply', 'scroll-to'],
+  emits: ['reply', 'mounted'],
   mixins: [helpersMixin],
   props: {
     event: {type: Object, required: true},
@@ -138,13 +132,12 @@ export default {
 
   data() {
     return {
-      // metadataDialog: false,
       invisible: true,
-      reposts: {},
       menu: {},
       render: 1,
       contextMenus: [],
       persistentMenu: false,
+      taggedEvents: {}
     }
   },
 
@@ -152,11 +145,9 @@ export default {
     sequence() {
       let sequence = [this.event].concat(this.event.appended).filter(x => x)
       // this.interpolateMessageMentions(sequence)
+      if (this.render) return sequence
       return sequence
     },
-    // text() {
-    //   return this.sequence.map(evt => this.interpolateMentions(evt.text, evt.tags).text)
-    // },
 
     sent() {
       return this.event.pubkey === this.$store.state.keys.pub
@@ -164,23 +155,17 @@ export default {
   },
 
   mounted() {
-    // this.menu = this.menu.fill(false, 0, this.sequence.length)
     setTimeout(() => {
       this.invisible = false
     }, 20)
-    if (this.event.taggedEvents)
-      setTimeout(() => {
-        // console.log('rerender event: ', this.event)
-        this.render++
-        this.$emit('scroll-to')
-      }, 1000)
-    // this.sequence.forEach(event => {
-    //   if (event.interpolated.mentionEvents) {
-    //     this.reposts[event.id] = []
-    //     this.listenReposts(event.interpolated.mentionEvents, this.reposts[event.id])
-    //   }
-    //   this.menu[event.id] = false
-    // })
+    for (let ev of this.sequence) {
+      let tagged = ev.tags?.filter(([t, v]) => t === 'e' && v).map(([t, v]) => v) || []
+      if (tagged.length) {
+        this.taggedEvents[ev.id] = []
+        this.processTaggedEvents(tagged, this.taggedEvents[ev.id])
+      }
+    }
+    if (this.event.created_at < this.$store.state.lastMessageRead[this.$route.params.pubkey]) this.$emit('mounted')
   },
 
   methods: {
@@ -197,21 +182,9 @@ export default {
     togglePersistentMenu(value) {
       this.persistentMenu = value
     }
-
-    // copyText(defaultText) {
-    //   let selection = window.getSelection().toString()
-    //   if (selection) {
-    //     return selection
-    //   } else return defaultText
-    // },
   }
 }
 </script>
-<!-- :class='event.pubkey === $store.state.keys.pub ? "bg-primary" : "bg-secondary"'
-
-  margin: .8rem 0;
-  gap: .25rem;
-  -->
 <style lang='scss'>
 .message-sent,
 .message-received {

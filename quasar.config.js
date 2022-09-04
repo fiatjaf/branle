@@ -78,7 +78,9 @@ module.exports = configure(function (ctx) {
       // blergh
       extendWebpack(cfg) {
         cfg.plugins.push(
-          new webpack.ProvidePlugin({ Buffer: ['buffer', 'Buffer'] })
+          new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer']
+          })
         )
         cfg.resolve.alias = cfg.resolve.alias || {}
         cfg.resolve.alias.stream = 'readable-stream'
@@ -86,8 +88,12 @@ module.exports = configure(function (ctx) {
         cfg.resolve.fallback.buffer = require.resolve('buffer/')
         cfg.resolve.fallback.stream = require.resolve('readable-stream')
         cfg.resolve.fallback.crypto = false
+        cfg.resolve.fallback.path = false
+        cfg.resolve.fallback.fs = false
         cfg.experiments = cfg.experiments || {}
         cfg.experiments.asyncWebAssembly = true
+        cfg.module = cfg.module || { rules: [] }
+        cfg.module.rules.push({ test: /\.wasm$/, type: 'asset/inline' })
       },
     },
 
@@ -98,6 +104,10 @@ module.exports = configure(function (ctx) {
       },
       port: 8080,
       open: false, // opens browser window automatically
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp'
+      },
       // proxy: {
       //   '/api': {
       //     target: 'https://astral.ninja',

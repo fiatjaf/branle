@@ -7,6 +7,7 @@ export default function (store) {
       case 'addRelay':
       case 'removeRelay':
       case 'setRelayOpt':
+      case 'saveRelays':
       case 'follow':
       case 'unfollow':
       case 'reorderFollows':

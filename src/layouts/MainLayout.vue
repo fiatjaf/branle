@@ -58,7 +58,6 @@
         >
           <q-tooltip>forward</q-tooltip>
         </q-btn>
-          <!-- v-if='$route.name !== "inbox" && $route.name !== "messages"' -->
         <q-btn
           @click.stop="scrollToTop"
           color="primary"
@@ -90,7 +89,7 @@
 import { defineComponent} from 'vue'
 import { scroll } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
-import { destroyStreams } from '../db'
+import { destroyStreams } from '../query'
 import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
@@ -112,18 +111,10 @@ export default defineComponent({
     }
   },
 
-  // computed: {
-  //   showKeyInitialization() {
-  //     if (['profile', 'event', 'hashtag', 'feed'].includes(this.$route.name)) return false
-  //     return true
-  //   },
-  // },
-
   mounted() {
     if (this.$store.state.keys.pub) {
       // keys already set up
       this.$store.dispatch('launch')
-      // this.initializeKeys = false
     } else {
       this.$store.dispatch('launchWithoutKey')
     }

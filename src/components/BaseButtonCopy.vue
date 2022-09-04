@@ -47,6 +47,10 @@ export default defineComponent({
       required: false,
       default: ''
     },
+    element: {
+      type: Object,
+      default: null
+    }
   },
 
   methods: {
@@ -57,9 +61,7 @@ export default defineComponent({
     },
 
     copyText(defaultText) {
-      // console.log('defaultText: ', defaultText)
-      let selection = window.getSelection().toString()
-        // console.log('selection: ', selection)
+      let selection = this.element?.getSelection()?.toString()
       if (selection) {
         return selection
       } else return defaultText

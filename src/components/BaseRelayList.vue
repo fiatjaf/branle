@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import {pool} from '../pool'
+import {publish} from '../query'
 import helpersMixin from '../utils/mixin'
 
 export default {
@@ -68,7 +68,7 @@ export default {
   },
   methods: {
     publishTo(relayURL) {
-      pool.relays[relayURL]?.relay?.publish?.(this.event)
+      publish(this.event, relayURL)
     }
 
   },

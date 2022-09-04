@@ -9,11 +9,6 @@ const routes = [
         component: () => import('pages/Feed.vue'),
         name: 'feed',
       },
-      // {
-      //   path: '/home',
-      //   component: () => import('pages/Home.vue'),
-      //   name: 'home',
-      // },
       {
         path: '/follow',
         component: () => import('pages/SearchFollow.vue'),
@@ -28,19 +23,6 @@ const routes = [
         path: '/messages/inbox',
         component: () => import('pages/Inbox.vue'),
         name: 'inbox',
-        // children: [
-        //   {
-        //     path: 'inbox',
-        //     component: () => import('pages/Inbox.vue'),
-        //     name: 'inbox'
-        //   },
-        //   {
-        //     path: '/messages/:pubkey',
-        //     component: () => import('pages/Messages.vue'),
-        //     name: 'messages'
-        //   }
-        // ],
-        // redirect: { name: 'inbox' }
       },
       {
         path: '/messages/:pubkey([a-f0-9A-F]{64})',
@@ -66,6 +48,11 @@ const routes = [
         path: '/hashtag/:hashtagId([a-zA-Z0-9_]{1,63})',
         component: () => import('pages/Hashtag.vue'),
         name: 'hashtag',
+      },
+      {
+        path: '/devTools',
+        component: () => import('pages/devTools.vue'),
+        name: 'devTools',
       },
       {
         path: '/:catchAll(.*)*',

@@ -29,6 +29,7 @@ export default function (store) {
         replaceRelay(store, payload.url, state.relays[payload.url])
         break
 
+      case 'saveRelays':
       case 'follow':
       case 'unfollow':
         store.dispatch('restartMainSubscription')

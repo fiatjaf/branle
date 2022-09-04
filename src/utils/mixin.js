@@ -2,6 +2,8 @@ import Tribute from 'tributejs'
 import {shorten} from './helpers'
 // import { stringify } from 'JSON'
 import {date} from 'quasar'
+import { dbStreamEvent } from 'src/query'
+import {decrypt} from 'nostr-tools/nip04'
 const { formatDate } = date
 
 
@@ -169,7 +171,7 @@ export default {
           return `
             <div class="flex row no-wrap items-center" style="gap: .2rem; width: 100%;">
               <div style="border-radius: 10px">
-                <img src=${this.$store.getters.avatar(item.original.value.pubkey)} style="object-fit: cover; height: 1.5rem; width: 1.5rem;"/>
+                <img src=${this.$store.getters.avatar(item.original.value.pubkey)} crossorigin style="object-fit: cover; height: 1.5rem; width: 1.5rem;"/>
               </div>
                 <div class="text-bold">${item.string}</div>
               ${item.original.value.nip05
@@ -199,5 +201,65 @@ export default {
         detach: element => tribute.detach(element),
       }
     },
+
+
+    async processTaggedEvents(ids, events) {
+      // let tagged = event.tags.filter(([t, v]) => t === 'e' && v).map(([t, v]) => v)
+      // // console.log('processing tagged events for: ', event, tagged)
+      // tagged.splice(10)
+      // event.taggedEvents = []
+      if (!Array.isArray(events)) throw new Error('no array supplied')
+      ids.splice(10)
+      // this.subTaggedEvents(tagged, event.taggedEvents)
+      let eventSubs = {}
+      for (let id of ids) {
+        eventSubs[id] = await dbStreamEvent(id, async ev => {
+          // ev = JSON.parse(ev)
+          this.$store.dispatch('useProfile', { pubkey: ev.pubkey })
+          if (ev.kind === 1 || ev.kind === 2) this.interpolateEventMentions(ev)
+          else if (ev.kind === 4) {
+            ev.text = await this.getPlaintext(ev)
+            this.interpolateMessageMentions(ev)
+          }
+          events = events.push(ev)
+          // event.taggedEvents.push(ev)
+          eventSubs[id].cancel()
+        })
+      }
+    },
+
+    async getPlaintext(event) {
+      if (
+        event.tags.find(
+          ([tag, value]) => tag === 'p' && value === this.$store.state.keys.pub
+        )
+      ) {
+        // it is addressed to us
+        // decrypt it
+        return await this.decrypt(event.pubkey, event.content)
+      } else if (event.pubkey === this.$store.state.keys.pub) {
+        // it is coming from us
+        let [_, target] = event.tags.find(([tag]) => tag === 'p')
+        // decrypt it
+        return await this.decrypt(target, event.content)
+      }
+    },
+
+    async decrypt(peer, ciphertext) {
+      try {
+        if (this.$store.state.keys.priv) {
+          return decrypt(this.$store.state.keys.priv, peer, ciphertext)
+        } else if (
+          (await window?.nostr?.getPublicKey?.()) === this.$store.state.keys.pub
+        ) {
+          return await window.nostr.nip04.decrypt(peer, ciphertext)
+        } else {
+          throw new Error('no private key available to decrypt!')
+        }
+      } catch (err) {
+        return '???'
+      }
+    },
+
   }
 }

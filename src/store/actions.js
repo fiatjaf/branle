@@ -1,10 +1,19 @@
 import {encrypt} from 'nostr-tools/nip04'
 import {queryName} from 'nostr-tools/nip05'
-import {Notify, LocalStorage} from 'quasar'
-
+import {Notify, LocalStorage, debounce} from 'quasar'
 import {pool, signAsynchronously} from '../pool'
-import {dbSave, dbGetProfile, dbGetContactList} from '../db'
-// import {processMentions, getPubKeyTagWithRelay} from '../utils/helpers'
+import {
+  dbSave,
+  dbUserProfile,
+  dbUserFollows,
+  streamUserProfile,
+  streamUserFollows,
+  streamUser,
+  dbQuery,
+  setRelays,
+  publish,
+  prune
+} from '../query'
 import {getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
 
@@ -16,6 +25,7 @@ export function initKeys(store, keys) {
 }
 
 export async function launch(store) {
+  console.log('launch for ', store.state.keys.pub)
   if (!store.state.keys.pub) {
     store.commit('setKeys') // passing no arguments will cause a new seed to be generated
 
@@ -31,7 +41,7 @@ export async function launch(store) {
   }
 
   // translate localStorage into a kind3 event -- or load relays and following from event
-  let contactList = await dbGetContactList(store.state.keys.pub)
+  let contactList = await dbUserFollows(store.state.keys.pub)
   var {relays, following} = store.state
   if (contactList) {
     try {
@@ -53,117 +63,86 @@ export async function launch(store) {
   store.commit('setFollowing', following)
   store.commit('setRelays', relays)
 
-  // setup pool
-  for (let url in store.state.relays) {
-    pool.addRelay(url, store.state.relays[url])
-  }
-  pool.onNotice((notice, relay) => {
-    Notify.create({
-      message: `Relay ${relay.url} says: ${notice}`,
-      color: 'info'
-    })
-  })
-  // preload our own profile from the db
-  await store.dispatch('useProfile', {pubkey: store.state.keys.pub})
-
   // start listening for nostr events
   store.dispatch('restartMainSubscription')
+
+  // preload our own profile from the db
+  store.dispatch('useProfile', {pubkey: store.state.keys.pub})
+
+  // preload our follows profiles from the db
+  for (let pubkey of following) store.dispatch('useProfile', {pubkey})
 }
 
 export async function launchWithoutKey(store) {
-  // var {relays} = store.state
-
-  // // update store state
-  // store.commit('setRelays', relays)
-
-  // setup pool
-  for (let url in store.state.relays) {
-    pool.addRelay(url, store.state.relays[url])
-  }
-  pool.onNotice((notice, relay) => {
-    Notify.create({
-      message: `Relay ${relay.url} says: ${notice}`,
-      color: 'info'
-    })
-  })
+  store.dispatch('restartMainSubscription')
 }
 
-var mainSub = pool
+let mainSub = {}
+export async function restartMainSubscription(store) {
+  // console.log('restart main subscription for', [store.state.keys.pub].concat(store.state.following), store.state.relays)
 
-export function restartMainSubscription(store) {
-  mainSub = mainSub.sub(
-    {
-      filter: [
-        // notes, profiles and contact lists of people we follow (and ourselves)
-        {
-          kinds: [0, 1, 2, 3],
-          authors: store.state.following.concat(store.state.keys.pub)
-        },
+  // setup pool
+  await setRelays(store.state.relays)
 
-        // posts mentioning us and direct messages to us
-        {
-          kinds: [1, 4],
-          '#p': [store.state.keys.pub]
-        },
+  let botTracker = '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'
+  let botTrackerSub = await streamUserFollows(botTracker)
+  setTimeout(() => {
+    botTrackerSub.cancel()
+  }, 60 * 1000)
 
-        // our own direct messages to other people
-        {
-          kinds: [4],
-          authors: [store.state.keys.pub]
-        }
-      ],
-      cb: async (event, relay) => {
-        switch (event.kind) {
-          case 0:
-            break
-          case 1:
-            break
-          case 2:
-            break
-          case 3: {
-            if (event.pubkey === store.state.keys.pub) {
-              // we got a new contact list from ourselves
-              // we must update our local relays and following lists
-              // if we don't have any local lists yet
-              let local = await dbGetContactList(store.state.keys.pub)
-              if (!local || local.created_at < event.created_at) {
-                var relays, following
-                try {
-                  relays = JSON.parse(event.content)
-                  store.commit('setRelays', relays)
-                } catch (err) {
-                  /***/
-                }
+  if (!store.state.keys.pub) return
 
-                following = event.tags
-                  .filter(([t, v]) => t === 'p' && v)
-                  .map(([_, v]) => v)
-                store.commit('setFollowing', following)
+  setTimeout(() => {
+    prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.following))
+  }, 5 * 60 * 1000)
 
-                following.forEach(f =>
-                  store.dispatch('useProfile', {pubkey: f})
-                )
-              }
-            }
-            break
-          }
-          case 4:
-            break
-        }
+  if (store.state.following.length)
+    store.state.following.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
+  if (!mainSub.streamUser) mainSub.streamUser = await streamUser(
+    store.state.keys.pub,
+    async event => {
+      if (event.kind === 3) {
+        let result = await dbQuery(`
+          SELECT json_extract(event,'$.created_at') created_at
+          FROM nostr
+          WHERE json_extract(event,'$.kind') = 3 AND
+            json_extract(event,'$.pubkey') = '${store.state.keys.pub}'
+          LIMIT 1
+        `)
+        if (result.length && event.created_at < result[0].created_at) return
+        let relays = JSON.parse(event.content)
+        store.commit('setRelays', relays)
 
-        store.dispatch('addEvent', {event, relay})
+        let follows = event.tags
+          .filter(([t, v]) => t === 'p' && v)
+          .map(([_, v]) => v)
+        store.commit('setFollowing', follows)
+        store.dispatch('restartMainSubscription')
+      } else if (event.kind === 0) {
+        let result = await dbQuery(`
+          SELECT json_extract(event,'$.created_at') created_at
+          FROM nostr
+          WHERE json_extract(event,'$.kind') = 0 AND
+            json_extract(event,'$.pubkey') = '${store.state.keys.pub}'
+          LIMIT 1
+        `)
+        if (result.length && event.created_at < result[0].created_at) return
+
+        let metadata = metadataFromEvent(event)
+        store.commit('addProfileToCache', metadata)
       }
-    },
-    'main-channel'
+    }
   )
+}
+
+export async function addEvent(store, {event, relay = null}) {
+  await dbSave(event, relay)
 }
 
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
 
-  let event
   try {
-    // const unpublishedEvent = await processMentions({
     const unpublishedEvent = {
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
@@ -171,46 +150,23 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
       tags,
       content: message
     }
-    // console.log('unpublishedEvent: ', unpublishedEvent)
-    event = await pool.publish(unpublishedEvent)
-  } catch (err) {
+
+    let event = await pool.publish(unpublishedEvent)
+    if (!event) throw new Error('could not create post for publishing')
+
+    let publishResult = await publish(event)
+    if (!publishResult) throw new Error('could not publish post')
+    console.log('sendPost', event, publishResult)
+
+    store.dispatch('addEvent', {event})
+    return event
+  } catch (error) {
     Notify.create({
-      message: `Did not publish: ${err}`,
+      message: `could not publish post: ${error}`,
       color: 'negative'
     })
     return
   }
-
-  if (!event) {
-    // aborted
-    return
-  }
-
-  store.dispatch('addEvent', {event})
-  return event
-}
-
-export async function setMetadata(store, metadata) {
-  let event = await pool.publish({
-    pubkey: store.state.keys.pub,
-    created_at: Math.floor(Date.now() / 1000),
-    kind: 0,
-    tags: [],
-    content: JSON.stringify(metadata)
-  })
-
-  store.dispatch('addEvent', {event})
-  store.commit('addProfileToCache', { pubkey: store.state.keys.pub, ...metadata })
-}
-
-export async function recommendServer(store, url) {
-  await pool.publish({
-    pubkey: store.state.keys.pub,
-    created_at: Math.round(Date.now() / 1000),
-    kind: 2,
-    tags: [],
-    content: url
-  })
 }
 
 export async function sendChatMessage(store, {now, pubkey, text, tags}) {
@@ -227,12 +183,7 @@ export async function sendChatMessage(store, {now, pubkey, text, tags}) {
     } else {
       throw new Error('no private key available to encrypt!')
     }
-  } catch (err) {
-    /***/
-  }
 
-  let event
-  try {
     let unpublishedEvent = {
       pubkey: store.state.keys.pub,
       created_at: now,
@@ -240,163 +191,28 @@ export async function sendChatMessage(store, {now, pubkey, text, tags}) {
       tags: tags.map(([t, v]) => [t, v]),
       content: ciphertext
     }
-    // console.log('unpublishedEvent: ', unpublishedEvent)
-    // if (replyTo) {
-    //   unpublishedEvent.tags.push(['e', replyTo])
-    // }
-    event = await pool.publish(unpublishedEvent)
-  } catch (err) {
+
+    let event = await pool.publish(unpublishedEvent)
+    if (!event) throw new Error('could not create message for publishing')
+
+    let publishResult = await publish(event)
+    if (!publishResult) throw new Error('could not publish message')
+
+    store.dispatch('addEvent', {event})
+    return event
+  } catch (error) {
     Notify.create({
-      message: `Did not publish: ${err}`,
+      message: `could not publish message: ${error}`,
       color: 'negative'
     })
     return
   }
-
-  if (!event) {
-    // aborted
-    return
-  }
-
-  store.dispatch('addEvent', {event})
-  return event
 }
-
-export async function addEvent(store, {event, relay = null}) {
-  await dbSave(event, relay)
-
-  // do things after the event is saved
-  switch (event.kind) {
-    case 0:
-      // this will reset the profile cache for this URL
-      store.dispatch('useProfile', {pubkey: event.pubkey})
-      break
-    case 1:
-      break
-    case 2:
-      break
-    case 3:
-      // this will reset the profile cache for this URL
-      store.dispatch('useContacts', event.pubkey)
-      break
-    case 4:
-      break
-  }
-}
-
-export async function useProfile(store, {pubkey, request = false}) {
-  let metadata
-  if (pubkey in store.state.profilesCache) {
-    // we don't fetch again, but we do commit this so the LRU gets updated
-    store.commit('addProfileToCache', {
-      pubkey,
-      ...store.state.profilesCache[pubkey]
-    }) // (just the pubkey is enough)
-    return
-  }
-
-  // fetch from db and add to cache
-  let event = await dbGetProfile(pubkey)
-  if (event) {
-    metadata = metadataFromEvent(event)
-  } else if (request) {
-    // try to request from a relay
-    await new Promise(resolve => {
-      let sub = pool.sub({
-        filter: [{authors: [pubkey], kinds: [0]}],
-        cb: async event => {
-          metadata = metadataFromEvent(event)
-          clearTimeout(timeout)
-          if (sub) sub.unsub()
-          resolve()
-        }
-      })
-      let timeout = setTimeout(() => {
-        sub.unsub()
-        sub = null
-        resolve()
-      }, 6000)
-    })
-  }
-
-  if (metadata) {
-    store.commit('addProfileToCache', metadata)
-
-    if (metadata.nip05) {
-      if (metadata.nip05 === '') delete metadata.nip05
-
-      let cached = store.state.nip05VerificationCache[metadata.nip05]
-      if (cached && cached.when > Date.now() / 1000 - 60 * 60) {
-        if (cached.pubkey !== pubkey) delete metadata.nip05
-      } else {
-        let checked = await queryName(metadata.nip05)
-        store.commit('addToNIP05VerificationCache', {
-          pubkey: checked,
-          identifier: metadata.nip05
-        })
-        if (pubkey !== checked) delete metadata.nip05
-      }
-
-      store.commit('addProfileToCache', metadata)
-    }
-  }
-}
-
-export async function useContacts(store, {pubkey, request = false}) {
-  if (pubkey in store.state.contactListCache) {
-    // we don't fetch again, but we do commit this so the LRU gets updated
-    store.commit('addContactListToCache', store.state.contactListCache[pubkey])
-    return
-  }
-
-  // fetch from db and add to cache
-  let event = await dbGetContactList(pubkey)
-  if (event) {
-    store.commit('addContactListToCache', event)
-  } else if (request) {
-    // try to request from a relay
-    await new Promise(resolve => {
-      let sub = pool.sub({
-        filter: [{authors: [pubkey], kinds: [3]}],
-        cb: async event => {
-          store.commit('addContactListToCache', event)
-          // store.dispatch('addEvent', {event})
-          clearTimeout(timeout)
-          if (sub) sub.unsub()
-          resolve()
-        }
-      })
-      let timeout = setTimeout(() => {
-        sub.unsub()
-        sub = null
-        resolve()
-      }, 6000)
-    })
-  }
-}
-
-// export async function useContacts(store, pubkey) {
-//   if (pubkey in store.state.contactListCache) {
-//     // we don't fetch again, but we do commit this so the LRU gets updated
-//     store.commit('addContactListToCache', store.state.contactListCache[pubkey])
-//   } else {
-//     // fetch from db and add to cache
-//     let event = await dbGetContactList(pubkey)
-//     if (event) {
-//       store.commit('addContactListToCache', event)
-//     }
-//   }
-// }
 
 export async function publishContactList(store) {
   // extend the existing tags
-  let event = await dbGetContactList(store.state.keys.pub)
-  var tags = event?.tags || []
-
-  // remove contacts that we're not following anymore
-  // tags = tags.filter(
-  //   ([t, v]) => t === 'p' && store.state.following.find(f => f === v)
-  // )
+  let oldEvent = await dbUserFollows(store.state.keys.pub)
+  var tags = oldEvent?.tags || []
 
   // check existing event because it might contain more data in the
   // tags that we don't want to replace, if so push existing event tag,
@@ -412,36 +228,165 @@ export async function publishContactList(store) {
       }
     })
   )
-  // now we merely add to the existing event because it might contain more data in the
-  // tags that we don't want to replace
-  // await Promise.all(
-  //   store.state.following.map(async pubkey => {
-  //     if (!tags.find(([t, v]) => t === 'p' && v === pubkey)) {
-  //       tags.push(await getPubKeyTagWithRelay(pubkey))
-  //     }
-  //   })
-  // )
 
-  // event = {
-  //   pubkey: store.state.keys.pub,
-  //   created_at: Math.floor(Date.now() / 1000),
-  //   kind: 3,
-  //   tags,
-  //   newTags,
-  //   content: JSON.stringify(store.state.relays)
-  // }
-  event = await pool.publish({
-    pubkey: store.state.keys.pub,
-    created_at: Math.floor(Date.now() / 1000),
-    kind: 3,
-    tags: newTags,
-    content: JSON.stringify(store.state.relays)
-  })
+  try {
+    let event = await pool.publish({
+      pubkey: store.state.keys.pub,
+      created_at: Math.floor(Date.now() / 1000),
+      kind: 3,
+      tags: newTags,
+      content: JSON.stringify(store.state.relays)
+    })
 
-  await store.dispatch('addEvent', {event})
+    if (!event) throw new Error('could not create updated list of followed keys and relays')
 
-  Notify.create({
-    message: 'Updated and published list of followed keys and relays.',
-    color: 'positive'
-  })
+    let publishResult = await publish(event)
+    if (!publishResult) throw new Error('could not publish updated list of followed keys and relays')
+
+    let relays, follows
+    relays = JSON.parse(event.content)
+    follows = event.tags
+      .filter(([t, v]) => t === 'p' && v)
+      .map(([_, v]) => v)
+
+    // update store state
+    store.commit('setFollowing', follows)
+    store.commit('setRelays', relays)
+
+    await store.dispatch('addEvent', {event})
+
+    Notify.create({
+      message: 'updated and published list of followed keys and relays.',
+      color: 'positive'
+    })
+    return event
+  } catch (error) {
+    Notify.create({
+      message: `could not publish updated list of followed keys and relays: ${error}`,
+      color: 'negative'
+    })
+    return
+  }
+}
+
+export async function setMetadata(store, metadata) {
+  try {
+    let event = await pool.publish({
+      pubkey: store.state.keys.pub,
+      created_at: Math.floor(Date.now() / 1000),
+      kind: 0,
+      tags: [],
+      content: JSON.stringify(metadata)
+    })
+    if (!event) throw new Error('could not create updated profile event')
+
+    let publishResult = await publish(event)
+    if (!publishResult) throw new Error('could not publish update profile event')
+
+    store.dispatch('addEvent', {event})
+    store.commit('addProfileToCache', { pubkey: store.state.keys.pub, ...metadata })
+
+    Notify.create({
+      message: 'updated and published profile',
+      color: 'positive'
+    })
+    return event
+  } catch (error) {
+    Notify.create({
+      message: `could not publish updated profile: ${error}`,
+      color: 'negative'
+    })
+    return
+  }
+}
+
+export async function recommendRelay(store, url) {
+  try {
+    let event = await pool.publish({
+      pubkey: store.state.keys.pub,
+      created_at: Math.round(Date.now() / 1000),
+      kind: 2,
+      tags: [],
+      content: url
+    })
+    if (!event) throw new Error('could not create recommend relay event')
+
+    let publishResult = await publish(event)
+    if (!publishResult) throw new Error('could not publish recommend relay event')
+
+    store.dispatch('addEvent', {event})
+    return event
+  } catch (error) {
+    Notify.create({
+      message: `could not publish recommend relay event: ${error}`,
+      color: 'negative'
+    })
+    return
+  }
+}
+
+const debouncedStreamUserProfile = debounce(async (store, users) => {
+  if (!mainSub.streamUserProfile) {
+    mainSub.streamUserProfile = await streamUserProfile(
+      users,
+      async event => {
+        if (event.pubkey in store.state.profilesCache) return
+        let metadata = metadataFromEvent(event)
+        store.commit('addProfileToCache', metadata)
+        store.dispatch('useNip05', {metadata})
+      }
+    )
+  } else {
+    mainSub.streamUserProfile.update(users)
+  }
+}, 100)
+
+let profilesInUse = {}
+export async function useProfile(store, {pubkey}) {
+  if (pubkey in store.state.profilesCache) {
+    // we don't fetch again, but we do commit this so the LRU gets updated
+    store.commit('addProfileToCache', {
+      pubkey,
+      ...store.state.profilesCache[pubkey]
+    }) // (just the pubkey is enough)
+  } else {
+    // fetch from db and add to cache
+    let event = await dbUserProfile(pubkey)
+    if (event) {
+      let metadata = metadataFromEvent(event)
+      store.dispatch('useNip05', {metadata})
+    }
+  }
+
+  profilesInUse[pubkey] = profilesInUse[pubkey] || 0
+  profilesInUse[pubkey]++
+  if (profilesInUse[pubkey] === 1) debouncedStreamUserProfile(store, Object.keys(profilesInUse))
+}
+
+export async function cancelUseProfile(store, {pubkey}) {
+  if (!profilesInUse[pubkey]) return
+  profilesInUse[pubkey]--
+  if (profilesInUse[pubkey] === 0) {
+    delete profilesInUse[pubkey]
+    debouncedStreamUserProfile(store, Object.keys(profilesInUse))
+  }
+}
+
+export async function useNip05(store, {metadata}) {
+  if (metadata.nip05 === '') delete metadata.nip05
+
+  if (metadata.nip05) {
+    let cached = store.state.nip05VerificationCache[metadata.nip05]
+    if (cached && cached.when > Date.now() / 1000 - 60 * 60) {
+      if (cached.pubkey !== metadata.pubkey) delete metadata.nip05
+    } else {
+      let checked = await queryName(metadata.nip05)
+      store.commit('addToNIP05VerificationCache', {
+        pubkey: checked,
+        identifier: metadata.nip05
+      })
+      if (metadata.pubkey !== checked) delete metadata.nip05
+    }
+  }
+  store.commit('addProfileToCache', metadata)
 }

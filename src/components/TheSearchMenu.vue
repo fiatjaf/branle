@@ -45,7 +45,6 @@
       </div>
         <q-list class='q-pt-xs q-pl-sm' style='overflow-y: auto; max-height: 40vh;'>
           <div v-for="user in domainUsers" :key="user.pubkey">
-            <!-- <h2 class='text-caption text-bold q-my-none'> {{user.name}} </h2> -->
             <BaseUserCard :pubkey="user.pubkey" />
           </div>
         </q-list>
@@ -69,7 +68,7 @@
           <BaseUserCard
             v-for="pubkey in $store.state.following"
             :pubkey="pubkey"
-            :key="pubkey"
+            :key="pubkey + '_' + $store.state.profilesCacheToggle"
           />
         </q-list>
         <Draggable
@@ -79,7 +78,6 @@
           @end="dragging=false"
           item-key="pubkey"
         >
-            <!-- <div>{{element.name}}</div> -->
           <template #header>
             <div class='flex row justify-between items-start'>
               <span>{{ $t('dragDropReorder') }}</span>
@@ -89,7 +87,6 @@
           <template #item="{element}">
             <BaseUserCard :pubkey='element.pubkey' :action-buttons='false'/>
           </template>
-              <!-- <BaseUserCard :clickable='false' :pubkey="element.pubkey" /> -->
         </Draggable>
       </div>
       <div v-else>
@@ -120,6 +117,7 @@ export default defineComponent({
       reordering: false,
       reorderedFollowing: [],
       dragging: false,
+      profilesUsed: new Set(),
     }
   },
 
@@ -146,6 +144,10 @@ export default defineComponent({
       let [name, domain] = this.searchingProfile.split('@')
       return domain || name
     }
+  },
+
+  deactivated() {
+    this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
   },
 
   methods: {
@@ -177,20 +179,8 @@ export default defineComponent({
           this.domainNames = await searchDomain(this.domain)
           // this.domainUsers
           if (this.domainUsers.length || this.domainDefaultPubkey) {
-            if (this.domainDefaultPubkey) {
-              this.$store.dispatch('useProfile', {
-                pubkey: this.domainDefaultPubkey,
-                request: true
-              })
-            }
-            if (this.domainUsers.length) {
-              this.domainUsers.forEach((user) => {
-                this.$store.dispatch('useProfile', {
-                  pubkey: user.pubkey,
-                  request: true
-                })
-              })
-            }
+            if (this.domainDefaultPubkey) this.useProfile(this.domainDefaultPubkey)
+            if (this.domainUsers.length) this.domainUsers.forEach((user) => this.useProfile(user.pubkey))
             this.searching = false
             this.domainMode = true
             return
@@ -228,7 +218,14 @@ export default defineComponent({
     cancelReorder() {
       this.reordering = false
       this.reorderedFollowing = []
-    }
+    },
+
+    useProfile(pubkey) {
+      if (this.profilesUsed.has(pubkey)) return
+
+      this.profilesUsed.add(pubkey)
+      this.$store.dispatch('useProfile', {pubkey})
+    },
   }
 })
 </script>

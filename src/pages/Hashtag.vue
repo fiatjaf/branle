@@ -3,83 +3,76 @@
     <div class="text-h5 text-bold q-py-md">{{'#' + this.$route.params.hashtagId}}</div>
     <q-separator color='accent' size='2px'/>
         <div>
-          <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='addEvent'/>
+          <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='processEvent'/>
         </div>
   </q-page>
 </template>
 
 <script>
 import { defineComponent } from 'vue'
-import {pool} from '../pool'
+import {dbStreamTagKind} from '../query'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
-// import BaseUserCard from 'components/BaseUserCard.vue'
 
 export default defineComponent({
   name: 'Hashtag',
   mixins: [helpersMixin],
 
-  components: {
-    // BaseUserCard,
-  },
-
   data() {
     return {
       threads: [],
       eventsSet: new Set(),
-      sub: null,
+      sub: {},
+    }
+  },
+
+  watch: {
+    '$route.params.hashtagId'(curr, prev) {
+      if (curr !== prev && curr && prev) {
+        this.stop()
+        this.start()
+      }
     }
   },
 
   activated() {
-    this.listen()
+    this.start()
   },
 
   deactivated() {
-    if (this.sub) this.sub.unsub()
+    this.stop()
   },
 
   methods: {
 
-    listen() {
+    async start() {
       this.threads = []
       this.eventsSet = new Set()
 
-      this.sub = pool.sub(
-        {
-          filter: [
-            {
-              '#hashtag': [this.$route.params.hashtagId.toLowerCase()],
-              kinds: [1, 2]
-            }
-          ],
-          cb: async (event, relay) => {
-            switch (event.kind) {
-              case 0:
-                await this.$store.dispatch('addEvent', {event, relay})
-                return
+      this.sub.hashtag = await dbStreamTagKind('e', this.$route.params.hashtagId.toLowerCase(), 1, event => {
+        this.processEvent(event)
+      })
 
-              case 1:
-              case 2:
-                if (this.eventsSet.has(event.id)) return
-
-                this.interpolateEventMentions(event)
-                this.eventsSet.add(event.id)
-                addToThread(this.threads, event)
-                return
-            }
-          }
-        },
-        'hashtag-browser'
-      )
+      this.sub.hashtagOld = await dbStreamTagKind('hashtag', this.$route.params.hashtagId.toLowerCase(), 1, event => {
+        this.processEvent(event)
+      })
     },
 
-    addEvent(event) {
+    stop() {
+      if (this.sub.hashtag) this.sub.hashtag.cancel()
+      if (this.sub.oldHashtag) this.sub.oldHashtag.cancel()
+      this.threads = []
+      this.eventsSet = new Set()
+    },
+
+    processEvent(event) {
       if (this.eventsSet.has(event.id)) return
+
       this.interpolateEventMentions(event)
       this.eventsSet.add(event.id)
       addToThread(this.threads, event)
-    }
+      return
+    },
   }
 })
 </script>

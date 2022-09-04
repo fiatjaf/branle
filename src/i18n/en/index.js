@@ -81,6 +81,7 @@ export default {
   follows: 'follows',
   followers: 'followers',
   replies: 'replies',
+  profile: 'profile',
   relays: 'relays',
   users: 'users',
   nip05Maintainer: 'NIP05 maintainer',
@@ -89,6 +90,7 @@ export default {
   // text
   noFollows: 'no follows',
   noFollowers: 'no followers',
+  noRelays: 'no relays',
   dragDropReorder: 'drag and drop to reorder',
 
 }

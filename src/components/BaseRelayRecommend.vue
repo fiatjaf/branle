@@ -1,6 +1,6 @@
 <template>
   <div class="flex column q-gutter-md">
-      <div class="" caption>added relay:</div>
+      <div v-if='!listView' class="" caption>added relay:</div>
       <BaseRelayCard :url='url' />
   </div>
 </template>
@@ -16,7 +16,8 @@ export default {
     BaseRelayCard,
   },
   props: {
-    url: {type: String, required: true}
+    url: {type: String, required: true},
+    listView: {type: Boolean, default: false},
   },
 }
 </script>

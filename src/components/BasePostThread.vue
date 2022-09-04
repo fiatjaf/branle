@@ -22,7 +22,6 @@
 <script>
 import helpersMixin from '../utils/mixin'
 import BaseShowMore from 'components/BaseShowMore'
-// import {getEventTagWithRelay} from '../utils/helpers'
 
 export default {
   name: 'BasePostThread',
@@ -73,12 +72,12 @@ export default {
         if ((i === this.events.length - 1) && curr.replies?.length && this.threadWidth &&
           // (this.replyDepth >= 5)) {
           (this.replyDepth >= 5 || (this.replyDepth > 0 && this.threadWidth < 175))) {
-            let replies = Array.from(curr.replies)
+            // let replies = Array.from(curr.replies)
             let event = Object.assign({}, curr)
             event.replies = []
             // curr.replies = []
             filled.push(event)
-            filled.push({id: 'FILLER', root: curr.id, replies: replies})
+            filled.push({id: 'FILLER', root: curr.id})
             // filled.concat([curr, {id: 'FILLER', root: curr.id, replies: replies}])
             // console.log('filled', filled)
         } else filled.push(curr)

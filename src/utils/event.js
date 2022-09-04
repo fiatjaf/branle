@@ -16,6 +16,7 @@ export function metadataFromEvent(event) {
     metadata.pubkey = event.pubkey
     return metadata
   } catch (_) {
+    console.log('metadataFromEvent error', _)
     return {}
   }
 }

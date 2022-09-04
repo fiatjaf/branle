@@ -123,7 +123,6 @@
       </div>
     </q-card>
   </q-dialog>
-  <!-- <q-fab-action color="primary" label="login/create user" /> -->
 </template>
 
 <script>
@@ -142,13 +141,6 @@ export default defineComponent({
     BaseMarkdown,
   },
 
-  // props: {
-  //   initializeKeys: {
-  //     type: Boolean,
-  //     default: true
-  //   }
-  // },
-
   setup() {
     return {
       focusKeyInput() {
@@ -159,19 +151,11 @@ export default defineComponent({
 
   data() {
     return {
-      // initializeKeys: true,
       watchOnly: false,
       key: null,
-      // hasExtension: false,
+      hasExtension: false,
     }
   },
-
-  // watch: {
-  //   $route(curr, prev) {
-  //     if (this.showKeyInitialization) this.initializeKeys = true
-  //     else this.initializeKeys = false
-  //   },
-  // },
 
   computed: {
     icon() {
@@ -181,11 +165,6 @@ export default defineComponent({
     showKeyInitialization() {
       if (['profile', 'event', 'hashtag', 'feed'].includes(this.$route.name)) return false
       return true
-    },
-
-    hasExtension() {
-      if (window.nostr) return true
-      return false
     },
 
     isKeyKey() {
@@ -227,28 +206,18 @@ export default defineComponent({
     },
   },
 
-  // async start() {
-    // if (!this.$store.state.keys.pub) {
-    //   // keys not set up, offer the option to try to get a pubkey from window.nostr
-      // setTimeout(() => {
-      //   if (window.nostr) {
-      //     this.hasExtension = true
-      //     console.log('window has nostr')
-      //   }
-      // }, 1000)
-      //     console.log('getFromExtension', this.getFromExtension)
-    // }
-    // if (this.$store.state.keys.pub) this.initializeKeys = false
-    // console.log('start')
-  // },
+  async created() {
+    if (!this.$store.state.keys.pub) {
+      // keys not set up, offer the option to try to get a pubkey from window.nostr
+      setTimeout(() => {
+        if (window.nostr) {
+          this.hasExtension = true
+        }
+      }, 1000)
+    }
+  },
 
   methods: {
-    // setInitializeKeys(evt) {
-    //   if (this.hideKeyInitialization) this.initializeKeys = false
-    //   else if (this.$store.state.keys.pub) this.initializeKeys = false
-    //   else if (!this.hideKeyInitialization) this.initializeKeys = true
-    // },
-
     async getFromExtension() {
       try {
         this.key = await window.nostr.getPublicKey()
@@ -261,13 +230,6 @@ export default defineComponent({
         })
       }
     },
-
-    // getAstralPublicKey() {
-    //   this.key =
-    //     '2df69cd0c6ab95e08f466abe7b39bb64e744ee31ffc3041f270bdfec2a37ec06'
-    //   this.watchOnly = true
-    //   this.focusKeyInput()
-    // },
 
     generate() {
       this.key = generatePrivateKey()

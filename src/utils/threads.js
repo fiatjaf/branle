@@ -1,4 +1,3 @@
-// import { search } from 'core-js/fn/symbol'
 import {addSorted} from './helpers'
 
 function calcReplyTags(event, route) {
@@ -6,10 +5,6 @@ function calcReplyTags(event, route) {
   else if (route === 'feed') return event.interpolated.mentionEvents
   else return []
 }
-
-// function log(desc, ...v) {
-//   console.log(desc, ...v)
-// }
 
 function searchAndUpdateThreads(threads, route, ...events) {
   // scenarios:
@@ -91,7 +86,6 @@ function searchAndUpdateThreads(threads, route, ...events) {
       if (events.length > 1) {
         event.replies.push(events.slice(1))
       }
-      unshiftThreads.sort()
       for (let j = unshiftThreads.length - 1; j >= 0; j--) {
         event.replies.push(threads[unshiftThreads[j]])
         threads.splice(unshiftThreads[j], 1)

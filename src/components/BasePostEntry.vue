@@ -1,6 +1,5 @@
 <template>
-  <q-item unelevated class='q-pa-none post-entry-form flex coloumn' ref='postEntry' @click.stop @keypress.enter.stop @keydown.stop @keyup.stop>
-          <!-- <q-separator color='primary' size='1px'/> -->
+  <q-item unelevated class='q-pa-none post-entry-form flex coloumn' ref='postEntry' @click.stop @mouseup.stop @keypress.enter.stop @keydown.stop @keyup.stop>
 
     <div
       v-if='replyMode === "quote" || replyMode === "repost"'
@@ -20,7 +19,6 @@
       class='embeded-message q-px-sm q-py-xs'
     >
       <div class='relative-position'>
-        <!-- <span class='text-primary text-subtitle1'> reply to </span> -->
         <q-btn icon="close" flat dense @click.stop='$emit("clear-event")' size='xs' class='absolute-top-right z-top'/>
       </div>
       <BaseMessage
@@ -42,8 +40,6 @@
         <BaseUserAvatar :pubkey='$store.state.keys.pub' class='avatar-image' />
         <span id="input-placeholder"> {{ placeholderText }}</span>
         <div id="input-readonly-highlight" contenteditable="true" spellcheck="false"></div>
-          <!-- ref="zinput" -->
-          <!-- @keypress.enter.exact='handleEnter' -->
         <div
           id="input-editable"
           :contenteditable="!sending && !mentionsUpdating"
@@ -63,38 +59,8 @@
           <q-spinner-orbit color="accent" size='md'/>
         </div>
       </div>
-      <!-- <q-input
-        ref="input"
-        v-model="text"
-        type='textarea'
-        autogrow
-        autofocus
-        :label="label"
-        :disable='sending || mentionsUpdating'
-        :loading='mentionsUpdating'
-        @keypress.ctrl.enter="send"
-        @click='trigger++'
-        @keyup='trigger++'
-      >
-        <template #loading>
-          <div class='full-width row justify-center q-my-md'>
-            <q-spinner-orbit color="accent" size='md'/>
-          </div>
-        </template>
-      </q-input>
-      <q-separator color='primary' size='1px'/> -->
     </div>
-    <!-- <q-list id='tribute-wrapper' class='overflow-auto' style='position: aboslute; bottom: 100%; max-height: 70vh;'> -->
     <div style='font-size: .9rem;'>
-      <!-- <q-list v-if='tags.length && !sending' class='q-px-sm tagged-wrapper'>
-        <div class='text-primary'>tagged<span v-if='$route.name === "messages"'>{{' **NOTE TAGS ARE NOT PRIVATE**'}}</span></div>
-        <div v-for='(tag, index) in tags' :key='index' class='flex row no-wrap q-gutter-xs' style='font-size: .8rem; font-weight: 300;'>
-          <div class='text-bold'>{{ "#[" + index + "] " }}</div>
-          <div>{{ (tag[0] === "e" ? " event: " : "") + (tag[0] === "p" ? " user: " : "")}}</div>
-          <BaseUserName v-if='tag[0] === "p"' :pubkey='tag[1]' :fallback='true'/>
-          <BaseMarkdown v-if='tag[0] === "e"'> {{ `[&${shorten(tag[1])}](/event/${tag[1]})` }} </BaseMarkdown>
-        </div>
-      </q-list> -->
       <div v-if='links.length' class='q-pl-xs'>
         <div class='text-secondary'>links added</div>
         <ul dense style='font-size: .8rem; font-weight: 300;'>
@@ -227,11 +193,7 @@
           @click.stop='send'
           :disable='!textValid'
         >
-          <!-- <q-item-label v-if='!replyMode'>relay&nbsp;</q-item-label> -->
           <q-icon name="send" :style='"transform: translateX(" + sendIconTranslation + "px);"'/>
-          <!-- <q-tooltip>
-            send
-          </q-tooltip> -->
         </q-btn>
       </q-btn-group>
     </div>
@@ -242,38 +204,22 @@
 import { colors } from 'quasar'
 const { getPaletteColor } = colors
 import helpersMixin from '../utils/mixin'
-// import {getPubKeyTagWithRelay, getEventTagWithRelay, processMentions} from '../utils/helpers'
-// import {nextTick} from 'vue'
-// import {getPubKeyTagWithRelay, getEventTagWithRelay, extractMentions} from '../utils/helpers'
 import {getPubKeyTagWithRelay, getEventTagWithRelay, shorten} from '../utils/helpers'
-// import BaseButtonCopy from 'components/BaseButtonCopy.vue'
-// import BaseButtonClear from 'components/BaseButtonClear.vue'
 import BaseEmojiPicker from 'components/BaseEmojiPicker.vue'
 import BaseLinkForm from 'components/BaseLinkForm.vue'
-// import BaseMarkdown from 'components/BaseMarkdown.vue'
 import BaseMessage from 'components/BaseMessage.vue'
 
 export default {
   name: 'BasePostEntry',
   mixins: [helpersMixin],
   emits: ['sent', 'resized', 'clear-event'],
-  // emits: ['sent', 'resized'],
   components: {
-    // BaseButtonCopy,
-    // BaseButtonClear,
     BaseEmojiPicker,
     BaseLinkForm,
-    // BaseMarkdown,
     BaseMessage,
   },
 
   props: {
-    // postEntryAlignment (post-entry-alignment) should be 'column' or 'row'
-    // postEntryAlignment: {
-    //   type: String,
-    //   required: false,
-    //   default: 'column'
-    // },
     messageMode: {
       type: String,
       required: false,
@@ -366,7 +312,6 @@ export default {
       return true
     },
     postEntryWidth() {
-      // return this.$refs.input?.$el?.clientWidth
       return this.$refs.postEntry?.$el?.clientWidth
     },
     toolboxWidth() {
@@ -660,22 +605,15 @@ export default {
 
     async updateMentionsTags() {
       this.trigger++
-      // let curPos = this.cursorPositionStart
-      // let prevTextLength = this.text.length
       let { start } = this.startEndOfRange()
       const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})/g
       if (this.text.toLowerCase().match(mentionRegex)) {
         this.mentionsUpdating = true
-        // this.text = await this.extractMentions(this.text, this.tags)
         await this.extractMentions(this.textarea, this.tags)
-        // this.textarea.innerHTML = this.text
-        // this.text = this.textarea.innerHTML
         this.updateText()
         if (start.el.nodeName === '#text' && start.pos > start.el.length)
           this.setCaret(start.el, start.el.length)
         else this.setCaret(start.el, start.pos)
-        // this.setCursorPosition(curPos + (this.text.length - prevTextLength))
-        // this.updateReadonlyInputs()
         this.updateReadonlyInput()
         this.mentionsUpdating = false
       }
@@ -753,7 +691,7 @@ export default {
     appendHashtags(tags) {
       for (let hashtag of this.hashtags) {
         if (!tags.find(([_, v]) => v === hashtag)) {
-          tags.push(['hashtag', hashtag.toLowerCase()])
+          tags.push(['t', hashtag.toLowerCase()])
         }
       }
     },
@@ -818,7 +756,6 @@ export default {
       for (let key in mentions) {
         let [_, mentionText] = key.split('_')
           const mentionAnchorRegex = new RegExp(`(?<i>${mentionText})\\b`, 'g')
-          // let matches = node.textContent.matchAll(mentionAnchorRegex)
           readonlyTextareaHtml = readonlyTextareaHtml.replaceAll(
             mentionAnchorRegex,
             (_, value) => this.colorText(mentionText).outerHTML
@@ -830,7 +767,6 @@ export default {
     updateReadonlyHightlightInput() {
       // update over char limit highlighting
       if (this.overCharLimit) {
-        // console.log('over char limit', this.charPos(this.charLimit))
         this.readonlyHighlightTextarea.innerHTML = this.textarea.innerHTML
         let { el, pos } = this.charPos(this.charLimit, this.readonlyHighlightTextarea)
         let midword = el.length && el.length > pos

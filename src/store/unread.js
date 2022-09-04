@@ -1,16 +1,15 @@
 import {
-  onNewMention,
-  onNewAnyMessage,
-  dbGetChats,
-  dbGetUnreadMessages,
-  dbGetUnreadNotificationsCount
-} from '../db'
+  dbChats,
+  dbUnreadMessagesCount,
+  dbUnreadMentionsCount,
+  streamTag
+} from '../query'
 
 export default function (store) {
   const setUnreadNotifications = async () => {
     store.commit(
       'setUnreadNotifications',
-      await dbGetUnreadNotificationsCount(
+      await dbUnreadMentionsCount(
         store.state.keys.pub,
         store.state.lastNotificationRead
       )
@@ -20,25 +19,32 @@ export default function (store) {
   const setUnreadMessages = async peer => {
     store.commit('setUnreadMessages', {
       peer,
-      count: await dbGetUnreadMessages(
+      count: await dbUnreadMessagesCount(
+        store.state.keys.pub,
         peer,
         store.state.lastMessageRead[peer] || 0
       )
     })
   }
 
-  onNewMention(store.state.keys.pub, setUnreadNotifications)
-  onNewAnyMessage(event => {
-    if (event.pubkey === store.state.keys.pub) return
-    setUnreadMessages(event.pubkey)
+  if (store.state.keys.pub) streamTag('p', store.state.keys.pub, event => {
+    if (event.kind === 1) setUnreadNotifications
+    else if (event.kind === 4) setUnreadMessages(event.pubkey)
   })
+  else {
+    let interval = setInterval(() => {
+      if (store.state.keys.pub) {
+        streamTag('p', store.state.keys.pub, event => {
+            if (event.kind === 1) setUnreadNotifications
+            else if (event.kind === 4) setUnreadMessages(event.pubkey)
+        })
+        clearInterval(interval)
+      }
+    }, 2000)
+  }
 
   setUnreadNotifications()
-  dbGetChats().then(chats => {
-    chats.forEach(chat => {
-      setUnreadMessages(chat.peer)
-    })
-  })
+  dbChats(store.state.keys.pub).then(chats => { chats.forEach(chat => { setUnreadMessages(chat.peer) }) })
 
   store.subscribe(({type, payload}, state) => {
     switch (type) {

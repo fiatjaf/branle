@@ -1,4 +1,3 @@
-    <!-- :clickable='$route.params.eventId !== event.id && !replying' -->
 <template>
   <q-item
     color='accent'
@@ -59,7 +58,6 @@
       />
     </div>
   </div>
-      <!-- :style='"height: " + (childReplyContentHeight) + "px;"' -->
     <q-item-section>
     <q-item-section ref='postContent'>
       <q-item-label caption class="text-secondary" style='opacity: .7;'>
@@ -118,7 +116,6 @@
         :class='replying ? "justify-between" : "justify-end"'
       >
         <div class='text-primary text-thin col q-pl-xs' style=' font-size: 90%; font-weight: 300;'>{{replyMode}}</div>
-          <!-- @reply="replying = !replying" -->
         <div class='flex row no-wrap'>
           <q-tabs
             v-model='replyMode'
@@ -177,8 +174,6 @@
           </div>
         </div>
       </div>
-      <!-- <q-separator v-if='replyMode' color='primary' size='1px' /> -->
-          <!-- <Reply v-if="event" :event="event"/> -->
       </q-item-section>
       <q-item-section v-if="replyMode" class='full-width new-reply-box' ref='replyContent'>
         <q-tab-panels
@@ -206,7 +201,6 @@
           </q-tab-panel>
         </q-tab-panels>
       </q-item-section>
-      <!-- <q-separator v-if='replyMode' color='primary' size='1px' class='q-mt-sm'/> -->
 
       <q-item v-if='hasReplyChildren' class='no-padding no-border no-margin column full-width' >
       <div v-for="thread in event.replies" :key="thread[0].id" ref="childReplyContent">
@@ -223,13 +217,9 @@
 
 <script>
 import { defineComponent } from 'vue'
-// import VueForceNextTick from 'vue-force-next-tick'
 import {nextTick} from 'vue'
-import {pool} from '../pool'
 import {cleanEvent} from '../utils/event'
-import {dbGetEvent} from '../db'
 import helpersMixin from '../utils/mixin'
-// import BaseButtonPost from 'components/BaseButtonPost.vue'
 import BaseButtonRelays from 'components/BaseButtonRelays.vue'
 import BaseButtonInfo from 'components/BaseButtonInfo.vue'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
@@ -238,7 +228,7 @@ import BaseRelayRecommend from 'components/BaseRelayRecommend.vue'
 
 export default defineComponent({
   name: 'BasePost',
-  emits: ['resized', 'add-event'],
+  emits: ['resized', 'add-event', 'mounted'],
   mixins: [helpersMixin],
   props: {
     event: {type: Object, required: true},
@@ -248,7 +238,6 @@ export default defineComponent({
     isEmbeded: {type: Boolean, default: false},
   },
   components: {
-    // BaseButtonPost,
     BaseButtonRelays,
     BaseButtonInfo,
     BaseButtonCopy,
@@ -273,34 +262,19 @@ export default defineComponent({
 
   computed: {
     tagged() {
-      // let eventTags = this.event.tags.filter(([t, v]) => t === 'e').map(([t, v]) => v)
-      // let lastEventTag = eventTags[eventTags.length - 1]
-      // // console.log('BasePost eventTags: ', eventTags, 'return: ', lastEventTag)
-      // if (lastEventTag) return lastEventTag
-      // for (let i = this.event.tags.length - 1; i >= 0; i--) {
-      //   let tag = this.event.tags[i]
-      //   if (tag.length === 2 && tag[0] === 'e') {
-      //     return tag[1]
-      //   }
-      // }
-      let replyTags = this.event.interpolated.replyEvents
+      let replyTags = this.event.interpolated?.replyEvents
       if (replyTags?.length) return replyTags[replyTags.length - 1]
       return null
     },
-    // content() {
-    //   return this.interpolateMentions(this.event.content, this.event.tags)
-    // },
 
     isRepost() {
       return this.event.interpolated?.text === '' &&
         this.event.interpolated.mentionEvents.length
-      // return this.content.text === '' && this.content.mentions.eventMentions.length
     },
 
     isQuote() {
       return this.event.interpolated?.text &&
         this.event.interpolated.mentionEvents.length
-      // return this.content.text && this.content.mentions.eventMentions.length
     },
 
     mentionEvents() {
@@ -356,42 +330,24 @@ export default defineComponent({
   mounted() {
     // console.log('mounted')
     if (!this.isEmbeded && (this.isQuote || this.isRepost)) {
-      this.listenReposts(this.mentionEvents)
-      // console.log('eventMentions:', this.mentionEvents)
+      this.processTaggedEvents(this.mentionEvents, this.reposts)
     }
     this.calcConnectorValues()
+    this.$emit('mounted')
   },
-
-  // updated() {
-  //   this.calcConnectorValues()
-  // },
 
   activated() {
     this.calcConnectorValues()
     this.trigger++
   },
 
+  deactivated() {
+    if (this.reposts.length) {
+      for (let event of this.reposts) this.$store.dispatch('cancelUseProfile', {pubkey: event.pubkey})
+    }
+  },
+
   methods: {
-    // startClicking() {
-    //   if (this.event.kind === 2) return
-
-    //   this.clicking = true
-    //   setTimeout(() => {
-    //     this.clicking = false
-    //   }, 200)
-    // },
-
-    // finishClicking(ev) {
-    //   if (ev.target.tagName === 'A') return
-
-    // replyingConnectorStyle() {
-    //   if (this.replying && ) {
-    //     let height = this.postHeight + this.childReplyHeights.slice(0, -1).reduce((c, p) => c + p, 0)
-    //     if (this.replyHeight) height += this.replyHeight
-    //     return 'visibility: visible; height: ' + height + 'px'
-    //   } else return ''
-    // },
-
     childReplyConnectorStyle() {
       if (this.childReplyHeights?.length) {
         let height = this.postHeight + this.childReplyHeights.slice(0, -1).reduce((c, p) => c + p, 0)
@@ -416,8 +372,6 @@ export default defineComponent({
           this.replyHeight = this.replyContentHeight
           if (this.hasReplyChildren) {
             this.childReplyHeights = this.$refs.childReplyContent?.map((div) => div.clientHeight)
-            // for (let {height, i} of childReplyHeights)
-            //   this.set(this.childReplyHeights, i, height)
           }
           this.$emit('resized')
         }, time)
@@ -441,66 +395,13 @@ export default defineComponent({
       this.$emit('add-event', event)
     },
 
-    async listenReposts(eventIds) {
-      let subEventIds = []
-      // let this.reposts = []
-      // only render first 10 reposts
-      eventIds.splice(10)
-      for (let eventId of eventIds) {
-        let event = await dbGetEvent(eventId)
-        if (event) {
-          this.$store.dispatch('useProfile', {
-            pubkey: event.pubkey,
-            request: true
-          })
-          this.interpolateEventMentions(event)
-          this.reposts.push(event)
-        } else {
-          subEventIds.push(eventId)
-        }
-      }
-      // console.log('this.reposts: ', this.reposts)
-      // console.log('subEventIds: ', subEventIds)
-      this.eventSub = pool.sub(
-        {
-          filter: {ids: subEventIds},
-          cb: async event => {
-            this.eventSub.unsub()
-            this.$store.dispatch('useProfile', {
-              pubkey: event.pubkey,
-              request: true
-            })
-            this.interpolateEventMentions(event)
-            this.reposts.push(event)
-            // this.event = event
-          }
-        },
-        'event-browser'
-      )
-    },
-
     niceDate(timestamp) {
       if (this.trigger) return this.niceDateUTC(timestamp)
       return this.niceDateUTC(timestamp)
     }
-
-      // listen to changes to the event in the db so we get .seen_on updates
-      // this.eventUpdates = await onEventUpdate(
-      //   this.$route.params.eventId,
-      //   event => {
-      //     // once we get an update from the db we know we can stop listening for relay updates
-      //     if (this.eventSub) this.eventSub.unsub()
-
-      //     // and just update our local event with the latest one from the db
-      //     this.event = event
-      //   }
-      // )
-    // },
   }
 })
 </script>
-  <!-- background-color: rgba(255, 255, 255, 0.2); -->
-  <!-- background: rgba(255, 255, 255, 0.1); -->
 <style lang="scss" scoped>
 .post-padding {
   box-sizing: border-box;

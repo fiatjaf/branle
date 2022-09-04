@@ -4,7 +4,7 @@
         <q-btn
           rounded
           flat
-          color="secondary"
+          color="primary"
           size="md"
           :icon="url in $store.state.relays ? 'check' : 'add'"
           :label="url in $store.state.relays ? 'added' : 'add relay'"

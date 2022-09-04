@@ -3,8 +3,8 @@
   <q-page ref='page'>
     <div class="text-h5 text-bold q-py-md">{{ $t('thread') }}</div>
     <q-separator color='accent' size='2px'/>
-    <div v-if="ancestors.length">
-      <BasePostThread :events="ancestors" is-ancestors @add-event='addEventAncestors'/>
+    <div v-if="ancestorsCompiled.length || rootAncestor">
+      <BasePostThread :events="ancestorsCompiled" is-ancestors @add-event='addEventAncestors'/>
     </div>
 
     <q-item ref="main" class='no-padding column'>
@@ -13,21 +13,20 @@
         :event='event'
         :highlighted='true'
         :position='ancestors.length ? "last" : "standalone"'
-        @add-event='addEventChildren'
+        @add-event='processChildEvent'
       />
       <div v-else>
         {{ $t('event') }} {{ $route.params.eventId }}
       </div>
-       <!-- style='background: rgba(255, 255, 255, 0.1);' -->
     <BaseRelayList v-if="event?.seen_on?.length" :event='event'/>
     </q-item>
 
     <q-separator color='accent' size='2px'/>
 
-    <div v-if="childrenThreads.length">
+    <div v-if="childrenThreadsFiltered.length">
       <div class="text-h6 text-bold">{{ $t('replies') }}</div>
-      <div v-for="(thread) in childrenThreads" :key="thread[0].id">
-        <BasePostThread :events="thread" @add-event='addEventChildren'/>
+      <div v-for="(thread) in childrenThreadsFiltered" :key="thread[0].id">
+        <BasePostThread :events="thread" @add-event='processChildEvent'/>
       </div>
     </div>
   </q-page>
@@ -35,15 +34,9 @@
 
 <script>
 import { defineComponent, nextTick } from 'vue'
-// import { parse } from 'JSON'
-import {pool} from '../pool'
-import {dbGetEvent, onEventUpdate} from '../db'
+import {dbStreamEvent, dbStreamTagKind} from '../query'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
-// import { scroll } from 'quasar'
-// const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
-// import { scroll } from 'quasar'
-// const { getScrollTarget, setScrollPosition } = scroll
 import BaseRelayList from 'components/BaseRelayList.vue'
 
 export default defineComponent({
@@ -58,206 +51,118 @@ export default defineComponent({
     return {
       replying: false,
       ancestors: [],
-      ancestorsSet: new Set(),
-      ancestorsSub: null,
+      ancestorsSeen: new Map(),
+      ancestorIds: [],
+      rootAncestor: null,
       event: null,
-      eventSub: null,
       childrenThreads: [],
-      childrenSeen: new Map(),
-      childrenSub: null,
-      eventUpdates: null
+      childrenSet: new Set(),
+      sub: {},
+      profilesUsed: new Set(),
     }
   },
 
-  // computed: {
-  //   content() {
-  //     return this.interpolateMentions(this.event.content, this.event.tags)
-  //   },
-  // },
+  computed: {
+    childrenThreadsFiltered() {
+      return this.childrenThreads.filter(thread => thread[0].interpolated.replyEvents.includes(this.$route.params.eventId))
+    },
+    ancestorsCompiled() {
+      if (!this.rootAncestor) return this.ancestors
+      if (this.ancestors.length && this.rootAncestor && this.ancestors[0].id === this.rootAncestor.id) return this.ancestors
+      return [this.rootAncestor].concat(this.ancestors)
+    }
+  },
 
   activated() {
+    console.log('activated')
     this.start()
   },
 
   deactivated() {
+    console.log('deactivated')
     this.stop()
   },
 
   methods: {
-    start() {
-      this.listen()
+    async start() {
+      this.sub.event = await dbStreamEvent(this.$route.params.eventId, event => {
+        let getAncestorsChildren = false
+        if (!this.event) getAncestorsChildren = true
+        this.interpolateEventMentions(event)
+        this.event = null
+        this.event = event
+        if (getAncestorsChildren) {
+          if (this.event.interpolated.replyEvents.length) this.subRootAncestor()
+          this.subAncestorsChildren()
+        }
+        this.useProfile(event.pubkey)
+      }, true)
+      this.subAncestorsChildren()
     },
 
     stop() {
       this.replying = false
-      if (this.ancestorsSub) this.ancestorsSub.unsub()
-      if (this.childrenSub) this.childrenSub.unsub()
-      if (this.eventSub) this.eventSub.unsub()
-      if (this.eventUpdates) this.eventUpdates.cancel()
+      if (this.sub.event) this.sub.event.cancel()
+      if (this.sub.ancestorsChildren) this.sub.ancestorsChildren.cancel()
+      if (this.sub.rootAncestor) this.sub.rootAncestor.cancel()
+      this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
     },
 
-    async listen() {
-      this.event = await dbGetEvent(this.$route.params.eventId)
-      if (this.event) {
-        this.$store.dispatch('useProfile', {
-          pubkey: this.event.pubkey,
-          request: true
-        })
-        this.interpolateEventMentions(this.event)
-        this.listenAncestors()
-      } else {
-        this.eventSub = pool.sub(
-          {
-            filter: {ids: [this.$route.params.eventId]},
-            cb: async event => {
-              this.eventSub.unsub()
-              this.event = event
-              this.$store.dispatch('useProfile', {
-                pubkey: this.event.pubkey,
-                request: true
-              })
-              this.interpolateEventMentions(this.event)
-              this.listenAncestors()
-            }
-          },
-          'event-browser'
-        )
-      }
+    async subRootAncestor() {
+        console.log('subbing root ancestor', this.event.interpolated.replyEvents[0])
+      this.sub.rootAncestor = await dbStreamEvent(this.event.interpolated.replyEvents[0], event => {
+        this.processAncestorEvent(event)
+        this.sub.rootAncestor.cancel()
+      })
+    },
 
-      // listen to changes to the event in the db so we get .seen_on updates
-      this.eventUpdates = await onEventUpdate(
-        this.$route.params.eventId,
-        event => {
-          // once we get an update from the db we know we can stop listening for relay updates
-          if (this.eventSub) this.eventSub.unsub()
+    async subAncestorsChildren() {
+      let tags = this.event?.interpolated?.replyEvents?.length ? [this.$route.params.eventId, this.event.interpolated.replyEvents[0]] : [this.$route.params.eventId]
 
-          // and just update our local event with the latest one from the db
-          this.event = event
-          this.interpolateEventMentions(this.event)
+      if (this.sub.ancestorsChildren) this.sub.ancestorsChildren.update('e', tags, 1)
+      else this.sub.ancestorsChildren = await dbStreamTagKind('e', tags, 1, event => {
+        if (this.event && event.created_at < this.event.created_at) {
+          this.processAncestorEvent(event)
+          return
         }
-      )
-      if (this.$route.params.childThreads) this.childrenThreads = JSON.parse(this.$route.params.childThreads)
-      else this.listenChildren()
+        this.processChildEvent(event)
+        return
+      })
     },
 
-    listenChildren() {
-      this.childrenThreads = []
-      this.childrenSeen = new Map()
-      this.childrenSub = pool.sub(
-        {
-          filter: [
-            {
-              '#e': [this.$route.params.eventId],
-              kinds: [1]
-            }
-          ],
-          cb: async (event, relay) => {
-            let existing = this.childrenSeen.get(event.id)
-            if (existing) {
-              if (!Array.isArray(existing.seen_on)) existing.seen_on = []
-              else if (existing.seen_on.includes(relay)) return
-              existing.seen_on.push(relay)
-              return
-            }
+    processAncestorEvent(event) {
+      let currAncestor = this.ancestors.length ? this.ancestors[this.ancestors.length - 1] : this.event
+      if (currAncestor.interpolated.replyEvents.length === 0) return
 
-            event.seen_on = [relay]
-            this.childrenSeen.set(event.id, event)
+      let existing = this.ancestorsSeen.get(event.id)
+      if (existing) return
 
-            this.$store.dispatch('useProfile', {pubkey: event.pubkey})
+      this.interpolateEventMentions(event)
+      this.ancestorsSeen.set(event.id, event)
+      if (this.event?.interpolated?.replyEvents?.[0] === event.id) this.rootAncestor = event
 
-            this.interpolateEventMentions(event)
-            addToThread(this.childrenThreads, event)
-            return
-          }
-        },
-        'event-children'
-      )
-    },
-
-    async listenAncestors() {
-      this.ancestors = []
-      this.ancestorsSet = new Set()
-
-      let eventTags = this.event.interpolated.replyEvents
-      if (eventTags.length === 2) await this.getAncestorsAncestorsFromDb(eventTags)
-      if (eventTags.length) {
-        this.ancestorsSub = pool.sub(
-          {
-            filter: [
-              {
-                kinds: [1],
-                ids: eventTags
-              }
-            ],
-            cb: async event => {
-              if (this.ancestorsSet.has(event.id)) return
-
-              this.$store.dispatch('useProfile', {
-                pubkey: event.pubkey,
-                request: true
-              })
-              this.interpolateEventMentions(event)
-              this.ancestorsSet.add(event.id)
-
-              // manual sorting
-              // older events first
-              for (let i = 0; i < this.ancestors.length; i++) {
-                if (event.created_at < this.ancestors[i].created_at) {
-                  // the new event is older than the current index,
-                  // so we add it at the previous index
-                  this.ancestors.splice(i, 0, event)
-                  return
-                }
-              }
-
-              // the newer event is the newest, add to end
-              this.ancestors.push(event)
-              this.scrollToMainEvent()
-
-              return
-            }
-          },
-          'event-ancestors'
-        )
-      }
-    },
-
-    async getAncestorsAncestorsFromDb(eventTags) {
-      const initialEventId = eventTags[0]
-      let lastEventId = eventTags[1]
-      let addedAncestorCount = 0
-      while (lastEventId !== initialEventId && addedAncestorCount <= 5) {
-        // console.log('starting await, lastEventId: ', lastEventId)
-        let lastEvent = await dbGetEvent(lastEventId)
-        // console.log('finished await')
-        if (lastEvent) {
-          this.$store.dispatch('useProfile', {
-            pubkey: lastEvent.pubkey,
-            request: true
-          })
-          let lastEventTags = lastEvent.tags.filter(([t, _]) => t === 'e').map(([_, v]) => v)
-          if (lastEventTags.length === 0) {
-            // console.log(`last event ${lastEventId} has no tags prior to finding initial event ${initialEventId}`)
-            break
-          } else if (lastEventTags[0] !== initialEventId) {
-            // console.log(`last event ${lastEventId} does not have initial event ${initialEventId} listed as initial event`)
-            break
-          } else if (lastEventTags.length > 2) {
-            // console.log(`last event ${lastEventId} has more than 2 tags`)
-            break
-          }
-          if (!eventTags.includes(lastEventId)) eventTags.push(lastEventId)
-          lastEventId = lastEventTags[lastEventTags.length - 1]
-          // console.log('eventTags: ', eventTags)
-          // console.log('lastEventTags: ', lastEventTags)
-        } else {
-          // console.log('no event found from db')
-          break
+      let prevAncestorId = currAncestor.interpolated.replyEvents[currAncestor.interpolated.replyEvents.length - 1]
+      if (prevAncestorId === event.id) {
+        let prevAncestor = event
+        while (prevAncestor) {
+          this.ancestors = [prevAncestor].concat(this.ancestors)
+          this.scrollToMainEvent()
+          this.useProfile(prevAncestor.pubkey)
+          currAncestor = prevAncestor
+          prevAncestorId = currAncestor.interpolated.replyEvents[currAncestor.interpolated.replyEvents.length - 1]
+          prevAncestor = this.ancestorsSeen.get(prevAncestorId)
         }
-      // for (eventId in eventTags) {
-        addedAncestorCount++
       }
-      return eventTags
+    },
+
+    processChildEvent(event) {
+      if (event.id === this.$route.params.eventId) return
+      if (this.childrenSet.has(event.id)) return
+
+      this.childrenSet.add(event.id)
+      this.useProfile(event.pubkey)
+      this.interpolateEventMentions(event)
+      addToThread(this.childrenThreads, event)
     },
 
     scrollToMainEvent() {
@@ -267,19 +172,16 @@ export default defineComponent({
       })
     },
 
-    addEventChildren(event) {
-      let existing = this.childrenSeen.get(event.id)
-        if (existing) {
-          return
-        }
-      this.interpolateEventMentions(event)
-      this.childrenSeen.set(event.id, event)
-      addToThread(this.childrenThreads, event)
-    },
-
     addEventAncestors(event) {
       this.interpolateEventMentions(event)
       this.toEvent(event.id)
+    },
+
+    useProfile(pubkey) {
+      if (this.profilesUsed.has(pubkey)) return
+
+      this.profilesUsed.add(pubkey)
+      this.$store.dispatch('useProfile', {pubkey})
     },
   }
 })

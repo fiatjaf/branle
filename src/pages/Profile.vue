@@ -11,44 +11,54 @@
     >
       <q-tab name="posts" label='posts' />
       <q-tab name="follows" label='follows' />
+      <q-tab name="followers" label='followers' />
+      <q-tab name="relays" label='relays' />
     </q-tabs>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="posts" class='no-padding'>
         <div>
           <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='addEvent'/>
+          <BaseButtonLoadMore :loading-more='loadingMore' :reached-end='reachedEnd' @click='loadMore' />
         </div>
       </q-tab-panel>
 
       <q-tab-panel name="follows" class='no-padding'>
         <div v-if="!follows">{{ $t('noFollows') }}</div>
         <div v-else class="flex column relative">
-          <!-- <q-btn
-            v-if="$store.getters.hasMoreContacts($route.params.pubkey)"
-            :name="showAllContacts ? 'show less' : 'show all'"
-            :label="showAllContacts ? 'show less' : 'show all'"
-            :icon-right="showAllContacts ? 'expand_less' : 'expand_more'"
-            color="secondary"
-            class='q-ma-sm'
-            outline
-            size='sm'
-            @click="showAllContacts = !showAllContacts"
-          /> -->
           <div class='q-pl-sm'>
             <BaseUserCard
-              v-for="(user) in follows"
-              :key="user.pubkey"
-              :pubkey="user.pubkey"
+              v-for="(pubkey) in follows"
+              :key="pubkey"
+              :pubkey="pubkey"
             />
           </div>
-          <!-- <q-btn
-            v-if='!showAllContacts && $store.getters.hasMoreContacts($route.params.pubkey)'
-            icon='more_vert'
-            size='xl'
-            class='q-pa-md justify-start items-start'
-            flat
-            dense
-            @click="showAllContacts = true"
-          /> -->
+        </div>
+      </q-tab-panel>
+
+      <q-tab-panel name="followers" class='no-padding'>
+        <div v-if="!followers">{{ $t('noFollowers') }}</div>
+        <div v-else class="flex column relative">
+          <div class='q-pl-sm'>
+            <BaseUserCard
+              v-for="(pubkey) in Object.keys(followers)"
+              :key="pubkey"
+              :pubkey="pubkey"
+            />
+          </div>
+        </div>
+      </q-tab-panel>
+
+      <q-tab-panel name="relays" class='no-padding'>
+        <div v-if="!relays">{{ $t('noRelays') }}</div>
+        <div v-else class="flex column relative">
+          <div class='q-pl-sm'>
+            <BaseRelayRecommend
+              v-for="(relay) in Object.keys(relays)"
+              :key="relay"
+              :url="relay"
+              :list-view='true'
+            />
+          </div>
         </div>
       </q-tab-panel>
     </q-tab-panels>
@@ -57,10 +67,12 @@
 
 <script>
 import { defineComponent } from 'vue'
-import {pool} from '../pool'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import BaseUserCard from 'components/BaseUserCard.vue'
+import { dbStreamUserFollows, dbStreamUserFollowers, streamUserNotes, dbUserNotes } from '../query'
+import BaseRelayRecommend from 'components/BaseRelayRecommend.vue'
+import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 
 export default defineComponent({
   name: 'Profile',
@@ -68,21 +80,23 @@ export default defineComponent({
 
   components: {
     BaseUserCard,
+    BaseRelayRecommend,
+    BaseButtonLoadMore,
   },
 
   data() {
     return {
       threads: [],
       eventsSet: new Set(),
-      sub: null,
-      showAllContacts: false,
-      tab: 'posts'
-    }
-  },
-
-  computed: {
-    follows() {
-      return this.$store.getters.contacts(this.$route.params.pubkey)
+      sub: {},
+      tab: 'posts',
+      followsEvent: null,
+      follows: [],
+      followers: [],
+      relays: {},
+      profilesUsed: new Set(),
+      loadingMore: true,
+      reachedEnd: false,
     }
   },
 
@@ -91,58 +105,79 @@ export default defineComponent({
   },
 
   deactivated() {
-    if (this.sub) this.sub.unsub()
+    this.stop()
   },
 
   methods: {
-    start() {
-      this.listen()
-      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey, request: true})
-      this.$store.dispatch('useContacts', {pubkey: this.$route.params.pubkey, request: true})
-      this.$store.getters
-        .contacts(this.$route.params.pubkey)
-        ?.forEach(pubkey => this.$store.dispatch('useProfile', {pubkey}))
+    async start() {
+      this.useProfile(this.$route.params.pubkey)
+      this.loadingMore = true
+
+      let timer = setTimeout(async() => {
+          this.loadMore()
+        }, 4000)
+      this.sub.streamUserNotes = streamUserNotes(this.$route.params.pubkey, event => {
+        if (!timer) this.processUserNotes([event], this.threads)
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(async() => {
+          this.loadMore()
+          clearTimeout(timer)
+          timer = null
+        }, 500)
+      })
+      this.sub.dbStreamUserFollows = dbStreamUserFollows(this.$route.params.pubkey, event => {
+        if (this.followsEvent && event.created_at < this.followsEvent.created_at) return
+        this.followsEvent = event
+        this.follows = event.tags
+          .filter(([t, v]) => t === 'p' && v)
+          .map(([_, v]) => v)
+        this.relays = JSON.parse(event.content)
+        if (this.follows.length)
+          this.follows.forEach(pubkey => this.useProfile(pubkey))
+      })
+      this.sub.dbStreamUserFollowers = dbStreamUserFollowers(this.$route.params.pubkey, event => {
+        this.followers[event.pubkey] = true
+        this.useProfile(event.pubkey)
+      })
     },
 
-    listen() {
-      this.threads = []
-      this.eventsSet = new Set()
+    stop() {
+      if (this.sub.streamUserNotes) this.sub.streamUserNotes.cancel()
+      if (this.sub.dbStreamUserFollows) this.sub.dbStreamUserFollows.cancel()
+      if (this.sub.dbStreamUserFollowers) this.sub.dbStreamUserFollowers.cancel()
+      this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
+    },
 
-      this.sub = pool.sub(
-        {
-          filter: [
-            {
-              authors: [this.$route.params.pubkey],
-              kinds: [0, 1, 2]
-            }
-          ],
-          cb: async (event, relay) => {
-            switch (event.kind) {
-              case 0:
-                await this.$store.dispatch('addEvent', {event, relay})
-                return
+    processUserNotes(events, threads) {
+      for (let event of events) {
+        if (this.eventsSet.has(event.id)) continue
 
-              case 1:
-              case 2:
-                if (this.eventsSet.has(event.id)) return
+        this.interpolateEventMentions(event)
+        this.eventsSet.add(event.id)
+        addToThread(threads, event)
+      }
+    },
 
-                this.interpolateEventMentions(event)
-                this.eventsSet.add(event.id)
-                addToThread(this.threads, event)
-                return
-            }
-          }
-        },
-        'profile-browser'
-      )
+    useProfile(pubkey) {
+      if (this.profilesUsed.has(pubkey)) return
+
+      this.profilesUsed.add(pubkey)
+      this.$store.dispatch('useProfile', {pubkey})
     },
 
     addEvent(event) {
-      if (this.eventsSet.has(event.id)) return
+      this.processUserNotes([event], this.threads)
+    },
 
-      this.interpolateEventMentions(event)
-      this.eventsSet.add(event.id)
-      addToThread(this.threads, event)
+    async loadMore() {
+      this.loadingMore = true
+      let until = this.threads.length ? this.threads[this.threads.length - 1][0].created_at : Math.round(Date.now() / 1000)
+      let notes = await dbUserNotes(this.$route.params.pubkey, until, 50)
+      if (notes.length < 50) this.reachedEnd = true
+      let threads = []
+      this.processUserNotes(notes, threads)
+      this.threads = this.threads.concat(threads)
+      this.loadingMore = false
     }
   }
 })

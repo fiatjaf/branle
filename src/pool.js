@@ -1,9 +1,22 @@
-import {relayPool} from 'nostr-tools'
+// import {Dialog} from 'quasar'
 import {Dialog} from 'quasar'
+// import {pool} from './relay.worker'
+import * as relayWorker from './relay.worker'
+// import {relayPool} from 'nostr-tools'
 
-export const pool = relayPool()
+// export const pool = relayPool()
 
-pool.setPolicy('randomChoice', 3)
+// relayWorker.pool.setPolicy('randomChoice', 3)
+// relayWorker.pool.onNotice((notice, relay) => {
+//   Notify.create({
+//     message: `Relay ${relay.url} says: ${notice}`,
+//     color: 'info'
+//   })
+// })
+
+// const tempPool = pool
+// delete pool
+export const pool = relayWorker.pool
 
 // this will try to sign either with window.nostr or using a manual prompt
 export async function signAsynchronously(event) {

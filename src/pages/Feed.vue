@@ -4,9 +4,7 @@
       class='home-feed-header flex column'
     >
       <div class="text-h5 text-bold q-py-md">{{ $t('feed') }}</div>
-      <!-- <BasePostEntry v-if='$store.state.keys.pub'/> -->
     </div>
-    <!-- <q-separator color='accent' size='2px'/> -->
     <q-tabs
       v-model="tab"
       dense
@@ -17,118 +15,51 @@
     >
       <q-tab name="follows" label='follows' />
       <q-tab name="global" label='global' />
-      <q-tab v-if='botsFeed.length' name="bots" label='bots' />
+      <q-tab name="bots" label='bots' />
     </q-tabs>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="follows" class='no-padding'>
         <div>
-          <q-virtual-scroll :items='followsFeed' virtual-scroll-item-size="110" ref='followsFeedScroll'>
+          <q-virtual-scroll :items='feed.follows' virtual-scroll-item-size="110" ref='followsFeedScroll'>
             <template #default="{ item }">
-              <BasePostThread :key="item[0].id" :events="item" @add-event='addEventFollows'/>
+              <BasePostThread :key="item[0].id" :events="item" @add-event='processEvent'/>
             </template>
           </q-virtual-scroll>
-          <div v-if='followsFeed.length'>
-            <q-separator color='accent'/>
-            <q-btn-group
-            flat
-            spread
-            dense
-            text-color="accent"
-            >
-              <q-btn
-                dense
-                :loading='loadingMore'
-                flat
-                color="accent"
-                class='text-weight-light'
-                style='letter-spacing: .1rem;'
-                :label='reachedEnd ? "reached end" : "load 200 more"'
-                :disable='reachedEnd'
-                @click="loadMoreFollowsFeed"
-              >
-                <template #loading>
-                  <div class='row justify-center q-my-md'>
-                    <q-spinner-orbit color="accent" size='md' />
-                  </div>
-                </template>
-              </q-btn>
-            </q-btn-group>
-            <q-separator color='accent'/>
-          </div>
+          <BaseButtonLoadMore
+            :loading-more='loadingMore'
+            label='load another day'
+            @click='loadMore'
+          />
         </div>
       </q-tab-panel>
 
       <q-tab-panel name="global" class='no-padding'>
         <div>
-          <q-virtual-scroll :items='globalFeed' virtual-scroll-item-size="110" ref='globalFeedScroll'>
+          <q-virtual-scroll :items='feed.global' virtual-scroll-item-size="110" ref='globalFeedScroll'>
             <template #default="{ item }">
-              <BasePostThread :key="item[0].id" :events="item" @add-event='addEventGlobal'/>
+              <BasePostThread :key="item[0].id" :events="item" @add-event='processEvent'/>
             </template>
           </q-virtual-scroll>
-          <div v-if='globalFeed.length'>
-            <q-separator color='accent'/>
-            <q-btn-group
-            flat
-            spread
-            dense
-            text-color="accent"
-            >
-              <q-btn
-                dense
-                :loading='loadingMore'
-                flat
-                color="accent"
-                class='text-weight-light'
-                style='letter-spacing: .1rem;'
-                label='load another day'
-                @click="loadMoreGlobalFeed"
-              >
-                <template #loading>
-                  <div class='row justify-center q-my-md'>
-                    <q-spinner-orbit color="accent" size='md' />
-                  </div>
-                </template>
-              </q-btn>
-            </q-btn-group>
-            <q-separator color='accent'/>
-          </div>
+          <BaseButtonLoadMore
+            :loading-more='loadingMore'
+            label='load another day'
+            @click='loadMore'
+          />
         </div>
       </q-tab-panel>
 
-      <q-tab-panel v-if='botsFeed.length' name="bots" class='no-padding hide-scrollbar'>
+      <q-tab-panel name="bots" class='no-padding hide-scrollbar'>
         <div>
-          <q-virtual-scroll :items='botsFeed' virtual-scroll-item-size="110" ref='botsFeedScroll'>
+          <q-virtual-scroll :items='feed.bots' virtual-scroll-item-size="110" ref='botsFeedScroll'>
             <template #default="{ item }">
-              <BasePostThread :key="item[0].id" :events="item" @add-event='addEventGlobal'/>
+              <BasePostThread :key="item[0].id" :events="item" @add-event='processEvent'/>
             </template>
           </q-virtual-scroll>
-          <div v-if='botsFeed.length'>
-            <q-separator color='accent'/>
-            <q-btn-group
-            flat
-            spread
-            dense
-            text-color="accent"
-            >
-              <q-btn
-                dense
-                :loading='loadingMore'
-                flat
-                color="accent"
-                class='text-weight-light'
-                style='letter-spacing: .1rem;'
-                label='load another day'
-                @click="loadMoreGlobalFeed"
-              >
-                <template #loading>
-                  <div class='row justify-center q-my-md'>
-                    <q-spinner-orbit color="accent" size='md' />
-                  </div>
-                </template>
-              </q-btn>
-            </q-btn-group>
-            <q-separator color='accent'/>
-          </div>
+          <BaseButtonLoadMore
+            :loading-more='loadingMore'
+            label='load another day'
+            @click='loadMore'
+          />
         </div>
       </q-tab-panel>
     </q-tab-panels>
@@ -136,163 +67,115 @@
 </template>
 
 <script>
-import {pool} from '../pool'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
-import {dbGetHomeFeedNotes, onNewHomeFeedNote} from '../db'
+import {dbStreamFeed, dbUserFollows} from '../query'
+import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 
 export default {
   name: 'Feed',
   mixins: [helpersMixin],
 
+  components: {
+    BaseButtonLoadMore,
+  },
+
   data() {
     return {
       listener: null,
       reachedEnd: false,
-      followsFeed: [],
-      followsFeedSet: new Set(),
-      globalFeed: [],
-      globalFeedSet: new Set(),
-      botsFeed: [],
-      botsFeedSet: new Set(),
+      feed: {
+        follows: [],
+        global: [],
+        bots: []
+      },
+      feedSet: new Set(),
       bots: [],
-      loadingMore: false,
+      follows: [],
+      botTracker: '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952',
+      loadingMore: true,
       tab: 'follows',
       sub: null,
-      since: null,
+      since: Math.round(Date.now() / 1000) - (3 * 24 * 60 * 60),
+      profilesUsed: new Set(),
     }
   },
 
   async mounted() {
-    this.loadMoreFollowsFeed()
-    this.loadMoreGlobalFeed()
+    this.bots = await this.getFollows(this.botTracker)
+    this.follows = await this.getFollows(this.$store.state.keys.pub)
 
-    this.listener = onNewHomeFeedNote(event => {
-      if (this.followsFeedSet.has(event.id)) return
+    this.loadMore()
 
-      this.followsFeedSet.add(event.id)
-      this.interpolateEventMentions(event)
-      addToThread(this.followsFeed, event, 'feed')
-    })
+    if (this.follows.length === 0) {
+      this.tab = 'global'
+    }
   },
 
   async beforeUnmount() {
     if (this.listener) this.listener.cancel()
-    if (this.sub) this.sub.unsub()
+    if (this.sub) this.sub.cancel()
+    this.sub = null
+    this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
   },
 
   methods: {
-    async loadMoreFollowsFeed() {
+    async loadMore() {
       this.loadingMore = true
 
-      let until = this.followsFeed.length === 0
-        ? Math.round(Date.now() / 1000)
-        : Math.min.apply(
-          Math,
-          this.followsFeed.flat().map(event => event.created_at)
-        ) - 1
-      let loadedNotes = await dbGetHomeFeedNotes(
-        200,
-        until
-      )
-      // loadedNotes = loadedNotes.filter(event => !this.followsFeedSet.has(event.id))
-      if (loadedNotes.length < 200) {
-        this.reachedEnd = true
-        if (this.followsFeed.length === 0) {
-          this.tab = 'global'
+      let loadedFeed = {
+        follows: [],
+        global: [],
+        bots: []
+      }
+      let timer = setTimeout(() => { this.loadingMore = false }, 1000)
+      if (this.sub) {
+        this.since = this.since - (24 * 60 * 60)
+        this.sub.update(this.since)
+        return
+      }
+      this.sub = await dbStreamFeed(this.since, event => {
+        if (!timer) {
+          this.processEvent(event, this.feed)
+          return
         }
-      }
-      this.interpolateEventMentions(loadedNotes)
-
-      let loadedThreads = []
-      for (let i = loadedNotes.length - 1; i >= 0; i--) {
-        let event = loadedNotes[i]
-        if (this.followsFeedSet.has(event.id)) continue
-        this.followsFeedSet.add(event.id)
-        addToThread(loadedThreads, event, 'feed')
-        // loadedThreads.sort((a, b) => a[0].latest_created_at < b[0].latest_created_at)
-      }
-      this.followsFeed.push(...loadedThreads)
-      this.loadingMore = false
-    },
-
-    async loadMoreGlobalFeed() {
-      this.loadingMore = true
-      if (this.sub) this.sub.unsub()
-
-      if (this.bots.length === 0) {
-        await new Promise(resolve => {
-        let sub = pool.sub({
-          filter: [{authors: ['29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'], kinds: [3]}],
-          cb: async event => {
-            this.bots = event.tags.filter(([t, v]) => t === 'p' && v).map(([_, v]) => v)
-            clearTimeout(timeout)
-            if (sub) sub.unsub()
-            resolve()
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+          for (let feed of Object.keys(this.feed)) {
+            this.feed[feed] = this.feed[feed].concat(loadedFeed[feed])
           }
-        })
-        let timeout = setTimeout(() => {
-          sub.unsub()
-          sub = null
-          resolve()
-        }, 3000)
+          timer = null
+          this.loadingMore = false
+        }, 300)
+          this.loadingMore = false
+        this.processEvent(event, loadedFeed)
       })
-    }
-
-      if (!this.since) this.since = Math.floor(Date.now() / 1000) - 86400
-      else this.since -= 86400
-
-      this.sub = pool.sub(
-        {
-          filter: [
-            {
-              kinds: [1, 2],
-              since: this.since,
-              until: this.since + 86400,
-            }
-          ],
-          cb: async (event, relay) => {
-            // if (this.globalFeedSet.has(event.id)) return
-
-            // // this.$store.dispatch('useProfile', {
-            // //   pubkey: event.pubkey,
-            // //   request: true
-            // // })
-            // this.interpolateEventMentions(event)
-            // this.globalFeedSet.add(event.id)
-            // if (this.bots.includes(event.pubkey)) {
-            //   addToThread(this.botsFeed, event)
-            //   this.botsFeed.sort((a, b) => a[0].latest_created_at < b[0].latest_created_at)
-            // } else {
-            //   addToThread(this.globalFeed, event, 'feed')
-            //   this.globalFeed.sort((a, b) => a[0].latest_created_at < b[0].latest_created_at)
-            // }
-            this.addEventGlobal(event)
-            return
-          }
-        },
-        'global-feed'
-      )
-
-      this.loadingMore = false
     },
 
-    addEventFollows(event) {
-      if (this.followsFeedSet.has(event.id)) return
+    processEvent(event, feed = this.feed) {
+      if (this.feedSet.has(event.id)) return
+      this.feedSet.add(event.id)
       this.interpolateEventMentions(event)
-      this.followsFeedSet.add(event.id)
-      addToThread(this.followsFeed, event, 'feed')
+      this.useProfile(event.pubkey)
+
+      if (this.follows.includes(event.pubkey)) addToThread(feed.follows, Object.assign({}, event), 'feed')
+      if (this.bots.includes(event.pubkey)) addToThread(feed.bots, Object.assign({}, event), 'feed')
+      else addToThread(feed.global, Object.assign({}, event), 'feed')
     },
 
-    addEventGlobal(event) {
-      if (this.globalFeedSet.has(event.id)) return
-      this.interpolateEventMentions(event)
-      this.globalFeedSet.add(event.id)
-      if (this.bots.includes(event.pubkey)) {
-        addToThread(this.botsFeed, event)
-      } else {
-        addToThread(this.globalFeed, event, 'feed')
-      }
+    async getFollows(pubkey) {
+      let event = await dbUserFollows(pubkey)
+      if (!event) return []
+      return event.tags
+        .filter(([t, v]) => t === 'p' && v)
+        .map(([_, v]) => v)
+    },
+
+    useProfile(pubkey) {
+      if (this.profilesUsed.has(pubkey)) return
+
+      this.profilesUsed.add(pubkey)
+      this.$store.dispatch('useProfile', {pubkey})
     },
   }
 }

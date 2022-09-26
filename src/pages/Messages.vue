@@ -1,33 +1,36 @@
 <template>
-  <q-page class='fit flex column no-wrap overflow-hidden'>
-    <div class='flex row justify-evenly no-wrap full-width q-pt-sm q-px-sm'>
-      <BaseUserCard
-        v-if='$route.params.pubkey'
-        :pubkey='$route.params.pubkey'
-        :action-buttons='false'
-        style='width: 50%;'
-      />
-      <BaseUserCard
-        v-if='$store.state.keys.pub'
-        :pubkey='$store.state.keys.pub'
-        :action-buttons='false'
-        :align-right='true'
-        style='width: 50%; self-justify: end;'
-      />
-    </div>
-    <q-separator color='accent' size='2px' spaced/>
-    <div class='relative-position'>
-      <div class='absolute-top flex justify-center'>
-      <span
-            class='text-accent bg-dark z-top q-px-sm'
-            style=''
-            id='current-datestamp'
-          >
-            {{ currentDatestamp }}
-          </span>
+  <q-page class='flex column no-wrap' style='min-height: unset;'>
+    <div id='header-placeholder' />
+    <div id='header' ref='header'>
+      <div class='flex row justify-evenly no-wrap full-width q-pt-sm q-px-sm'>
+        <BaseUserCard
+          v-if='$route.params.pubkey'
+          :pubkey='$route.params.pubkey'
+          :action-buttons='false'
+          style='width: 50%;'
+        />
+        <BaseUserCard
+          v-if='$store.state.keys.pub'
+          :pubkey='$store.state.keys.pub'
+          :action-buttons='false'
+          :align-right='true'
+          style='width: 50%; self-justify: end;'
+        />
+      </div>
+      <q-separator color='accent' size='2px' spaced/>
+      <div class='relative-position'>
+        <div class='absolute-top flex justify-center'>
+          <span
+              class='text-accent bg-dark z-top q-px-sm'
+              style=''
+              id='current-datestamp'
+            >
+              {{ currentDatestamp }}
+            </span>
           </div>
+      </div>
     </div>
-    <div ref='messageScroll' class='col overflow-auto' @scroll='updateCurrentDatestamp'>
+    <div ref='messageScroll' id='message-scroll' @scroll='updateCurrentDatestamp' @touchmove='updateCurrentDatestamp' @touchend='delayedUpdateCurrentDatestamp'>
       <q-infinite-scroll @load="loadMore" reverse ref='messagesScroll'>
         <div
           v-for="(event, index) in messages"
@@ -68,12 +71,6 @@
         size='sm'
         @click.stop='scrollToBottom()'
       />
-      <BasePostEntry
-        :message-mode='replyEvent? "reply" : "message"'
-        :event='replyEvent'
-        @sent='messageSent'
-        @clear-event='replyEvent=null'
-        />
     </div>
   </q-page>
 </template>
@@ -82,13 +79,19 @@
 import helpersMixin from '../utils/mixin'
 import {dbMessages, streamMessages} from '../query'
 import BaseMessage from 'components/BaseMessage.vue'
+import { useQuasar } from 'quasar'
 
 export default {
   name: 'Messages',
   mixins: [helpersMixin],
-
+  emits: ['reply-event', 'scroll-to-rect'],
   components: {
     BaseMessage,
+  },
+
+  setup () {
+    const $q = useQuasar()
+    return $q
   },
 
   data() {
@@ -110,6 +113,7 @@ export default {
     // load saved messages and start listening for new ones
     await this.start()
     this.scrollToBottom()
+    this.resizeHeaderPlaceholder()
   },
 
   async deactivated() {
@@ -158,6 +162,8 @@ export default {
         )
           this.addMessage(event)
       })
+
+      // this.updateCurrentDatestamp()
     },
 
 
@@ -165,10 +171,11 @@ export default {
       return new Promise(resolve =>
         setTimeout(() => {
           this.$refs.messageScroll.scrollTop = this.$refs.messageScroll.scrollHeight
+          this.$emit('scroll-to-rect', { top: this.$refs.messageScroll.scrollHeight })
           this.$store.commit('haveReadMessage', this.$route.params.pubkey)
           this.unreadMessagesSet.clear()
           resolve()
-        }, 10)
+        }, 100)
       )
     },
 
@@ -224,6 +231,7 @@ export default {
     },
 
     reply(event) {
+      this.$emit('reply-event', event)
       this.replyEvent = null
       setTimeout(() => {
         let replyEvent = Object.assign({}, event)
@@ -233,61 +241,88 @@ export default {
     },
 
     updateCurrentDatestamp(event) {
-      // console.log('scrolled', event)
       let messageScroll = this.$refs.messageScroll
       let datestamps = Array.from(messageScroll.querySelectorAll('.datestamp'))
-      this.currentDatestamp = datestamps.reduce((p, c) => {
-        if (c.offsetTop < messageScroll.scrollTop + c.offsetHeight) return c.innerText
-        else return p
-      }, datestamps[0].innerText)
+      let headerHeight = document.querySelector('#header').clientHeight
+      let currentDatestamp = datestamps.reduce((p, c) => {
+        let rect = c.getBoundingClientRect()
+        if (rect.top < headerHeight && c.offsetTop > p.offsetTop) {
+          return c
+        } else return p
+      }, datestamps[0])
+      this.currentDatestamp = currentDatestamp.innerText
     },
 
-    async messageSent(event) {
-      await this.addMessage(event)
-      this.replyEvent = null
+    delayedUpdateCurrentDatestamp(event) {
+      let count = 0
+      let interval = setInterval(() => {
+        this.updateCurrentDatestamp()
+        count++
+        if (count > 9) clearInterval(interval)
+      }, 100)
+      // setTimeout(() => { this.updateCurrentDatestamp() }, 1000)
     },
+
+    // async messageSent(event) {
+    //   await this.addMessage(event)
+    //   this.replyEvent = null
+    // },
 
     async addMessage(event) {
-        if (this.messagesSet.has(event.id)) return
-        this.messagesSet.add(event.id)
+      if (this.messagesSet.has(event.id)) return
+      this.messagesSet.add(event.id)
 
-        await this.lock()
-        event.text = await this.getPlaintext(event)
-        this.unlock()
-        this.interpolateMessageMentions(event)
+      await this.lock()
+      event.text = await this.getPlaintext(event)
+      this.unlock()
+      this.interpolateMessageMentions(event)
 
-        let messageScroll = this.$refs.messageScroll
-        let scrollToBottom = 100 > Math.abs((messageScroll.scrollHeight - messageScroll.clientHeight) - messageScroll.scrollTop) ||
-          messageScroll.scrollHeight === messageScroll.clientHeight
+      let messageScroll = this.$refs.messageScroll
+      let scrollToBottom = 100 > Math.abs((messageScroll.scrollHeight - messageScroll.clientHeight) - messageScroll.scrollTop) ||
+        messageScroll.scrollHeight === messageScroll.clientHeight
 
-        if (this.messages.length === 0) {
-          this.messages.push(event)
+      if (this.messages.length === 0) {
+        this.messages.push(event)
+      } else {
+        let last = this.messages[this.messages.length - 1]
+        if (
+          event.pubkey === this.$store.state.keys.pub &&
+          last.pubkey === event.pubkey &&
+          last.created_at + 120 >= event.created_at
+        ) {
+          last.appended = last.appended || []
+          last.appended.push(event)
         } else {
-          let last = this.messages[this.messages.length - 1]
-          if (
-            event.pubkey === this.$store.state.keys.pub &&
-            last.pubkey === event.pubkey &&
-            last.created_at + 120 >= event.created_at
-          ) {
-            last.appended = last.appended || []
-            last.appended.push(event)
-          } else {
-            this.messages.push(event)
-          }
+          this.messages.push(event)
         }
+      }
 
-        if (scrollToBottom) {
-          this.$store.commit('haveReadMessage', this.$route.params.pubkey)
-          this.scrollToBottom()
-        } else if (event.pubkey === this.$route.params.pubkey) {
-          this.unreadMessagesSet.add(event.id)
-        }
+      if (scrollToBottom) {
+        this.$store.commit('haveReadMessage', this.$route.params.pubkey)
+        this.scrollToBottom()
+      } else if (event.pubkey === this.$route.params.pubkey) {
+        this.unreadMessagesSet.add(event.id)
+      }
+    },
+
+    resizeHeaderPlaceholder() {
+      setTimeout(() => {
+        document.querySelector('#header-placeholder').style.minHeight = `${document.querySelector('#header').clientHeight}px`
+      }, 1000)
     },
   }
 }
 </script>
 
 <style lang='scss' scoped>
+#header {
+  position: fixed;
+  top: 0;
+  z-index: 1;
+  background: $dark;
+  width: calc(100vw - 4px);
+  left: 2px;
+}
 #current-datestamp {
   border-bottom-right-radius: .25rem;
   border-bottom-left-radius: .25rem;
@@ -296,5 +331,27 @@ export default {
   position: absolute;
   top: -3rem;
   left: 0
+}
+@media screen and (min-width: 600px) {
+  .q-page {
+    height: inherit;
+    overflow: hidden;
+
+  }
+  #header-placeholder {
+    display: none;
+  }
+  #header {
+    position: unset;
+    top: unset;
+    width: unset;
+    z-index: unset;
+    background: unset;
+    left: unset;
+  }
+  #message-scroll {
+    overflow: auto;
+    height: 100%;
+  }
 }
 </style>

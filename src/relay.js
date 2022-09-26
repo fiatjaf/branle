@@ -89,8 +89,12 @@ export function subEvent(id) {
   return sub('subEvent', [id])
 }
 
-export function unsub() {
-  return call('unsub', [])
+export function activateSub() {
+  return call('activateSub', [])
+}
+
+export function deactivateSub() {
+  return call('deactivateSub', [])
 }
 
 export function close() {

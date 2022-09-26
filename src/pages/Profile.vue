@@ -1,6 +1,13 @@
 <template>
   <q-page>
-    <BaseUserCard v-if='$route.params.pubkey' :pubkey='$route.params.pubkey' class='user-card-header q-my-sm' :header-mode='true'/>
+    <BaseUserCard
+      v-if='$route.params.pubkey'
+      :pubkey='$route.params.pubkey'
+      class='user-card-header q-my-sm'
+      :header-mode='true'
+      :show-following='true'
+      :clickable='false'
+    />
     <q-tabs
       v-model="tab"
       dense
@@ -30,6 +37,7 @@
               v-for="(pubkey) in follows"
               :key="pubkey"
               :pubkey="pubkey"
+              :show-following='true'
             />
           </div>
         </div>
@@ -43,6 +51,7 @@
               v-for="(pubkey) in Object.keys(followers)"
               :key="pubkey"
               :pubkey="pubkey"
+              :show-following='true'
             />
           </div>
         </div>

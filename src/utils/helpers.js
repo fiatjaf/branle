@@ -1,4 +1,4 @@
-import {dbUserProfile} from '../query'
+import {dbUserProfile, dbEvent} from '../query'
 
 export function shorten(str) {
   return str ? str.slice(0, 5) + '…' + str.slice(-5) : ''
@@ -111,4 +111,10 @@ export function getEventTagWithRelay(event) {
   }
 
   return ['e', event.id]
+}
+export async function getEventIdTagWithRelay(eventId) {
+  let event = await dbEvent(eventId)
+  if (event && event.seen_on && event.seen_on.length) return getEventTagWithRelay(event)
+
+  return ['e', eventId]
 }

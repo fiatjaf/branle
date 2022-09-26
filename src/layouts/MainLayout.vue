@@ -3,27 +3,53 @@
     <TheKeyInitializationDialog v-if='!$store.state.keys.pub'/>
     <div id='layout-container' :ripple='false'>
       <div id='left-drawer' class='flex justify-end'>
-        <TheUserMenu/>
+        <TheUserMenu :item-mode='$q.screen.width < 1023' :show-compact-mode-items='$q.screen.width < 700' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry'/>
       </div>
 
       <div id='middle-page'>
         <q-page-container ref='pageContainer'>
-          <!-- <router-view :key='$route.path' /> -->
           <router-view v-slot="{ Component }">
             <keep-alive  >
-              <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect'/>
+              <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent'/>
             </keep-alive>
           </router-view>
         </q-page-container>
-        <q-footer id='bottom-drawer' unelevated class='z-max'>
-          <TheUserMenu :compact-mode='true'/>
-        </q-footer>
+      <div v-if='postEntryOpen || messageMode' id='post-entry' unelevated class='gt-xs flex column align-self'>
+        <q-separator color='accent'/>
+          <q-btn v-if='!messageMode' icon="close" flat @click='togglePostEntry' class='self-end'/>
+        <BasePostEntry
+          :message-mode='messageMode'
+          :event='replyEvent'
+          @clear-event='replyEvent=null'
+          @sent='togglePostEntry'
+          class='q-px-md'
+          :class='messageMode ? "q-pt-sm" : ""'
+        />
+      </div>
+        <div id='bottom-post-entry-placeholder' />
+        <div id='bottom-menu-placeholder' />
       </div>
 
       <div id='right-drawer' class='flex justify-start'>
         <TheSearchMenu/>
       </div>
     </div>
+    <q-page-sticky id='bottom-drawer' position="bottom" class='z-top xs'>
+      <q-separator color='accent'/>
+      <div  v-if='postEntryOpen || messageMode' id='bottom-post-entry' unelevated class='flex column align-self'>
+          <q-btn v-if='!messageMode' icon="close" flat @click='togglePostEntry' class='self-end'/>
+        <BasePostEntry
+          :message-mode='messageMode'
+          :event='replyEvent'
+          @clear-event='replyEvent=null'
+          @sent='togglePostEntry'
+          @resized='resizePostEntryPlaceholder'
+          :auto-focus='false'
+          class='q-px-md'
+        />
+      </div>
+      <TheUserMenu id='bottom-menu' :compact-mode='true' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry'/>
+    </q-page-sticky>
     <q-page-sticky position="top-right" :offset="fabPos" id='navagation-buttons'>
       <q-fab
         direction="left"
@@ -87,20 +113,24 @@
 
 <script>
 import { defineComponent} from 'vue'
-import { scroll } from 'quasar'
+import { scroll, useQuasar } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
-import { destroyStreams } from '../query'
+import { activateSub, deactivateSub, destroyStreams } from '../query'
 import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
 
 export default defineComponent({
   name: 'MainLayout',
-
   components: {
     TheKeyInitializationDialog,
     TheUserMenu,
     TheSearchMenu,
+  },
+
+  setup () {
+    const $q = useQuasar()
+    return $q
   },
 
   data() {
@@ -108,21 +138,49 @@ export default defineComponent({
       middlePagePos: {},
       fabPos: [0, 10],
       draggingFab: false,
+      broadcastChannel: new BroadcastChannel('astral'),
+      activeWindow: false,
+      timeout: null,
+      hasLaunched: false,
+      postEntryOpen: false,
+      replyEvent: null,
+    }
+  },
+
+  computed: {
+    scrollingContainer() {
+      if (this.$q.screen.width < 600) return window
+      return this.$refs.pageContainer?.$el
+    },
+    messageMode() {
+      if (this.$route.name === 'messages') {
+        if (this.replyEvent) return 'reply'
+        else return 'message'
+      } else return null
     }
   },
 
   mounted() {
-    if (this.$store.state.keys.pub) {
-      // keys already set up
-      this.$store.dispatch('launch')
-    } else {
-      this.$store.dispatch('launchWithoutKey')
+    // coordinate closing/opening of db if multiple astral windows
+    this.broadcastChannel.onmessage = (event) => {
+      let {type} = event.data
+
+      if (type === 'active' && this.activeWindow) this.deactivateWindow()
+      else if (type === 'closing' && this.timeout) clearTimeout(this.timeout)
+      else if (type === 'done' && this.activeWindow) this.launch()
     }
+    this.activateWindow()
+    document.addEventListener('visibilitychange', this.activateWindow())
+    window.onfocus = this.activateWindow
+
+    // setup scrolling
     document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll)
     this.$router.beforeEach((to, from) => { this.preserveScrollPos(to, from) })
     this.$router.afterEach((to, from) => { this.restoreScrollPos(to, from) })
     let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
     if (pageRect) this.fabPos[0] = pageRect.right - pageRect.width
+
+    // destroy streams before unloading window
     window.onbeforeunload = async () => {
       await destroyStreams()
     }
@@ -134,23 +192,21 @@ export default defineComponent({
 
   methods: {
     redirectScroll(event) {
-      let pos = getVerticalScrollPosition(this.$refs.pageContainer.$el)
-      setVerticalScrollPosition(this.$refs.pageContainer.$el, pos + event.deltaY)
+      let pos = getVerticalScrollPosition(this.scrollingContainer)
+      setVerticalScrollPosition(this.scrollingContainer, pos + event.deltaY)
     },
 
     preserveScrollPos(to, from) {
-      if (this.$refs.pageContainer?.$el) this.middlePagePos[from.fullPath] = getVerticalScrollPosition(this.$refs.pageContainer.$el)
+      this.middlePagePos[from.fullPath] = getVerticalScrollPosition(this.scrollingContainer)
     },
 
     restoreScrollPos(to, from) {
-      if (this.$refs.pageContainer?.$el) {
-        if (this.middlePagePos[to.fullPath]) setVerticalScrollPosition(this.$refs.pageContainer.$el, this.middlePagePos[to.fullPath], 500)
-        else setVerticalScrollPosition(this.$refs.pageContainer.$el, 0)
-      }
+      if (this.middlePagePos[to.fullPath]) setVerticalScrollPosition(this.scrollingContainer, this.middlePagePos[to.fullPath], 500)
+      else this.scrollToTop()
     },
 
     scrollToTop() {
-      setVerticalScrollPosition(this.$refs.pageContainer.$el, 0, 500)
+      setVerticalScrollPosition(this.scrollingContainer, 0, 500)
     },
 
     back() {
@@ -171,24 +227,69 @@ export default defineComponent({
     },
 
     scrollToRect(rect) {
-      let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
-      let offset = Math.max(rect.bottom - (pageRect.height / 2), 0)
-      setVerticalScrollPosition(this.$refs.pageContainer.$el, offset, 500)
-    }
+      let offset = Math.max(rect.top - 100, 0)
+      setVerticalScrollPosition(this.scrollingContainer, offset, 500)
+    },
+
+    async launch() {
+      // await dbInit()
+      this.timeout = null
+      if (this.hasLaunched) {
+        activateSub()
+      }
+      if (this.$store.state.keys.pub) {
+        this.$store.dispatch('launch')
+      } else {
+        this.$store.dispatch('launchWithoutKey')
+      }
+      this.hasLaunched = true
+    },
+
+    async activateWindow() {
+      if (document.hidden || this.activeWindow) return
+      this.activeWindow = true
+      this.broadcastChannel.postMessage({ type: 'active' })
+      if (!this.timeout) this.timeout = setTimeout(this.launch, 100)
+    },
+
+    async deactivateWindow() {
+      this.broadcastChannel.postMessage({ type: 'closing' })
+      this.activeWindow = false
+      // deactivateSub will post 'done' message to broadcastChannel
+      deactivateSub()
+    },
+
+    togglePostEntry() {
+      if (this.messageMode) {
+        this.replyEvent = null
+      } else this.postEntryOpen = !this.postEntryOpen
+    },
+
+    setReplyEvent(event) {
+      this.replyEvent = event
+    },
+
+    resizePostEntryPlaceholder() {
+      setTimeout(() => {
+        document.querySelector('#bottom-post-entry-placeholder').style.minHeight = `${document.querySelector('#bottom-post-entry').clientHeight}px`
+      }, 1000)
+    },
   },
 })
 
 </script>
 
 <style lang='scss'>
+body {
+  display: block;
+  height: 100vh;
+  overflow: auto;
+}
 #layout-container {
   display: flex;
   justify-content: center;
-  overflow: hidden;
-  height: 100vh;
-  position: relative;
   width: 100%;
-  will-change: overflow;
+  position: relative;
   flex-wrap: nowrap;
 }
 #left-drawer, #right-drawer {
@@ -211,36 +312,53 @@ export default defineComponent({
   padding: 0 .5rem;
 }
 #middle-page .q-page-container {
-  overflow-y: auto;
 }
+#bottom-post-entry-placeholder {
+}
+
+#bottom-menu,
+#bottom-menu-placeholder {
+  height: 2rem;
+  min-height: 2rem;
+  width: 100%;
+}
+
 #bottom-drawer {
-  background: rgba(255, 255, 255, 0.2);
+  background: $dark;
+  width: calc(100% - 4px);
+  left: 2px;
+}
+#bottom-drawer > div {
+  width: 100%;
+}
+#navagation-buttons .q-fab__actions .q-btn{
+  background: $dark !important;
 }
 #navagation-buttons .q-btn{
-  font-size: .6rem;
+  font-size: .8rem;
+}
+.q-page-sticky {
+  z-index: 2;
 }
 .q-fab__actions--left {
   margin: 0;
 }
 
 @media screen and (min-width: 600px) {
+  body {
+    height: unset;
+    overflow: unset;
+  }
   #navagation-buttons .q-btn{
     font-size: .8rem;
   }
-}
-
-@media screen and (min-width: 700px) {
   #layout-container {
     justify-content: flex-start;
-  }
-  #left-drawer, #right-drawer {
-    display: flex;
-    visibility: inherit;
-    height: auto;
-    -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none;
+    overflow: hidden;
+    height: 100vh;
   }
   #left-drawer {
+    display: flex;
     overflow: hidden;
     width: 50px;
     max-width: 50px;
@@ -248,6 +366,51 @@ export default defineComponent({
     flex: 0;
     flex-shrink: 0;
     flex-grow: 0;
+  }
+  #middle-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 550px;
+    max-width: 650px;
+    height: 100vh;
+    padding-bottom: 0;
+    flex: 1;
+    flex-shrink: 1;
+    flex-grow: 1;
+  }
+  #middle-page .q-page-container {
+    overflow: auto;
+    height: 100%;
+    flex: 1;
+    flex-shrink: 1;
+    flex-grow: 1;
+  }
+  #post-entry {
+    height: fit-content;
+    flex: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+  }
+  #bottom-menu,
+  #bottom-menu-placeholder,
+  #bottom-post-entry-placeholder {
+    display: none;
+  }
+}
+
+@media screen and (min-width: 700px) {
+  #layout-container {
+    justify-content: flex-start;
+    overflow: hidden;
+    height: 100vh;
+  }
+  #left-drawer, #right-drawer {
+    display: flex;
+    visibility: inherit;
+    height: auto;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
   }
   #right-drawer {
     width: auto;
@@ -261,13 +424,6 @@ export default defineComponent({
   #middle-page {
     min-width: 400px;
     max-width: 600px;
-    padding-bottom: 0;
-    flex: 1;
-    flex-shrink: 1;
-    flex-grow: 1;
-  }
-  #bottom-drawer {
-    display: none;
   }
 }
 @media screen and (min-width: 1023px) {
@@ -307,23 +463,23 @@ export default defineComponent({
   }
 }
 @media screen and (min-width: 1200px) {
-#layout-container {
-  justify-content: center;
-}
-#left-drawer, #right-drawer {
+  #layout-container {
+    justify-content: center;
+  }
+  #left-drawer, #right-drawer {
     width: calc((100vw - 600px) / 2);
     max-width: 300px;
-      flex: 1;
-      flex-shrink: 1;
-      flex-grow: 1;
+    flex: 1;
+    flex-shrink: 1;
+    flex-grow: 1;
   }
   #middle-page {
-  width: 600px;
-  min-width: 600px;
-  max-width: 600px;
-      flex: 0;
-      flex-shrink: 0;
-      flex-grow: 0;
+    width: 600px;
+    min-width: 600px;
+    max-width: 600px;
+    flex: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
   }
 }
 </style>

@@ -1,6 +1,6 @@
 {
   "name": "astral",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "description": "decentralized social platform (nostr client)",
   "productName": "astral",
   "author": "monica <monlovesmango@protonmail.com>",
@@ -28,7 +28,7 @@
     "markdown-it-sup": "1.0",
     "markdown-it-task-lists": "2.1",
     "mergebounce": "^0.1.1",
-    "nostr-tools": "0.23.4",
+    "nostr-tools": "0.24.1",
     "quasar": "2.5.5",
     "readable-stream": "3.6.0",
     "tributejs": "^5.1.3",

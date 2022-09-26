@@ -84,14 +84,17 @@ export async function restartMainSubscription(store) {
   // setup pool
   await setRelays(store.state.relays)
 
+  // sub to bot tracker follows (to filter out bots in feed)
   let botTracker = '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'
   let botTrackerSub = await streamUserFollows(botTracker)
   setTimeout(() => {
     botTrackerSub.cancel()
   }, 60 * 1000)
 
+  // thats all if no pubkey entered
   if (!store.state.keys.pub) return
 
+  // prune old events after 5 min
   setTimeout(() => {
     prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.following))
   }, 5 * 60 * 1000)

@@ -47,11 +47,12 @@
           :style='mentionsUpdating ? "opacity: .7;" : ""'
           @input='updateText'
           @keypress.delete='updateText'
-          @paste='handlePaste'
           @focus='textareaFocus'
           @blur='textareaBlur'
           @keypress.ctrl.enter="send"
           @click.stop
+          @touchstart.stop
+          @mousedown.stop
         >
         </div>
         <div id="input-readonly" contenteditable="true" spellcheck="false"></div>
@@ -204,7 +205,7 @@
 import { colors } from 'quasar'
 const { getPaletteColor } = colors
 import helpersMixin from '../utils/mixin'
-import {getPubKeyTagWithRelay, getEventTagWithRelay, shorten} from '../utils/helpers'
+import {getPubKeyTagWithRelay, getEventTagWithRelay, getEventIdTagWithRelay, shorten} from '../utils/helpers'
 import BaseEmojiPicker from 'components/BaseEmojiPicker.vue'
 import BaseLinkForm from 'components/BaseLinkForm.vue'
 import BaseMessage from 'components/BaseMessage.vue'
@@ -234,6 +235,10 @@ export default {
       type: Object,
       required: false,
       default: null
+    },
+    autoFocus: {
+      type: Boolean,
+      default: true
     }
   },
 
@@ -254,16 +259,13 @@ export default {
       },
       trigger: 1,
       links: [],
+      textareaRange: null,
     }
   },
 
   watch: {
     text(curr, prev) {
       this.updateMentionsTags()
-      if (curr.length > this.charLimit) this.updateReadonlyHightlightInput()
-    },
-    overCharLimit(curr, prev) {
-      this.updateReadonlyHightlightInput()
     },
     replyMode(curr, prev) {
       if (curr !== prev) {
@@ -273,6 +275,7 @@ export default {
     },
     messageMode(curr, prev) {
       if (curr !== prev) {
+        this.$emit('resized')
         this.focusInput()
       }
     },
@@ -323,18 +326,18 @@ export default {
       return 0
     },
     label() {
-      if (this.messageMode === 'reply') return 'reply to message'
-      else if (this.messageMode) return ''
+      if (this.messageMode === 'reply') return "what's your reply?"
+      else if (this.messageMode) return "what's your message?"
       else if (this.replyMode) {
         if (this.replyMode === 'reply') return "what's your reply?"
-        else if (this.replyMode === 'quote') return "what's your thought on this?"
+        else if (this.replyMode === 'quote') return "what's your thought?"
       }
       return "what's happening?"
     },
     placeholderText() {
       if (this.text.length) return ''
       else if (this.messageMode === 'reply') return 'reply to message'
-      else if (this.messageMode) return ''
+      else if (this.messageMode) return "what's your message?"
       else if (this.replyMode) {
         if (this.replyMode === 'reply') return "what's your reply?"
         else if (this.replyMode === 'quote') return "what's your thought on this?"
@@ -369,11 +372,12 @@ export default {
 
   mounted() {
     if (!this.messageMode) this.profileMentionsProvider.attach(this.textarea)
-    this.focusInput()
+    if (this.autoFocus) this.focusInput()
+    this.$emit('resized')
   },
 
   activated() {
-    this.focusInput()
+    // if (this.autoFocus) this.focusInput()
   },
 
   beforeUnmount() {
@@ -385,8 +389,9 @@ export default {
     updateText(e) {
       if (e) this.text = e.target.textContent
       else this.text = this.textarea.textContent
+      this.textareaRange = this.caretRange
       this.updateReadonlyInput()
-      this.updateReadonlyHightlightInput()
+      if (!this.messageMode) this.updateReadonlyHightlightInput()
     },
 
     async send() {
@@ -469,7 +474,10 @@ export default {
       } else {
         // add the first and the last events being replied to
         let first = usableTags.find(([t, v]) => t === 'e')
-        if (first) tags.push(first)
+        if (first) {
+          if (first.length < 3 || !first[2] || first[2] === '') tags.push(await getEventIdTagWithRelay(first[1]))
+          else tags.push(first)
+        }
         let last = getEventTagWithRelay(this.event)
         tags.push(last)
       }
@@ -478,6 +486,10 @@ export default {
       let text = this.formatMentionsForPublishing(tags, textarea)
       this.appendHashtags(tags)
       text = this.appendLinks(text)
+      // console.log('sendReply', {
+      //   message: text,
+      //   tags: tags
+      // })
       return await this.$store.dispatch('sendPost', {
         message: text,
         tags: tags
@@ -610,11 +622,10 @@ export default {
       if (this.text.toLowerCase().match(mentionRegex)) {
         this.mentionsUpdating = true
         await this.extractMentions(this.textarea, this.tags)
-        this.updateText()
         if (start.el.nodeName === '#text' && start.pos > start.el.length)
           this.setCaret(start.el, start.el.length)
         else this.setCaret(start.el, start.pos)
-        this.updateReadonlyInput()
+        this.updateText()
         this.mentionsUpdating = false
       }
     },
@@ -626,7 +637,7 @@ export default {
       }
     },
 
-    insertText(insertedText, range = this.caretRange) {
+    insertText(insertedText, range = this.textareaRange) {
       let { start, end } = this.startEndOfRange(range)
       let text = start.el.textContent.slice(0, start.pos) + insertedText + end.el.textContent.slice(end.pos)
       let nextSibling = end.el.nextSibling
@@ -649,8 +660,6 @@ export default {
         this.setCaret(textNode, insertedText.length)
       }
       this.updateText()
-      this.updateReadonlyInput()
-      this.updateReadonlyHightlightInput()
     },
 
     insertEmoji(emoji) {
@@ -675,6 +684,7 @@ export default {
     },
 
     toggleTool(tool) {
+      this.updateText()
       if (this.toolSelected === tool) this.closeTools()
       else this.toolSelected = tool
     },
@@ -683,6 +693,8 @@ export default {
       this.closeTools()
       this.text = ''
       this.textarea.innerHTML = ''
+      this.readonlyTextarea.innerHTML = ''
+      this.readonlyHighlightTextarea.innerHTML = ''
       this.tags = []
       this.links = []
       this.focusInput()
@@ -817,17 +829,17 @@ export default {
       return { char } // needed because of recursion stuff
     },
 
-    handlePaste(e) {
-      let clipboardData = e.clipboardData || e.originalEvent.clipboardData || window.clipboardData
-      let pastedText = clipboardData.getData('text/plain') || clipboardData.getData('Text')
-      let pastedTextNew = this.extractUrls(pastedText)
-      // console.log('pastedText', pastedText, 'pastedTextNew', pastedTextNew)
-      if (pastedText !== pastedTextNew) {
-        e.preventDefault()
-        this.trigger++
-        this.insertText(pastedTextNew)
-      }
-    },
+    // handlePaste(e) {
+    //   let clipboardData = e.clipboardData || e.originalEvent.clipboardData || window.clipboardData
+    //   let pastedText = clipboardData.getData('text/plain') || clipboardData.getData('Text')
+    //   let pastedTextNew = this.extractUrls(pastedText)
+    //   // console.log('pastedText', pastedText, 'pastedTextNew', pastedTextNew)
+    //   if (pastedText !== pastedTextNew) {
+    //     e.preventDefault()
+    //     this.trigger++
+    //     this.insertText(pastedTextNew)
+    //   }
+    // },
 
     extractUrls(text) {
       // eslint-disable-next-line no-useless-escape
@@ -913,6 +925,7 @@ ul, li {
   outline: none;
   border: none;
   min-height: 3rem;
+  width: 100%;
 }
 .input-area #input-editable {
   display: block;

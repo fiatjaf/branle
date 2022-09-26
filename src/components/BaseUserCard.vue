@@ -27,8 +27,8 @@
         :header-mode='headerMode'
         :show-verified='true'
         :class='headerMode ? " text-h6" : ""'
-        :wrap='headerMode'
         :align-right='alignRight'
+        :show-following='showFollowing'
       />
       <div class='text-secondary pubkey' style='opacity: .9; font-size: 95%; font-weight: 300'>{{ shorten(pubkey) }}</div>
       <BaseMarkdown v-if='headerMode' >
@@ -87,6 +87,7 @@ export default defineComponent({
       required: false,
       default: true
     },
+    showFollowing: {type: Boolean, default: false},
   },
 
   setup() {

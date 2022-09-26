@@ -75,6 +75,10 @@ export function unreadChats(state) {
   return Object.values(state.unreadMessages).filter(v => v).length
 }
 
+export function unreadNotifications(state) {
+  return state.unreadNotifications
+}
+
 export function canSignEventsAutomatically(state) {
   return Boolean(state.keys.priv || window.nostr)
 }

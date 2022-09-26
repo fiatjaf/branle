@@ -9,13 +9,9 @@ import sqlWasm from '@jlongster/sql.js/dist/sql-wasm.wasm'
 
 
 export var channel = new MessageChannel()
-// worker.postMessage({ name: 'setPort' }, [ channel.port1 ])
 relay.setPort(channel)
 
 let relayWorkerPort = channel.port1
-// relayWorkerPort = ev.ports[0]
-// relayWorker.addEventListener('message', e => {
-// relayWorker.onmessage = ev => {
 relayWorkerPort.onmessage = ev => {
   switch (ev.data.type) {
     case 'events': {
@@ -39,7 +35,7 @@ relayWorkerPort.onmessage = ev => {
 }
 
 // delete pouchdb indexeddbs
-indexedDB.databases().then(dbs => {
+if (indexedDB?.databases) indexedDB.databases().then(dbs => {
   if (dbs.length <= 1) return
   for (let db of dbs) {
     if (db.name.includes('_pouch_nostr-events'))
@@ -53,41 +49,12 @@ let pageSize = 8192
 const dbName = `events.absurd-sql`
 const path = `/nostr/${dbName}`
 let SQL = null
-// let recordProfile = false;
-// let useRawIDB = false;
 
-// let memoryBackend = new MemoryBackend({});
 let idbBackend = new IndexedDBBackend(() => {
   console.error('Unable to write!')
 })
 
 var db = null
-// getDb(db)
-
-// let relayWorker = new Worker(new URL('./relay.worker.js', import.meta.url))
-// let relays;
-
-// let debouncedDbSave = mergebounce(
-//   events => saveEventsToDb(events),
-//   500,
-//   { 'concatArrays': true, 'promise': true }
-// )
-// // relayWorker.addEventListener('message', e => {
-// // relayWorker.onmessage = ev => {
-// relayWorkerPort.onmessage = ev => {
-//   switch (ev.data.type) {
-//     case 'event': {
-//       // consolvlog(e.data);
-//       debouncedDbSave([ev.data])
-//       // lastSave = Date.now();
-//       break
-//     }
-//     default: {
-//       output(ev.data)
-//       break
-//     }
-//   }
-// }
 
 // Helper methods
 function output(msg) {
@@ -146,7 +113,8 @@ function output(msg) {
 // }
 
 async function initDb() {
-  // if (SQL == null) {
+  // if (db) return
+  if (SQL == null) {
     SQL = await initSqlJs({ locateFile: () => sqlWasm })
     let sqlFS = new SQLiteFS(SQL.FS, idbBackend)
     SQL.register_for_idb(sqlFS)
@@ -158,24 +126,23 @@ async function initDb() {
 
     SQL.FS.mkdir('/nostr')
     SQL.FS.mount(sqlFS, {}, '/nostr')
-    // }
-    if (typeof SharedArrayBuffer === 'undefined') {
-      let stream = SQL.FS.open(path, 'a+')
-      await stream.node.contents.readIfFallback()
-      SQL.FS.close(stream)
-    }
+  }
+  if (typeof SharedArrayBuffer === 'undefined') {
+    let stream = SQL.FS.open(path, 'a+')
+    await stream.node.contents.readIfFallback()
+    SQL.FS.close(stream)
+  }
+  db = new SQL.Database(path, { filename: true })
+  db.run(`
+    PRAGMA cache_size=-${cacheSize};
+    PRAGMA journal_mode=MEMORY;
+    PRAGMA page_size=${pageSize};
+    VACUUM;
+  `)
+  output(`Opened ${dbName} (${currentBackendType}) cache size: ${cacheSize}`)
 
-    db = new SQL.Database(path, { filename: true })
-    db.run(`
-      PRAGMA cache_size=-${cacheSize};
-      PRAGMA journal_mode=MEMORY;
-      PRAGMA page_size=${pageSize};
-      VACUUM;
-    `)
-    output(`Opened ${dbName} (${currentBackendType}) cache size: ${cacheSize}`)
-
-    createTables(db)
-    return
+  createTables(db)
+  return
 }
 
 // function setupDb(db) {
@@ -235,7 +202,6 @@ function handleUpdatedEvent(event) {
   for (let id in streams) {
     if (id.split(' ')[0] === 'dbStreamEvent' && streams[id].filter.ids.length === 1) {
       try {
-        // console.log('stream event passed', id, streams, matchFilter(streams[id].filter, event))
         let callback = streams[id].callback
         if (matchFilter(streams[id].filter, event) && callback) callback(event)
       } catch (err) {
@@ -246,7 +212,7 @@ function handleUpdatedEvent(event) {
 }
 
 function createTables(db, output = console.log) {
-  console.log('creating tables and indexes')
+  console.log('creating tables and indexes', db)
   db.create_function('handleInsertedEvent', event => {
     handleInsertedEvent(event)
   })
@@ -350,12 +316,6 @@ function queryDb(sql) {
   }
   stmt.free()
   return rows
-  // return rows.length === 1 ? rows[0] : rows
-  // self.postMessage({
-  //   type: 'query-results',
-  //   data: rows,
-  //   id: msg.data.id
-  // });
 }
 
 function closeDb() {
@@ -367,6 +327,10 @@ function closeDb() {
 }
 
 function saveEventsToDb(events, output = console.log, outputTiming = console.log) {
+  if (!db) return
+  if (!active) return
+  if (saving) return
+  saving = true
   let start = Date.now()
   console.debug(`saving ${events.length} events...`)
   db.exec(`BEGIN TRANSACTION;
@@ -398,6 +362,7 @@ function saveEventsToDb(events, output = console.log, outputTiming = console.log
   stmt.free()
   let took = Date.now() - start
   console.debug('Done! Took: ' + took + ` for ${events.length} events`)
+  saving = false
   return events
   // output('events inserted: ' + JSON.stringify(events));
   // outputTiming(took);
@@ -417,13 +382,25 @@ const methods = {
     return true
   },
 
-  // delete everything
-  dbErase() {
-    // return await db.destroy()
-    // await initDb()
-    closeDb()
+  // async dbInit() {
+  //   if (db === null) {
+  //     try {
+  //       await initDb()
+  //     } catch (error) {
+  //       console.log('dbInit error', db, error)
+  //     }
+  //   }
+  //   self.onmessage = handleMessage
+  //   if (queue && queue.length) queue.forEach(ev => handleMessage(ev))
+  //   queue = null
+  // },
 
-    // let filepath = `/nostr/${dbName}`
+  // dbClose() {
+  //   closeDb()
+  // },
+
+  dbErase() {
+    closeDb()
 
     let exists = true
     try {
@@ -452,8 +429,6 @@ const methods = {
         AND json_extract(event,'$.created_at') >= ${since}
     `)
     if (result.length) result.forEach(row => callback(JSON.parse(row.event)))
-    // callback(result.map(row => row.event))
-    // let sub = relay.subFeed(since)
     return {
       filter: {
         kinds: [1, 2],
@@ -462,9 +437,7 @@ const methods = {
       callback,
       subName: 'subFeed',
       subArgs: [since]
-      // sub: relay.subFeed(since)
     }
-    // return result
   },
 
   dbChats(pubkey) {
@@ -491,12 +464,6 @@ const methods = {
       )
       GROUP BY peer
     `)
-    // let result = queryDb(`
-    //   SELECT tag, pubkey, MAX(created_at) last_message
-    //   FROM idx_kind_tag_created_at
-    //   WHERE kind = 4
-    //   GROUP BY tag, pubkey
-    // `)
 
     return result
       .sort((a, b) => b.last_message - a.last_message)
@@ -506,12 +473,6 @@ const methods = {
           lastMessage: row.last_message
         }
       })
-    // return result.map(row => {
-    //   return {
-    //     peer: row.pubkey === pubkey ? row.tag[1] : row.pubkey,
-    //     lastMessage: row.last_message
-    //   }
-    // }).sort((a, b) => b.lastMessage - a.lastMessage)
   },
 
   dbMessages(userPubkey, peerPubkey, limit, until) {
@@ -558,24 +519,25 @@ const methods = {
   // },
 
   streamMessages(callback) {
-    // let sub = relay.subUserMessages(pubkey)
+    // don't need to open relay sub bc launch already subs the mentions
+    // also don't need date restriction as db should always be up to date
+    // and only new messages will be inserted
     return {
       filter: {
         kinds: [4]
       },
       callback,
-      // sub
     }
   },
 
-  // dbEvent(id) {
-  //   let result = queryDb(`
-  //     SELECT event
-  //     FROM nostr
-  //     WHERE id = '${id}'
-  //   `)
-  //   return result.map(row => JSON.parse(row.event))
-  // },
+  dbEvent(id) {
+    let result = queryDb(`
+      SELECT event
+      FROM nostr
+      WHERE id = '${id}'
+    `)
+    return JSON.parse(result[0].event)
+  },
 
   dbStreamEvent(id, updates, callback) {
     let ids = Array.isArray(id) ? id : [id]
@@ -594,7 +556,6 @@ const methods = {
       },
       callback,
     }
-    // let sub = relay.subEvent(id)
     return {
       filter: {
         ids
@@ -602,7 +563,6 @@ const methods = {
       callback,
       subName: 'subEvent',
       subArgs: [ids]
-      // sub: relay.subEvent(ids)
     }
   },
 
@@ -641,10 +601,7 @@ const methods = {
         tag = '["p","${pubkey}"]' AND
         created_at >= ${since}
     `)
-    // return result.length ? result[0].count : 0
-      // return result[0].count
     return result[0].count
-    // return result.count
   },
 
   dbUnreadMessagesCount(userPubkey, peerPubkey, since) {
@@ -656,69 +613,44 @@ const methods = {
         json_extract(event,'$.created_at') >= ${since} AND
         instr(json_extract(event,'$.tags'),'["p","${userPubkey}"')
     `)
-    // return result.length ? result[0].count : 0
     return result[0].count
   },
 
   dbUserProfile(pubkey) {
-    // let intervals = 0
-    // let event = null
-    // while (event === null && intervals < 20) {
-    //   await new Promise((resolve) => setTimeout(resolve, 100))
-      let result = queryDb(`
-        SELECT event
-        FROM nostr
-        WHERE json_extract(event,'$.kind') = 0 AND
-          json_extract(event,'$.pubkey') = '${pubkey}'
-        LIMIT 1
-      `)
-    //   if (result.length === 0) intervals++
-    //   else event = result[0].event
-    // }
+    let result = queryDb(`
+      SELECT event
+      FROM nostr
+      WHERE json_extract(event,'$.kind') = 0 AND
+        json_extract(event,'$.pubkey') = '${pubkey}'
+      LIMIT 1
+    `)
     return result.length ? JSON.parse(result[0].event) : null
-    // return event
   },
 
   dbUserFollows(pubkey) {
-      let result = queryDb(`
-        SELECT event
-        FROM nostr
-        WHERE json_extract(event,'$.kind') = 3 AND
-          json_extract(event,'$.pubkey') = '${pubkey}'
-        LIMIT 1
-      `)
-      // if (result.length === 0) return [1]
-      // // if (result.length === 0) intervals++
-      // else event = result[0].event
-    // }
-    // return result.map(row => row.event)
-    // return event
+    let result = queryDb(`
+      SELECT event
+      FROM nostr
+      WHERE json_extract(event,'$.kind') = 3 AND
+        json_extract(event,'$.pubkey') = '${pubkey}'
+      LIMIT 1
+    `)
     return result.length ? JSON.parse(result[0].event) : null
   },
 
   dbUserNotes(pubkey, until, limit) {
-    // let intervals = 0
-    // let event = null
-    // while (event === null && intervals < 20) {
-    //   await new Promise((resolve) => setTimeout(resolve, 100))
-      let result = queryDb(`
-        SELECT event
-        FROM nostr
-        WHERE json_extract(event,'$.kind') = 1 AND
-          json_extract(event,'$.pubkey') = '${pubkey}' AND
-          json_extract(event,'$.created_at') <= ${until}
-        LIMIT ${limit}
-      `)
-    //   if (result.length === 0) intervals++
-    //   else event = result[0].event
-    // }
-  // console.log('streamUserNotes', result)
-  return result.map(row => JSON.parse(row.event))
-    // return event
+    let result = queryDb(`
+      SELECT event
+      FROM nostr
+      WHERE json_extract(event,'$.kind') = 1 AND
+        json_extract(event,'$.pubkey') = '${pubkey}' AND
+        json_extract(event,'$.created_at') <= ${until}
+      LIMIT ${limit}
+    `)
+    return result.map(row => JSON.parse(row.event))
   },
 
   streamUser(pubkey, callback) {
-    // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
       filter: {
         kinds: [0, 1, 2, 3, 4],
@@ -727,12 +659,10 @@ const methods = {
       callback,
       subName: 'subUser',
       subArgs: [pubkey]
-      // sub: relay.subUser(pubkey)
     }
   },
 
   streamUserNotes(pubkey, callback) {
-    // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
       filter: {
         kinds: [1],
@@ -741,7 +671,6 @@ const methods = {
       callback,
       subName: 'subUserNotes',
       subArgs: [pubkey]
-      // sub: relay.subUserNotes(pubkey)
     }
   },
 
@@ -765,7 +694,6 @@ const methods = {
       callback,
       subName: 'subUserProfile',
       subArgs: [pubkeys]
-      // sub: relay.subUserProfile(pubkeys)
     }
   },
 
@@ -779,7 +707,6 @@ const methods = {
       callback,
       subName: 'subUserProfile',
       subArgs: [pubkeys]
-      // sub: relay.subUserProfile(pubkeys)
     }
   },
 
@@ -793,7 +720,6 @@ const methods = {
       callback,
       subName: 'subUserFollows',
       subArgs: [pubkeys]
-      // sub: relay.subUserFollows(pubkeys)
     }
   },
 
@@ -814,7 +740,6 @@ const methods = {
       callback,
       subName: 'subUserFollows',
       subArgs: [pubkeys]
-      // sub: relay.subUserFollows(pubkeys)
     }
   },
 
@@ -839,7 +764,6 @@ const methods = {
       callback,
       subName: 'subUserFollowers',
       subArgs: [pubkeys]
-      // sub: relay.subUserFollowers(pubkeys)
     }
   },
 
@@ -857,7 +781,6 @@ const methods = {
         idx.tag IN ${tagList}
     `)
     if (result.length) result.forEach(row => callback(JSON.parse(row.event)))
-    // return result.map(row => JSON.parse(row.event))
     return {
       filter: {
         [type]: values,
@@ -866,16 +789,11 @@ const methods = {
       callback,
       subName: 'subTag',
       subArgs: [type, values]
-      // sub: relay.subTag(type, values)
     }
   },
 
   streamTag(type, value, callback) {
     let values = Array.isArray(value) ? value : [value]
-    // let sub = relay.subUserMessages(pubkey)
-    // await new Promise((resolve) => setTimeout(resolve, 5000))
-
-    // let sub = relay.subTag(type, values)
     return {
       filter: {
         [type]: values
@@ -883,7 +801,6 @@ const methods = {
       callback,
       subName: 'subTag',
       subArgs: [type, values]
-      // sub: relay.subTag(type, values)
     }
   },
 
@@ -914,84 +831,51 @@ const methods = {
   publish(event, relayURL) {
     return relay.publish(event, relayURL)
   },
+
+  async activateSub() {
+    active = true
+    if (db === null) {
+      try {
+        await initDb()
+      } catch (error) {
+        console.log('dbInit error', db, error)
+      }
+    }
+    self.onmessage = handleMessage
+    if (queue && queue.length) queue.forEach(async ev => await handleMessage(ev))
+    queue = null
+    return await relay.activateSub()
+  },
+
+  deactivateSub() {
+    active = false
+    queue = []
+    self.onmessage = queueMessage
+    relay.deactivateSub()
+    let interval = setInterval(() => {
+      if (!saving) {
+        closeDb()
+        let broadcastChannel = new BroadcastChannel('astral')
+        broadcastChannel.postMessage({ type: 'done' })
+        clearInterval(interval)
+      }
+    }, 50)
+    return
+  }
 }
 
 var streams = {}
-async function run() {
-  // db is not initialized, collect all requests in a queue
-  var queue = []
-  self.onmessage = function (ev) {
-    queue.push(ev)
-  }
-  if (db === null) await initDb()
+let active = true
+let saving = false
+var queue = []
 
-  // var subs = {}
-
-  // self.onmessage = async function (ev) {
-  async function handleMessage(ev) {
-    // console.log('onmessage', ev, db)
-
-    // let { name, args, id, stream, cancel } = JSON.parse(ev.data)
-    // let { name, args, id, stream, cancel, sub } = JSON.parse(ev.data)
-    // let { name, args, id, stream, cancel } = JSON.parse(ev.data)
-    // console.log('ev', ev)
-    let { name, args, id, stream, cancel } = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data
-    // console.log('name, args, id, stream, cancel', name, args, id, stream, cancel)
-    // if (ev.ports.length && name === 'setPort') {
-    //   relayWorkerPort = ev.ports[0]
-    //   // relayWorker.addEventListener('message', e => {
-    //   // relayWorker.onmessage = ev => {
-    //   relayWorkerPort.onmessage = ev => {
-    //     switch (ev.data.type) {
-    //       case 'events': {
-    //         console.log(ev.data)
-    //         // debouncedDbSave([ev.data])
-    //         saveEventsToDb(ev.data.events)
-    //         // lastSave = Date.now();
-    //         break
-    //       }
-    //       default: {
-    //         output(ev.data)
-    //         break
-    //       }
-    //     }
-    //   }
-    //   return
-    // }
-
-    if (cancel) {
-      // subs[id].cancel()
-      // delete subs[id]
-      // if (subs[id]) cancelSub(id)
-      // else if (streams[id]) cancelStream(id)
-      cancelStream(id)
-    // } else if (sub) {
-    //   subs[id] = methods[name](...args)
-    //   setRelayFilter()
-    } else if (stream) {
-      // if (stream) {
-      let changes = methods[name](...args, event => {
-        self.postMessage({
-            id,
-            data: event,
-            stream: true
-        })
-      })
-      if (streams[id] && streams[id].sub) {
-        changes.sub = streams[id].sub
-        changes.sub.update(...changes.subArgs)
-      } else if (changes.subName && changes.subArgs) {
-        changes.sub = relay[changes.subName](...changes.subArgs)
-      }
-      streams[id] = changes
-      // } else if (cancel) {
-      //   // streams[id].cancel()
-      //   if (streams[id].sub) streams[id].sub.cancel()
-      //   delete streams[id]
-    } else {
+async function queueMessage(ev) {
+  // queue.push(ev)
+    let { name, id } = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data
+    if (name === 'activateSub') {
       var reply = { id }
         try {
-          let data = methods[name](...args)
+          let data = await methods[name]()
           reply.success = true
           reply.data = data
         } catch (err) {
@@ -1001,12 +885,56 @@ async function run() {
         // console.log('reply', reply)
 
         self.postMessage(JSON.stringify(reply))
-    }
+    } else queue.push(ev)
   }
+
+async function handleMessage(ev) {
+  let { name, args, id, stream, cancel } = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data
+
+  if (cancel) {
+    cancelStream(id)
+  } else if (stream) {
+    let changes = methods[name](...args, event => {
+      self.postMessage({
+          id,
+          data: event,
+          stream: true
+      })
+    })
+    if (streams[id] && streams[id].sub) {
+      changes.sub = streams[id].sub
+      changes.sub.update(...changes.subArgs)
+    } else if (changes.subName && changes.subArgs) {
+      changes.sub = relay[changes.subName](...changes.subArgs)
+    }
+    streams[id] = changes
+  } else {
+    var reply = { id }
+      try {
+        let data = methods[name](...args)
+        reply.success = true
+        reply.data = data
+      } catch (err) {
+        reply.success = false
+        reply.error = err
+      }
+      // console.log('reply', reply)
+
+      self.postMessage(JSON.stringify(reply))
+  }
+}
+
+async function run() {
+  // db is not initialized, collect all requests in a queue
+  self.onmessage = queueMessage
+
+  // initialize db
+  if (db === null) await initDb()
 
   // db is initialized now, execute all in the query and run them immediately from here onwards
   self.onmessage = handleMessage
   queue.forEach(ev => handleMessage(ev))
   queue = null
 }
+
 run()

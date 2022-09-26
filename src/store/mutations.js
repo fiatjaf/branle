@@ -96,7 +96,7 @@ export function addProfileToCache(
   }
 
   // removing older stuff if necessary
-  if (state.profilesCacheLRU.length > 1500) {
+  if (state.profilesCacheLRU.length > 2500) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
   }

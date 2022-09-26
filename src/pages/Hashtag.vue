@@ -49,7 +49,7 @@ export default defineComponent({
       this.threads = []
       this.eventsSet = new Set()
 
-      this.sub.hashtag = await dbStreamTagKind('e', this.$route.params.hashtagId.toLowerCase(), 1, event => {
+      this.sub.hashtag = await dbStreamTagKind('t', this.$route.params.hashtagId.toLowerCase(), 1, event => {
         this.processEvent(event)
       })
 

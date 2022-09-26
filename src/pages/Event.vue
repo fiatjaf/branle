@@ -29,6 +29,7 @@
         <BasePostThread :events="thread" @add-event='processChildEvent'/>
       </div>
     </div>
+    <div style='min-height: 70vh;'/>
   </q-page>
 </template>
 
@@ -74,12 +75,10 @@ export default defineComponent({
   },
 
   activated() {
-    console.log('activated')
     this.start()
   },
 
   deactivated() {
-    console.log('deactivated')
     this.stop()
   },
 
@@ -109,7 +108,6 @@ export default defineComponent({
     },
 
     async subRootAncestor() {
-        console.log('subbing root ancestor', this.event.interpolated.replyEvents[0])
       this.sub.rootAncestor = await dbStreamEvent(this.event.interpolated.replyEvents[0], event => {
         this.processAncestorEvent(event)
         this.sub.rootAncestor.cancel()

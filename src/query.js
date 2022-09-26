@@ -92,6 +92,14 @@ export async function destroyStreams() {
   return call('destroyStreams', [])
 }
 
+// export async function dbInit() {
+//   return call('dbInit', [])
+// }
+
+// export async function dbClose() {
+//   return call('dbClose', [])
+// }
+
 export async function dbErase() {
   return call('dbErase', [])
 }
@@ -223,6 +231,13 @@ export function publish(event, relayURL) {
   return call('publish', [JSON.parse(JSON.stringify(event)), relayURL])
 }
 
+export function activateSub() {
+  return call('activateSub', [])
+}
+
+export function deactivateSub() {
+  return call('deactivateSub', [])
+}
 
 // export function relaySubUser(pubkey) {
 //   return sub('relaySubUser', [pubkey])

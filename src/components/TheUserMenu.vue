@@ -1,6 +1,6 @@
 <template>
   <q-list
-    :class='compactMode ? "flex row no-wrap items-center compact-menu" : "text-right"'
+    :class='compactMode ? "flex row no-wrap justify-around items-center full-width" : "text-right"'
     :dense='compactMode'
   >
     <q-item
@@ -28,7 +28,6 @@
         v-if='$store.state.keys.pub && compactMode'
         :pubkey="$store.state.keys.pub"
         :align-right='true'
-        :show-verified='true'
         size='1.5rem'
       />
     </q-item>
@@ -58,13 +57,13 @@
       >
         <q-icon outline :name="item.icon"/>
         <q-badge
-          v-if="item.badge && $store[item.badge.split('.')[0]][item.badge.split('.')[1]]"
+          v-if="item.badge && $store.getters[item.badge]"
           color="secondary"
           floating
           class='q-mr-md text-bold'
           outline
         >
-          {{ $store[item.badge.split('.')[0]][item.badge.split('.')[1]] }}
+          {{ $store.getters[item.badge] }}
         </q-badge>
       </q-item-section>
 
@@ -75,11 +74,11 @@
       >
         <q-icon :name="item.icon" size='sm'/>
         <q-badge
-          v-if="item.badge && $store[item.badge.split('.')[0]][item.badge.split('.')[1]]"
+          v-if="item.badge && $store.getters[item.badge]"
           color="secondary"
           floating
-          class='q-ml-lg'
           rounded
+          style='margin-top: .2rem; margin-left: .1rem;'
         />
       </div>
     </q-item>
@@ -91,9 +90,9 @@
       >
         <BaseButtonPost
           v-if='$store.state.keys.pub'
-          :is-open='post'
+          :is-open='posting'
           :verbose='true'
-          @open='post = !post'
+          @open="$emit('toggle-post-entry')"
           :outline='!compactMode'
           :flat='compactMode'
           color='primary'
@@ -111,7 +110,7 @@
           :class='compactMode ? "" : "q-px-sm"'
         />
       </div>
-    <q-dialog
+    <!-- <q-dialog
       v-model='post'
       seamless
       position='bottom'
@@ -126,7 +125,7 @@
         <BasePostEntry class='q-pa-md' @sent='post = false'/>
         <div class='compact-user-menu-space'/>
       </q-card>
-    </q-dialog>
+    </q-dialog> -->
     <!-- <input type='color' /> -->
   </q-list>
 </template>
@@ -141,17 +140,30 @@ import BaseButtonSetUser from 'components/BaseButtonSetUser.vue'
 export default defineComponent({
   name: 'TheUserMenu',
   mixins: [helpersMixin],
+  emits: ['toggle-post-entry'],
   props: {
+    iconMode: {
+      type: Boolean,
+      default: false
+    },
     compactMode: {
       type: Boolean,
       default: false,
     },
+    showCompactModeItems: {
+      type: Boolean,
+      default: false
+    },
+    posting: {
+      type: Boolean,
+      required: true
+    }
   },
 
   data() {
     return {
-      post: false,
-      position: 'bottom',
+      // isOpen: this.posting,
+      // position: 'bottom',
       userMenuItems: [
         {
           title: 'feed',
@@ -161,14 +173,14 @@ export default defineComponent({
         },
         {
           title: 'notifications',
-          badge: 'state.unreadNotifications',
+          badge: 'unreadNotifications',
           icon: 'notifications',
           to: '/notifications',
           match: 'notifications',
         },
         {
           title: 'messages',
-          badge: 'getters.unreadChats',
+          badge: 'unreadChats',
           icon: 'mail_lock',
           to: '/messages/inbox',
           match: 'messages',
@@ -211,10 +223,20 @@ export default defineComponent({
   computed: {
     filteredUserMenuItems() {
       if (!this.$store.state.keys.pub) return this.userMenuItems.filter(item => item.title === 'feed')
-      if (!this.compactMode) return this.userMenuItems.filter(item => !item.compactMenuOnly)
+      if (!this.compactMode && !this.showCompactModeItems) return this.userMenuItems.filter(item => !item.compactMenuOnly)
       return this.userMenuItems
-    }
+    },
+    // isOpen() {
+    //   return this.posting
+    // }
   },
+
+  // methods: {
+  //   togglePostEntry() {
+  //     this.$emit('toggle-post-entry')
+  //     console.log('toggle-post-entry')
+  //   }
+  // }
 })
 </script>
 

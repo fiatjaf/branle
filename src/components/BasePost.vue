@@ -11,7 +11,7 @@
       (hasReplyChildren ? " post-has-child-reply" : "")'
     @click.stop="toEvent(event.id)"
   >
-  <div class='absolute-top-right flex row items-center post-info' @click.stop>
+  <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
     <q-item-label caption style='opacity: .8;'>{{ niceDate(event.created_at) }}</q-item-label>
     <BaseButtonRelays
       button-class='text-secondary'
@@ -65,7 +65,7 @@
       </q-item-label>
       <q-space/>
       <q-item-label :line='1' clickable>
-        <BaseUserName :pubkey="event.pubkey" :show-verified='true' class='text-bold'/>
+        <BaseUserName :pubkey="event.pubkey" :show-verified='true' class='text-bold' :show-following='true'/>
       </q-item-label>
       <q-item-label
         v-if="
@@ -86,7 +86,6 @@
 
       <q-item-label
         class='q-pt-xs break-word-wrap'
-        style='overflow: auto;'
       >
         <BaseMarkdown v-if="event.kind === 1">
           {{ event.interpolated.text }}
@@ -179,15 +178,16 @@
         <q-tab-panels
           v-model="replyPanel"
           class='no-padding full-width overflow-hidden'
-          style='background-color: inherit;'
+          style='background-color: inherit; max-width: 100%;'
           @transition='calcConnectorValues(10)'
         >
-          <q-tab-panel name="embed" class='no-padding full-width overflow-auto' @click.stop>
-            <span class='text-caption full-width'>
+          <q-tab-panel name="embed" class='no-padding' @click.stop>
+            <span class='text-caption'>
               copy the formatted event ID below and paste it in any post to embed this event
             </span>
-              <BaseButtonCopy :button-text="'&' + event.id" color='primary' flat tooltip-text='copy event ID'/>
-            <span class='text-primary full-width'>
+            <BaseButtonCopy :button-text="'&' + event.id" color='primary' flat tooltip-text='copy event ID'/>
+            <br>
+            <span class='text-primary' style='word-break: break-all;'>
               {{ '&' + event.id }}
             </span>
           </q-tab-panel>
@@ -330,6 +330,7 @@ export default defineComponent({
   mounted() {
     // console.log('mounted')
     if (!this.isEmbeded && (this.isQuote || this.isRepost)) {
+      if (!Array.isArray(this.reposts)) this.reposts = []
       this.processTaggedEvents(this.mentionEvents, this.reposts)
     }
     this.calcConnectorValues()

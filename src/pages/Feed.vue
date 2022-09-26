@@ -1,78 +1,39 @@
 <template>
-  <q-page >
-    <div
-      class='home-feed-header flex column'
-    >
-      <div class="text-h5 text-bold q-py-md">{{ $t('feed') }}</div>
+  <q-page>
+    <div>
+      <div class="text-h5 text-bold q-py-md full-width flex row justify-start">
+        {{ $t('feed') }}
+      </div>
+      <q-tabs
+        v-model="tab"
+        dense
+        outline
+        align="left"
+        active-color='accent'
+        :breakpoint="0"
+      >
+        <q-tab name="follows" label='follows' />
+        <q-tab name="global" label='global' />
+        <q-tab name="bots" label='bots' />
+      </q-tabs>
     </div>
-    <q-tabs
-      v-model="tab"
-      dense
-      outline
-      align="left"
-      active-color='accent'
-      :breakpoint="0"
-    >
-      <q-tab name="follows" label='follows' />
-      <q-tab name="global" label='global' />
-      <q-tab name="bots" label='bots' />
-    </q-tabs>
-    <q-tab-panels v-model="tab" animated>
-      <q-tab-panel name="follows" class='no-padding'>
-        <div>
-          <q-virtual-scroll :items='feed.follows' virtual-scroll-item-size="110" ref='followsFeedScroll'>
-            <template #default="{ item }">
-              <BasePostThread :key="item[0].id" :events="item" @add-event='processEvent'/>
-            </template>
-          </q-virtual-scroll>
-          <BaseButtonLoadMore
-            :loading-more='loadingMore'
-            label='load another day'
-            @click='loadMore'
-          />
-        </div>
-      </q-tab-panel>
-
-      <q-tab-panel name="global" class='no-padding'>
-        <div>
-          <q-virtual-scroll :items='feed.global' virtual-scroll-item-size="110" ref='globalFeedScroll'>
-            <template #default="{ item }">
-              <BasePostThread :key="item[0].id" :events="item" @add-event='processEvent'/>
-            </template>
-          </q-virtual-scroll>
-          <BaseButtonLoadMore
-            :loading-more='loadingMore'
-            label='load another day'
-            @click='loadMore'
-          />
-        </div>
-      </q-tab-panel>
-
-      <q-tab-panel name="bots" class='no-padding hide-scrollbar'>
-        <div>
-          <q-virtual-scroll :items='feed.bots' virtual-scroll-item-size="110" ref='botsFeedScroll'>
-            <template #default="{ item }">
-              <BasePostThread :key="item[0].id" :events="item" @add-event='processEvent'/>
-            </template>
-          </q-virtual-scroll>
-          <BaseButtonLoadMore
-            :loading-more='loadingMore'
-            label='load another day'
-            @click='loadMore'
-          />
-        </div>
-      </q-tab-panel>
-    </q-tab-panels>
+    <BasePostThread v-for='(item, index) in items' :key='index' :events="item" class='full-width'/>
+    <BaseButtonLoadMore
+      :loading-more='loadingMore'
+      label='load another day'
+      @click='loadMore'
+    />
   </q-page>
 </template>
 
 <script>
+import { defineComponent } from 'vue'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import {dbStreamFeed, dbUserFollows} from '../query'
 import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 
-export default {
+export default defineComponent({
   name: 'Feed',
   mixins: [helpersMixin],
 
@@ -98,6 +59,17 @@ export default {
       sub: null,
       since: Math.round(Date.now() / 1000) - (3 * 24 * 60 * 60),
       profilesUsed: new Set(),
+      // index: 0,
+      active: false,
+    }
+  },
+
+  computed: {
+    items() {
+      if (this.tab === 'follows') return this.feed.follows
+      if (this.tab === 'global') return this.feed.global
+      if (this.tab === 'bots') return this.feed.bots
+      return []
     }
   },
 
@@ -112,6 +84,12 @@ export default {
     }
   },
 
+  activated() {
+    // console.log('feed activated', this.index)
+    // this.$refs.virtualScroll.refresh(this.index)
+    this.active = true
+  },
+
   async beforeUnmount() {
     if (this.listener) this.listener.cancel()
     if (this.sub) this.sub.cancel()
@@ -119,7 +97,17 @@ export default {
     this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
   },
 
+  deactivated() {
+    // console.log('feed deactivated', this.index)
+    this.active = false
+  },
+
   methods: {
+    testScroll(event) {
+      console.log('Feed testScroll', event, this.activated, this.index)
+      if (this.activated) this.index = event.index
+      // else this.$refs.virtualScroll.scrollTo(this.index, 'center-force')
+    },
     async loadMore() {
       this.loadingMore = true
 
@@ -177,13 +165,18 @@ export default {
       this.profilesUsed.add(pubkey)
       this.$store.dispatch('useProfile', {pubkey})
     },
+
+    // printDetails(details) {
+    //   console.log('details', details)
+    // },
+
+    itemKey(item) {
+      return item[0].id
+    }
   }
-}
+})
 </script>
 <style lang='scss' scoped>
-.home-feed-header {
-  margin: 0;
-}
 .q-tabs {
   border-bottom: 1px solid $accent
 }

@@ -17,8 +17,8 @@
         class='flex row no-padding no-margin justify-between items-center q-gutter-xs'
         @click.capture.stop="$router.push({ name: 'messages', params: { pubkey: chat.peer }})"
       >
-        <div class='col q-pl-md q-pr-auto flex row' style='max-width: 350px; width: 350px;'>
-          <BaseUserCard v-if='chat.peer' :pubkey='chat.peer' :action-buttons='false' class='col' :clickable='false'/>
+        <div class='col q-pl-md q-pr-auto flex row'>
+          <BaseUserCard v-if='chat.peer' :pubkey='chat.peer' :action-buttons='false' class='col' :clickable='false' :show-following='true'/>
           <q-badge
             v-if="$store.state.unreadMessages[chat.peer]"
             color="secondary"
@@ -46,6 +46,7 @@
 
 <script>
 import {dbChats} from '../query'
+import {streamMessages} from '../query'
 import helpersMixin from '../utils/mixin'
 
 export default {
@@ -58,6 +59,7 @@ export default {
       loading: true,
       noChats: false,
       profilesUsed: new Set(),
+      sub: null,
     }
   },
 
@@ -73,9 +75,18 @@ export default {
     this.chats.forEach(({peer}) => this.useProfile(peer))
     if (this.allChatsNeverRead) this.chats.forEach(({peer}) => this.$store.commit('haveReadMessage', peer))
     this.loading = false
+    this.sub = await streamMessages(async event => {
+      if (event.pubkey === this.$store.state.keys.pub) return
+      this.chats = await dbChats(this.$store.state.keys.pub)
+      this.useProfile(event.pubkey)
+    })
   },
 
   deactivated() {
+    if (this.sub) {
+      this.sub.cancel()
+      this.sub = null
+    }
     this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
   },
 

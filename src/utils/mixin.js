@@ -50,12 +50,8 @@ export default {
       this.$router.push('/' + pubkey)
     },
 
-    toEvent(id, childThreads = null) {
-      if (childThreads) this.$router.push({
-        name: 'event',
-        params: { eventId: id, childThreads: JSON.stringify(childThreads) },
-      })
-      else this.$router.push('/event/' + id)
+    toEvent(id) {
+      if (!window.getSelection().toString().length) this.$router.push('/event/' + id)
     },
 
     shorten,
@@ -221,7 +217,8 @@ export default {
             ev.text = await this.getPlaintext(ev)
             this.interpolateMessageMentions(ev)
           }
-          events = events.push(ev)
+          if (Array.isArray(events)) events.push(ev)
+          else console.log('processTaggedEvents events not array', ids, ev, events)
           // event.taggedEvents.push(ev)
           eventSubs[id].cancel()
         })

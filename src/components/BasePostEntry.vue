@@ -50,7 +50,7 @@
           @focus='textareaFocus'
           @blur='textareaBlur'
           @keypress.ctrl.enter="send"
-          @click.stop
+          @click.stop='updateText'
           @touchstart.stop
           @mousedown.stop
         >
@@ -383,10 +383,12 @@ export default {
   beforeUnmount() {
     if (!this.messageMode) this.profileMentionsProvider.detach(this.textarea)
     this.reset()
+    this.$emit('resized')
   },
 
   methods: {
     updateText(e) {
+      this.trigger++
       if (e) this.text = e.target.textContent
       else this.text = this.textarea.textContent
       this.textareaRange = this.caretRange

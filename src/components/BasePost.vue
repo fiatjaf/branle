@@ -11,7 +11,7 @@
       (hasReplyChildren ? " post-has-child-reply" : "")'
     @click.stop="toEvent(event.id)"
   >
-  <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
+  <!-- <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
     <q-item-label caption style='opacity: .8;'>{{ niceDate(event.created_at) }}</q-item-label>
     <BaseButtonRelays
       button-class='text-secondary'
@@ -21,7 +21,7 @@
       button-class='text-secondary'
       :event='event'
     />
-  </div>
+  </div> -->
   <div
     clickable
     avatar
@@ -35,6 +35,7 @@
         :round='true'
         :bordered='hasReply || isReply || hasReplyChildren || isChildReply'
         :hover-effect='true'
+        style='z-index: 1;'
       />
     <div v-if="hasReply" class="has-reply-connector"></div>
     <div
@@ -59,34 +60,45 @@
     </div>
   </div>
     <q-item-section>
-    <q-item-section ref='postContent'>
-      <q-item-label caption class="text-secondary" style='opacity: .7;'>
-          <span @click.stop="toProfile(event.pubkey)">{{ shorten(event.pubkey) }}</span>
-      </q-item-label>
-      <q-space/>
-      <q-item-label :line='1' clickable>
-        <BaseUserName :pubkey="event.pubkey" :show-verified='true' class='text-bold' :show-following='true'/>
-      </q-item-label>
-      <q-item-label
-        v-if="
-          tagged &&
-          ($route.name === 'feed' || $route.name === 'profile' || $route.name === 'notifications') &&
-          !(isReply || isChildReply)
-        "
-        caption
-        class='q-pl-sm'
-      >
-        <span>in reply to&nbsp;</span>
-        <a
-          @click.stop="toEvent(tagged)"
-        >
-          {{ shorten(tagged) }}
-        </a>
-      </q-item-label>
+    <q-item-section ref='postContent' class='relative-position'>
 
-      <q-item-label
+      <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
+        <q-item-label caption style='opacity: .8;'>{{ niceDate(event.created_at) }}</q-item-label>
+        <BaseButtonRelays
+          button-class='text-secondary'
+          :event='event'
+        />
+        <BaseButtonInfo
+          button-class='text-secondary'
+          :event='event'
+        />
+      </div>
+      <div class='q-pb-sm'>
+        <q-item-label caption class="text-secondary" style='opacity: .7;'>
+            <span @click.stop="toProfile(event.pubkey)">{{ shorten(event.pubkey) }}</span>
+        </q-item-label>
+        <q-space/>
+        <q-item-label :line='1' clickable>
+          <BaseUserName :pubkey="event.pubkey" :show-verified='true' class='text-bold' :show-following='true'/>
+        </q-item-label>
+        <q-item-label
+          v-if="
+            tagged &&
+            ($route.name === 'feed' || $route.name === 'profile' || $route.name === 'notifications') &&
+            !(isReply || isChildReply)
+          "
+          caption
+          class='q-pl-sm'
+        >
+          <span>in reply to&nbsp;</span>
+          <a @click.stop="toEvent(tagged)">
+            {{ shorten(tagged) }}
+          </a>
+        </q-item-label>
+      </div>
+      <!-- <q-item-label
         class='q-pt-xs break-word-wrap'
-      >
+      > -->
         <BaseMarkdown v-if="event.kind === 1">
           {{ event.interpolated.text }}
         </BaseMarkdown>
@@ -107,7 +119,7 @@
             @resized='calcConnectorValues(10)'
           />
         </div>
-      </q-item-label>
+      <!-- </q-item-label> -->
       <div
         v-if='!isRepost && $store.state.keys.pub && (replyDepth !== -1)'
         class='flex row items-center no-wrap reply-buttons'
@@ -407,11 +419,11 @@ export default defineComponent({
 .post-padding {
   box-sizing: border-box;
   border-bottom: 1px dotted $accent;
-  padding: 1rem 0 0;
+  padding: .5rem 0 0;
   margin-top: 0;
   gap: .25rem;
   width: 100%;
-  overflow-y: hidden;
+  overflow: hidden;
   font-size: .9rem;
 }
 .post-highlighted {
@@ -424,7 +436,7 @@ export default defineComponent({
 }
 
 .reposts .post-padding {
-  border: 0
+  border: 0;
 }
 .post-is-reply,
 .post-has-reply,
@@ -435,6 +447,10 @@ export default defineComponent({
 .post-is-child-reply,
 .post-has-reply {
   border-bottom: 0;
+}
+.post-is-reply,
+.post-is-child-reply {
+  padding: 0;
 }
 .has-reply-connector {
   width: 2px;
@@ -470,7 +486,7 @@ export default defineComponent({
   width: 2px;
   position: absolute;
   left: calc((100% / 2) - 1px);
-  top: 1.55rem;
+  top: .6rem;
   background: $accent;
   z-index: 0;
 }

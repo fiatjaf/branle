@@ -146,9 +146,9 @@ export default defineComponent({
       this.interpolateEventMentions(event)
       this.useProfile(event.pubkey)
 
-      if (this.follows.includes(event.pubkey)) addToThread(feed.follows, Object.assign({}, event), 'feed')
-      if (this.bots.includes(event.pubkey)) addToThread(feed.bots, Object.assign({}, event), 'feed')
-      else addToThread(feed.global, Object.assign({}, event), 'feed')
+      if (this.follows.includes(event.pubkey)) addToThread(feed.follows, Object.assign({}, event), 'feed', event.pubkey !== this.$store.state.keys.pub)
+      if (this.bots.includes(event.pubkey)) addToThread(feed.bots, Object.assign({}, event), 'feed', event.pubkey !== this.$store.state.keys.pub)
+      else addToThread(feed.global, Object.assign({}, event), 'feed', event.pubkey !== this.$store.state.keys.pub)
     },
 
     async getFollows(pubkey) {

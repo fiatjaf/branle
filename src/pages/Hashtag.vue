@@ -70,7 +70,7 @@ export default defineComponent({
 
       this.interpolateEventMentions(event)
       this.eventsSet.add(event.id)
-      addToThread(this.threads, event)
+      addToThread(this.threads, event, '', event.pubkey !== this.$store.state.keys.pub)
       return
     },
   }

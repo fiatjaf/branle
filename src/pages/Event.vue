@@ -160,7 +160,7 @@ export default defineComponent({
       this.childrenSet.add(event.id)
       this.useProfile(event.pubkey)
       this.interpolateEventMentions(event)
-      addToThread(this.childrenThreads, event)
+      addToThread(this.childrenThreads, event, '', event.pubkey !== this.$store.state.keys.pub)
     },
 
     scrollToMainEvent() {

@@ -163,7 +163,7 @@ function searchAndUpdateThreads(threads, route, ...events) {
   else return false
 }
 
-export function addToThread(threads, event, route = '') {
+export function addToThread(threads, event, route = '', reorder) {
   // if (Array.isArray(event)) {
   //   console.log('addToThread using array as event', event)
   //   if (event[event.length - 1].replies?.length) event[0].latest_created_at = event[event.length - 1].replies.reduce((acc, curr) =>
@@ -176,6 +176,7 @@ export function addToThread(threads, event, route = '') {
   // }
   event.replies = []
   event.latest_created_at = event.created_at
-  if (searchAndUpdateThreads(threads, route, event)) threads.sort((a, b) => Number(b[0].latest_created_at) - Number(a[0].latest_created_at))
-  else addSorted(threads, [event], (a, b) => a[0].latest_created_at < b[0].latest_created_at)
+  if (searchAndUpdateThreads(threads, route, event)) {
+    if (reorder) threads.sort((a, b) => Number(b[0].latest_created_at) - Number(a[0].latest_created_at))
+  } else addSorted(threads, [event], (a, b) => a[0].latest_created_at < b[0].latest_created_at)
 }

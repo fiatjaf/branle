@@ -5,7 +5,8 @@
       :key="event.id + index"
       class='no-padding'
     >
-      <BaseShowMore v-if="event.id === 'FILLER'" :root="event.root" :replies='event.replies ? event.replies : []'/>
+      <BaseButtonShowMore v-if="event.id === 'FILLER'" :root="event.root"/>
+      <BaseButtonShowMore v-else-if="event.id === 'REPLIES'" :root="event.root" :reply-count='event.replyCount'/>
       <BasePost
         v-else
         :event="event"
@@ -21,7 +22,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import BaseShowMore from 'components/BaseShowMore'
+import BaseButtonShowMore from 'components/BaseButtonShowMore'
 
 export default {
   name: 'BasePostThread',
@@ -33,7 +34,7 @@ export default {
     replyDepth: {type: Number, default: 0},
   },
   components: {
-    BaseShowMore,
+    BaseButtonShowMore,
   },
 
   data() {
@@ -46,18 +47,13 @@ export default {
     root() {
       return this.events[0].id
     },
-    threadWidth() {
-      // only using resizing to trigger compute
-      if (this.resizing) return this.$refs.thread?.$el?.clientWidth
-      return this.$refs.thread?.$el?.clientWidth
-    },
 
     filledEvents() {
       if (this.resizing && !this.resizing) return
       if (this.events.length === 0) return []
 
       var filled = [this.events[0]]
-      if (this.events.length === 1) return filled
+      if (this.events.length === 1) return this.pushShowMore(filled)
 
       for (let i = 1; i < this.events.length; i++) {
         let curr = this.events[i]
@@ -69,21 +65,22 @@ export default {
           filled.push({id: 'FILLER', root: prev.id})
         }
 
-        if ((i === this.events.length - 1) && curr.replies?.length && this.threadWidth &&
-          // (this.replyDepth >= 5)) {
-          (this.replyDepth >= 5 || (this.replyDepth > 0 && this.threadWidth < 175))) {
-            // let replies = Array.from(curr.replies)
-            let event = Object.assign({}, curr)
-            event.replies = []
-            // curr.replies = []
-            filled.push(event)
-            filled.push({id: 'FILLER', root: curr.id})
-            // filled.concat([curr, {id: 'FILLER', root: curr.id, replies: replies}])
-            // console.log('filled', filled)
-        } else filled.push(curr)
+        // if ((i === this.events.length - 1) && curr.replies?.length && this.threadWidth &&
+        //   // (this.replyDepth >= 5)) {
+        //   (this.replyDepth >= 2 || (this.replyDepth > 0 && this.threadWidth < 300))) {
+        //     // let replies = Array.from(curr.replies)
+        //     let event = Object.assign({}, curr)
+        //     event.replies = []
+        //     // curr.replies = []
+        //     filled.push(event)
+        //     filled.push({id: 'FILLER', root: curr.id})
+        //     // filled.concat([curr, {id: 'FILLER', root: curr.id, replies: replies}])
+        //     // console.log('filled', filled)
+        // } else filled.push(curr)
+        filled.push(curr)
       }
 
-      return filled
+      return this.pushShowMore(filled)
     },
   },
 
@@ -114,7 +111,32 @@ export default {
     resize(event) {
       this.resizing = !this.resizing
       this.$emit('resized')
-    }
+    },
+
+    pushShowMore(filled) {
+      let last = filled[filled.length - 1]
+      if (last.replies?.length && this.threadWidth() &&
+        // (this.replyDepth >= 5)) {
+        (this.replyDepth >= 2 || (this.replyDepth > 0 && this.threadWidth() < 300))) {
+          // let replies = Array.from(curr.replies)
+          let event = Object.assign({}, last)
+          event.replyCount = event.replies.length
+          event.replies = []
+          // curr.replies = []
+          filled.pop()
+          filled.push(event)
+          filled.push({id: 'REPLIES', root: event.id, replyCount: event.replyCount})
+          // filled.concat([curr, {id: 'FILLER', root: curr.id, replies: replies}])
+          // console.log('filled', filled)
+      }
+      return filled
+    },
+
+    threadWidth() {
+      // only using resizing to trigger compute
+      // if (this.resizing) return this.$refs.thread?.$el?.clientWidth
+      return this.$refs.thread?.$el?.clientWidth
+    },
   }
 }
 </script>

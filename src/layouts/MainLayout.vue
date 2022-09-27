@@ -227,7 +227,7 @@ export default defineComponent({
     },
 
     scrollToRect(rect) {
-      let offset = Math.max(rect.top - 100, 0)
+      let offset = Math.max(rect.top, 0)
       setVerticalScrollPosition(this.scrollingContainer, offset, 500)
     },
 

@@ -115,6 +115,20 @@ export function dbStreamFeed(
   return stream('dbStreamFeed', [since], callback)
 }
 
+export function dbFeed(
+  since = Math.round(Date.now() / 1000),
+  callback = () => { }
+) {
+  return call('dbFeed', [since])
+}
+
+export function streamFeed(
+  since = Math.round(Date.now() / 1000),
+  callback = () => { }
+) {
+  return stream('streamFeed', [since], callback)
+}
+
 export async function dbChats(pubkey) {
   return call('dbChats', [pubkey])
 }

@@ -1,8 +1,9 @@
 <template>
   <div
-    class='cursor-pointer flex no-wrap'
+    class='cursor-pointer flex'
     :class="(alignRight ? ' justify-end' : ' justify-start') +
-      (headerMode ? ' column items-start' : ' row items-center')"
+      (headerMode ? ' column items-start' : ' row items-center') +
+      (wrap ? '' : ' no-wrap')"
     @click.stop="toProfile(pubkey)"
     style='gap: .1rem'
     :style="alignRight ? 'text-align: right;' : 'text-align: left'"
@@ -41,7 +42,7 @@ export default {
   props: {
     pubkey: {type: String, required: true},
     // fallback: {type: Boolean, default: false}, // if the shortened pubkey should be displayed
-    // wrap: {type: Boolean, default: false},
+    wrap: {type: Boolean, default: false},
     alignRight: {type: Boolean, default: false},
     headerMode: {type: Boolean, default: false},
     showFollowing: {type: Boolean, default: false},

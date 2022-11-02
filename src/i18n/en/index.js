@@ -86,6 +86,8 @@ export default {
   users: 'users',
   nip05Maintainer: 'NIP05 maintainer',
   inactiveRelays: 'inactive relays',
+  preferences: 'preferences',
+  colors: 'colors',
 
   // text
   noFollows: 'no follows',

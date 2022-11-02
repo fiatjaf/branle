@@ -56,13 +56,13 @@ md.use(subscript)
         trimmed.endsWith('.jpeg') ||
         trimmed.endsWith('.jpg')
       ) {
-        return `<img src="${src}" crossorigin style="max-width: 90%; max-height: 30%">`
+        return `<img src="${src}" crossorigin async style="max-width: 90%; max-height: 30%">`
       } else if (
         trimmed.endsWith('.mp4') ||
         trimmed.endsWith('.webm') ||
         trimmed.endsWith('.ogg')
       ) {
-        return `<video controls style="max-width: 90%"><source src="${src}"></video>`
+        return `<video controls crossorigin style="max-width: 90%"><source src="${src}"></video>`
       }
     }
     // pulled from https://github.com/markdown-it/markdown-it/blob/master/docs/architecture.md#renderer

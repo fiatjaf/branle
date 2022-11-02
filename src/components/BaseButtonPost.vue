@@ -67,7 +67,7 @@ export default defineComponent({
 
 <style>
 .button-post {
-  opacity: .6;
+  opacity: .8;
 }
 .button-post:hover {
   opacity: 1;

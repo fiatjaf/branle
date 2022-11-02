@@ -20,3 +20,12 @@ export function metadataFromEvent(event) {
     return {}
   }
 }
+
+export function isValidEvent(event) {
+  if (event.tags.filter(([_, v]) => v.includes(' ')).length) return false
+  try {
+    JSON.parse(event.content)
+    return false
+  } catch (error) { /* nothing to do */ }
+  return true
+}

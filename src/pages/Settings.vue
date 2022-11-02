@@ -1,15 +1,15 @@
 <template>
-  <q-page>
+  <q-page id='settings-page'>
     <div class="text-h5 text-bold q-py-md">{{ $t('settings') }}</div>
     <q-separator color='accent' size='2px'/>
     <q-form class="q-gutter-md q-pt-sm" @submit="setMetadata">
       <div v-if='editingMetadata' class='flex justify-between' style='display: flex; gap: .2rem;'>
-        <q-btn label="save" color="primary" size="sm" type="submit"/>
-        <q-btn label="cancel" color="negative" size="sm" @click='cancel("metadata")'/>
+        <q-btn label="save" color="primary" outline size="sm" type="submit"/>
+        <q-btn label="cancel" color="negative" outline size="sm" @click='cancel("metadata")'/>
       </div>
       <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
           {{ $t('profile') }}
-          <q-btn v-if='!editingMetadata' label="edit" color="primary" size="sm" @click='editingMetadata = true'/>
+          <q-btn v-if='!editingMetadata' label="edit" color="primary" outline size="sm" @click='editingMetadata = true'/>
       </div>
       <q-input v-model="metadata.name" filled type="text" label="Name" :disable='!editingMetadata'>
         <template #before>
@@ -46,16 +46,44 @@
         maxlength="50"
       />
     </q-form>
+
+    <q-separator color='accent' spaced/>
+
+    <div v-if='Object.keys(preferences).length'>
+      <div v-if='editingPreferences' class='flex justify-between' style='display: flex; gap: .2rem;'>
+        <q-btn label="save" color="primary" outline size="sm" @click='savePreferences'/>
+        <q-btn label="cancel" color="negative" outline size="sm" @click='cancel("preferences")'/>
+      </div>
+      <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
+        {{ $t('preferences') }}
+        <div class="text-normal flex row no-wrap" style='font-size: .9rem; gap: .4rem;'>
+          <q-btn v-if='!editingPreferences' label="edit" color="primary" outline size="sm" @click='editingPreferences = true'/>
+        </div>
+      </div>
+      <div class="text-bold flex justify-between no-wrap" style='font-size: 1rem;'>
+        {{ $t('colors') }}
+      </div>
+      <div style='padding-left: .2rem; gap: 1rem;' class='flex row'>
+        <div v-for='(colorName, index) in ["primary", "secondary", "accent"]' :key='index' class='flex column items-center'>
+          <label :for="colorName">{{ colorName }}</label>
+          <input type="color" :id="colorName" :name="colorName" :value='preferences.color[colorName]' :disabled="!editingPreferences" @input='(event) => updateColor(event, colorName)'>
+        </div>
+      </div>
+      <!-- <label for="secondary">secondary</label>
+      <input type="color" id="secondary" name="secondary" :value='this.preferences.color.secondary' @input='(event) => updateColor(event, "secondary")'>
+      <label for="accent">accent</label>
+      <input type="color" id="accent" name="accent" :value='this.preferences.color.accent' @input='(event) => updateColor(event, "accent")'> -->
+    </div>
     <q-separator color='accent' spaced/>
     <div>
       <div v-if='editingRelays' class='flex justify-between' style='display: flex; gap: .2rem;'>
-        <q-btn label="save" color="primary" size="sm" @click='saveRelays'/>
-        <q-btn label="cancel" color="negative" size="sm" @click='cancel("relays")'/>
+        <q-btn label="save" color="primary" outline size="sm" @click='saveRelays'/>
+        <q-btn label="cancel" color="negative" outline size="sm" @click='cancel("relays")'/>
       </div>
       <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
         {{ $t('relays') }}
         <div class="text-normal flex row no-wrap" style='font-size: .9rem; gap: .4rem;'>
-          <q-btn v-if='!editingRelays' label="edit" color="primary" size="sm" @click='editingRelays = true'/>
+          <q-btn v-if='!editingRelays' label="edit" color="primary" outline size="sm" @click='editingRelays = true'/>
           <div v-if='editingRelays'>read</div>
           <div v-if='editingRelays'>write</div>
         </div>
@@ -71,6 +99,7 @@
               <q-btn
                 v-if='relays[url].read || relays[url].write'
                 color="secondary"
+                outline
                 size="sm"
                 label="Share"
                 :disable="
@@ -83,6 +112,7 @@
                 v-if='editingRelays && !relays[url].read && !relays[url].write'
                 color="negative"
                 label='remove'
+                outline
                 size="sm"
                 :disable="!$store.getters.canSignEventsAutomatically"
                 @click="removeRelay(url)"
@@ -123,6 +153,7 @@
               label="Add"
               type="submit"
               color="primary"
+              outline
               size="sm"
               @click="addRelay"
             />
@@ -134,9 +165,10 @@
     <q-separator color='accent' spaced/>
 
     <div class="flex no-wrap" style='gap: .2rem;'>
-      <q-btn label="Delete Local Data" color="negative" @click="hardReset" />
-      <q-btn label="View your keys" color="primary" @click="keysDialog = true" />
-      <q-btn label="dev tools" color='secondary' :to='{ name: "devTools"}' />
+      <q-btn label="View your keys" color="primary" outline @click="keysDialog = true" />
+      <q-btn label="logout" color="primary" outline @click="logout" />
+      <q-btn label="Delete Local Data" color="negative" outline @click="hardReset" />
+      <q-btn label="dev tools" color='secondary' outline :to='{ name: "devTools"}' />
     </div>
 
     <q-dialog v-model="keysDialog">
@@ -168,7 +200,7 @@
         </q-card-section>
 
         <q-card-actions align="right" class="text-primary">
-          <q-btn v-close-popup flat label="Close" />
+          <q-btn v-close-popup outline label="Close" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -182,6 +214,7 @@ import {queryName} from 'nostr-tools/nip05'
 
 import helpersMixin from '../utils/mixin'
 import {dbErase} from '../query'
+import { getCssVar, setCssVar } from 'quasar'
 
 export default {
   name: 'Settings',
@@ -202,6 +235,8 @@ export default {
       },
       relays: {},
       editingRelays: false,
+      editingPreferences: false,
+      preferences: {},
       addingRelay: '',
       unsubscribe: null,
       hasJustSharedRelay: false
@@ -248,6 +283,7 @@ export default {
       }
     })
     this.cloneRelays()
+    this.clonePreferences()
   },
 
   beforeUnmount() {
@@ -258,7 +294,6 @@ export default {
     cloneMetadata() {
       let {name, picture, about, nip05} = this.$store.state.profilesCache[this.$store.state.keys.pub]
       this.metadata = {name, picture, about, nip05}
-      console.log('cloneMeta', this.metadata)
     },
     cloneRelays() {
       this.relays = JSON.parse(JSON.stringify(this.$store.state.relays))
@@ -269,8 +304,6 @@ export default {
         if (
           (await queryName(this.metadata.nip05)) !== this.$store.state.keys.pub
         ) {
-          console.log(this.metadata)
-          console.log(await queryName(this.metadata.nip05))
           this.$q.notify({
             message: 'Failed to verify NIP05 identifier on server.',
             color: 'warning'
@@ -281,6 +314,21 @@ export default {
       }
 
       this.$store.dispatch('setMetadata', this.metadata)
+    },
+    clonePreferences() {
+      this.preferences = {}
+      let config = LocalStorage.getItem('config') || {}
+      if (config['preferences']) this.preferences = config.preferences
+      else {
+        this.preferences = {
+          color: {
+            primary: getCssVar('primary'),
+            secondary: getCssVar('secondary'),
+            accent: getCssVar('accent'),
+          }
+        }
+        LocalStorage.set('config', {preferences: this.preferences})
+      }
     },
     addRelay() {
       this.relays[this.addingRelay] = { read: true, write: true }
@@ -300,6 +348,15 @@ export default {
     saveRelays() {
       if (this.$store.getters.canSignEventsAutomatically) this.$store.commit('saveRelays', this.relays)
     },
+    savePreferences() {
+      let config = {preferences: this.preferences}
+      LocalStorage.set('config', config)
+      this.editingPreferences = false
+    },
+    updateColor(event, colorName) {
+      setCssVar(colorName, event.target.value)
+      this.preferences.color[colorName] = event.target.value
+    },
     cancel(section) {
       if (section === 'metadata') {
         this.editingMetadata = false
@@ -311,6 +368,11 @@ export default {
         this.cloneRelays()
         return
       }
+      if (section === 'preferences') {
+        this.editingPreferences = false
+        this.clonePreferences()
+        return
+      }
     },
     shareRelay(url) {
       this.hasJustSharedRelay = true
@@ -319,16 +381,27 @@ export default {
         this.hasJustSharedRelay = false
       }, 5000)
     },
-    async hardReset() {
+    async logout() {
       this.$q
         .dialog({
-          title: 'Are you sure?',
-          message: 'Do you really want to delete all data from this device?',
+          title: 'logout?',
+          message: 'this will not delete your local nostr database but will allow you to login as another user. continue?',
           cancel: true
         })
         .onOk(async () => {
           LocalStorage.clear()
-          // await eraseDatabase()
+          window.location.reload()
+        })
+    },
+    async hardReset() {
+      this.$q
+        .dialog({
+          title: 'delete all data?',
+          message: 'do you really want to delete all data from this device?',
+          cancel: true
+        })
+        .onOk(async () => {
+          LocalStorage.clear()
           await dbErase()
           window.location.reload()
         })

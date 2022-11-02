@@ -6,6 +6,7 @@ import {
   dbSave,
   dbUserProfile,
   dbUserFollows,
+  streamFeed,
   streamUserProfile,
   streamUserFollows,
   streamUser,
@@ -63,14 +64,15 @@ export async function launch(store) {
   store.commit('setFollowing', following)
   store.commit('setRelays', relays)
 
-  // start listening for nostr events
-  store.dispatch('restartMainSubscription')
-
   // preload our own profile from the db
   store.dispatch('useProfile', {pubkey: store.state.keys.pub})
 
   // preload our follows profiles from the db
   for (let pubkey of following) store.dispatch('useProfile', {pubkey})
+
+  // start listening for nostr events
+  // setTimeout(store.dispatch('restartMainSubscription'), 500)
+  store.dispatch('restartMainSubscription')
 }
 
 export async function launchWithoutKey(store) {
@@ -90,6 +92,9 @@ export async function restartMainSubscription(store) {
   setTimeout(() => {
     botTrackerSub.cancel()
   }, 60 * 1000)
+
+  // sub feed
+  if (!mainSub.streamFeed) mainSub.streamFeed = await streamFeed(Math.round(Date.now() / 1000) - (5 * 24 * 60 * 60))
 
   // thats all if no pubkey entered
   if (!store.state.keys.pub) return

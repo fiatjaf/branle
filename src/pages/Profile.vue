@@ -192,8 +192,8 @@ export default defineComponent({
 })
 </script>
 
-<style lang='scss' scoped>
+<style lang='css' scoped>
 .q-tabs {
-  border-bottom: 1px solid $accent
+  border-bottom: 1px solid var(--q-accent)
 }
 </style>

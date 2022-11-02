@@ -104,17 +104,17 @@ export async function getPubKeyTagWithRelay(pubkey) {
   return base
 }
 
-export function getEventTagWithRelay(event) {
+export function getEventTagWithRelay(event, ...appendedValues) {
   if (event.seen_on && event.seen_on.length) {
     let random = event.seen_on[Math.floor(Math.random() * event.seen_on.length)]
-    return ['e', event.id, random]
+    return ['e', event.id, random, ...appendedValues]
   }
 
   return ['e', event.id]
 }
-export async function getEventIdTagWithRelay(eventId) {
+export async function getEventIdTagWithRelay(eventId, ...appendedValues) {
   let event = await dbEvent(eventId)
-  if (event && event.seen_on && event.seen_on.length) return getEventTagWithRelay(event)
+  if (event && event.seen_on && event.seen_on.length) return getEventTagWithRelay(event, ...appendedValues)
 
   return ['e', eventId]
 }

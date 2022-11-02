@@ -60,7 +60,7 @@
     </div>
   </div>
     <q-item-section>
-    <q-item-section ref='postContent' class='relative-position'>
+    <q-item-section ref='postContent' class='relative-position' style='padding-left: .2rem;'>
 
       <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
         <q-item-label caption style='opacity: .8;'>{{ niceDate(event.created_at) }}</q-item-label>
@@ -415,13 +415,12 @@ export default defineComponent({
   }
 })
 </script>
-<style lang="scss" scoped>
+<style lang="css" scoped>
 .post-padding {
   box-sizing: border-box;
-  border-bottom: 1px dotted $accent;
+  border-bottom: 1px dotted var(--q-accent);
   padding: .5rem 0 0;
   margin-top: 0;
-  gap: .25rem;
   width: 100%;
   overflow: hidden;
   font-size: .9rem;
@@ -442,7 +441,6 @@ export default defineComponent({
 .post-has-reply,
 .post-is-child-reply,
 .post-has-child-reply {
-  gap: .25rem;
 }
 .post-is-child-reply,
 .post-has-reply {
@@ -458,7 +456,7 @@ export default defineComponent({
   left: calc((100% / 2) - 1px);
   height: 100%;
   top: 1.5rem;
-  background: $accent;
+  background: var(--q-accent);
   z-index: 0;
 }
 .is-reply-connector {
@@ -467,7 +465,7 @@ export default defineComponent({
   left: calc((100% / 2) - 1px);
   height: 2rem;
   top: -1.5rem;
-  background: $accent;
+  background: var(--q-accent);
   z-index: 0;
 }
 .has-replying-connector {
@@ -475,8 +473,8 @@ export default defineComponent({
   position: absolute;
   left: calc((100% / 2) - 1px);
   top: 1.5rem;
-  border-left: 2px dotted $accent;
-  border-bottom: 2px dotted $accent;
+  border-left: 2px dotted var(--q-accent);
+  border-bottom: 2px dotted var(--q-accent);
   z-index: 0;
 }
 .post-highlighted .has-replying-connector {
@@ -487,20 +485,20 @@ export default defineComponent({
   position: absolute;
   left: calc((100% / 2) - 1px);
   top: .6rem;
-  background: $accent;
+  background: var(--q-accent);
   z-index: 0;
 }
 .has-child-reply-tick {
-  width: .7rem;
+  width: .55rem;
   height: 2px;
   position: absolute;
   left: calc((100% / 2) - 1px);
-  background: $accent;
+  background: var(--q-accent);
   z-index: 0;
 }
 
 .new-reply-box {
-  border: 1px dashed $primary;
+  border: 1px dashed var(--q-primary);
   border-radius: .4rem;
   padding: .3rem .3rem 0;
   margin: 0 0 .3rem;
@@ -510,10 +508,10 @@ export default defineComponent({
 }
 </style>
 
-<style lang="scss">
+<style lang="css">
 .reposts {
   border-radius: .25rem;
-  border: 1px dotted $accent;
+  border: 1px dotted var(--q-accent);
   min-width: 150px;
 }
 </style>

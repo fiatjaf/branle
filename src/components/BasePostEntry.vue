@@ -43,7 +43,6 @@
         <div
           id="input-editable"
           :contenteditable="!sending && !mentionsUpdating"
-          spellcheck="false"
           :style='mentionsUpdating ? "opacity: .7;" : ""'
           @input='updateText'
           @keypress.delete='updateText'
@@ -170,20 +169,20 @@
           </q-tooltip>
         </q-btn>
         <div v-if='text && !messageMode' class='char-left-label'>
-          <span v-if='charLeft <= 0' class='over-limit'>{{ charLeft }}</span>
+          <span v-if='charLeft() <= 0' class='over-limit'>{{ charLeft() }}</span>
           <q-circular-progress
-            v-if='charLeft > 0'
-            :show-value='charLeft <= 25'
+            v-if='charLeft() > 0'
+            :show-value='charLeft() <= 25'
             :value='((text.length % charLimit) / charLimit) * 100'
-            :size="charLeft <= 25 ? '1.5rem' : '1.2rem'"
+            :size="charLeft() <= 25 ? '1.5rem' : '1.2rem'"
             font-size='.6rem'
-            :thickness="charLeft <= 25 ? .2 : .1"
-            :color="charLeft <= 25 ? 'warning' : 'secondary'"
+            :thickness="charLeft() <= 25 ? .2 : .1"
+            :color="charLeft() <= 25 ? 'warning' : 'secondary'"
             track-color='transparent'
             class="no-padding"
             instant-feedback
           >
-            {{ charLeft }}
+            {{ charLeft() }}
           </q-circular-progress>
         </div>
         <q-btn
@@ -192,7 +191,7 @@
           color="primary"
           type="submit"
           @click.stop='send'
-          :disable='!textValid'
+          :disable='!textValid()'
         >
           <q-icon name="send" :style='"transform: translateX(" + sendIconTranslation + "px);"'/>
         </q-btn>
@@ -300,20 +299,6 @@ export default {
     profileMentionsProvider() {
       return this.createMentionsProvider()
     },
-    charLeft() {
-      return this.charLimit - this.text.length
-    },
-    overCharLimit() {
-      return this.charLeft < 0
-    },
-    textValid() {
-      if (this.replyMode === 'repost') return true
-      if (this.links.length) return true
-      if (!this.text.length) return false
-      if (this.messageMode) return true
-      if (this.overCharLimit) return false
-      return true
-    },
     postEntryWidth() {
       return this.$refs.postEntry?.$el?.clientWidth
     },
@@ -389,15 +374,16 @@ export default {
   methods: {
     updateText(e) {
       this.trigger++
-      if (e) this.text = e.target.textContent
-      else this.text = this.textarea.textContent
+      // if (e) this.text = e.target.textContent
+      // else this.text = this.textarea.textContent
+      this.text = this.textarea.textContent
       this.textareaRange = this.caretRange
       this.updateReadonlyInput()
       if (!this.messageMode) this.updateReadonlyHightlightInput()
     },
 
     async send() {
-      if (!this.textValid) {
+      if (!this.textValid()) {
         console.log('text not valid')
         return
       }
@@ -425,7 +411,7 @@ export default {
     async sendPost() {
       let tags = Object.values(this.mentions()).map(mention => mention.tag)
       // let mentions = Object.assign({}, this.mentions())
-      let text = this.formatMentionsForPublishing(tags)
+      let text = await this.formatMentionsForPublishing(tags)
       // let text = this.formatMentionsForPublishing(this.text, tags, mentions)
       this.appendHashtags(tags)
       text = this.appendLinks(text)
@@ -469,7 +455,7 @@ export default {
       // add quoted/reposted event
       if (this.replyMode === 'quote' || this.replyMode === 'repost') {
         // if quote or repost, only tag this event and add mention to text
-        let last = getEventTagWithRelay(this.event)
+        let last = await getEventTagWithRelay(this.event)
         tags.push(last)
         // text += ` #[${tags.length - 1}]`
         textarea.append(` #[${tags.length - 1}]`)
@@ -477,21 +463,22 @@ export default {
         // add the first and the last events being replied to
         let first = usableTags.find(([t, v]) => t === 'e')
         if (first) {
-          if (first.length < 3 || !first[2] || first[2] === '') tags.push(await getEventIdTagWithRelay(first[1]))
+          if (first.length < 3 || !first[2] || first[2] === '') tags.push(await getEventIdTagWithRelay(first[1], 'root'))
           else tags.push(first)
         }
-        let last = getEventTagWithRelay(this.event)
+        let last = await getEventTagWithRelay(this.event, 'reply')
         tags.push(last)
       }
 
       // let text = this.textarea.innerText
-      let text = this.formatMentionsForPublishing(tags, textarea)
+      let text = await this.formatMentionsForPublishing(tags, textarea)
       this.appendHashtags(tags)
       text = this.appendLinks(text)
       // console.log('sendReply', {
       //   message: text,
       //   tags: tags
       // })
+
       return await this.$store.dispatch('sendPost', {
         message: text,
         tags: tags
@@ -511,7 +498,7 @@ export default {
       }
       // this.tags = this.tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
       // let text = this.formatMentionsForPublishing(text, tags, mentions)
-      let text = this.formatMentionsForPublishing(tags)
+      let text = await this.formatMentionsForPublishing(tags)
       text = this.appendLinks(text)
 
       return await this.$store.dispatch('sendChatMessage', {
@@ -594,7 +581,7 @@ export default {
       return mentions
     },
 
-    formatMentionsForPublishing(tags, textarea = this.textarea.cloneNode(true)) {
+    async formatMentionsForPublishing(tags, textarea = this.textarea.cloneNode(true)) {
       // let textarea = this.textarea.cloneNode(true)
       let mentions = this.mentions(textarea)
         for (let key in mentions) {
@@ -602,7 +589,10 @@ export default {
           let idx = tags.findIndex(([t, v]) => t === mention.tag[0] && v === mention.tag[1])
           // console.log('idx', idx)
           if (idx === -1) {
-            tags.push(mention.tag)
+            let tag
+            if (mention.tag[0] === 'p') tag = await getPubKeyTagWithRelay(mention.tag[1])
+            else if (mention.tag[0] === 'e') tag = await getEventIdTagWithRelay(mention.tag[1])
+            tags.push(tag)
             idx = tags.length - 1
           }
           let range = new Range()
@@ -780,7 +770,7 @@ export default {
 
     updateReadonlyHightlightInput() {
       // update over char limit highlighting
-      if (this.overCharLimit) {
+      if (this.overCharLimit()) {
         this.readonlyHighlightTextarea.innerHTML = this.textarea.innerHTML
         let { el, pos } = this.charPos(this.charLimit, this.readonlyHighlightTextarea)
         let midword = el.length && el.length > pos
@@ -858,6 +848,20 @@ export default {
 
       return text
     },
+    charLeft() {
+      return this.charLimit - this.text.length
+    },
+    overCharLimit() {
+      return this.charLeft() < 0
+    },
+    textValid() {
+      if (this.replyMode === 'repost') return true
+      if (this.links.length) return true
+      if (!this.text.length) return false
+      if (this.messageMode) return true
+      if (this.overCharLimit()) return false
+      return true
+    },
   }
 }
 </script>
@@ -928,6 +932,8 @@ ul, li {
   border: none;
   min-height: 3rem;
   width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 .input-area #input-editable {
   display: block;

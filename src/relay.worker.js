@@ -5,7 +5,8 @@ export const pool = relayPool()
 let poolSub = null
 
 pool.onNotice((notice, relay) => {
-  dbWorkerPort.postMessage({type: 'notice', notice, relay})
+  let noticeCopy = JSON.parse(JSON.stringify(notice))
+  dbWorkerPort.postMessage({type: 'notice', notice: noticeCopy, relay})
 })
 
 let relays = {}
@@ -39,7 +40,7 @@ function calcFilter() {
         acc[type] = [value]
         return acc
       } else if (type === 'feed') {
-        acc[type] = value
+        if (!acc[type] || acc[type] >= value) acc[type] = value
         return acc
       } else if (type === 'tag') {
         let tagType = value.tagType

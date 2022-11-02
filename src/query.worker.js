@@ -440,6 +440,28 @@ const methods = {
     }
   },
 
+  dbFeed(since) {
+    let result = queryDb(`
+      SELECT event
+      FROM nostr
+      WHERE json_extract(event,'$.kind') IN (1, 2)
+        AND json_extract(event,'$.created_at') >= ${since}
+    `)
+    return result.map(row => JSON.parse(row.event))
+  },
+
+  streamFeed(since, callback) {
+    return {
+      filter: {
+        kinds: [1, 2],
+        since
+      },
+      callback,
+      subName: 'subFeed',
+      subArgs: [since]
+    }
+  },
+
   dbChats(pubkey) {
     let result = queryDb(`
       SELECT peer, MAX(last_message) last_message

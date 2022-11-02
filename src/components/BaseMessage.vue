@@ -185,7 +185,7 @@ export default {
   }
 }
 </script>
-<style lang='scss'>
+<style lang='css'>
 .message-sent,
 .message-received {
   max-width: min(90%, 400px);
@@ -200,14 +200,14 @@ export default {
 }
 .timestamp {
   font-size: .7rem;
-  opacity: .7;
+  opacity: .9;
   padding: .3rem .15rem 0;
 }
 .message-sent .message-bubbles {
-  border-right: 3px solid $primary;
+  border-right: 3px solid var(--q-primary);
 }
 .message-received .message-bubbles {
-  border-left: 3px solid $secondary;
+  border-left: 3px solid var(--q-secondary);
 }
 .message-sent .message-bubble {
 }
@@ -257,11 +257,11 @@ export default {
   padding: .25rem .5rem;
 }
 .embeded-message .message-sent .message-bubbles {
-  border-right: 2px solid $primary;
+  border-right: 2px solid var(--q-primary);
   border-left: 0;
 }
 .embeded-message .message-received .message-bubbles {
-  border-left: 2px solid $secondary;
+  border-left: 2px solid var(--q-secondary);
   border-right: 0;
 }
 .embeded-message .message-menu {

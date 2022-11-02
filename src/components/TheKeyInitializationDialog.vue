@@ -59,6 +59,7 @@
               color="primary"
               label="public key"
               :outline="!watchOnly"
+              :text-color="!watchOnly ? '' : 'dark'"
               value="true"
               @click="watchOnly = true"
               :disable='isBech32Sec'
@@ -68,6 +69,7 @@
               color="primary"
               label="private key"
               :outline="watchOnly"
+              :text-color="watchOnly ? '' : 'dark'"
               value="false"
               @click="watchOnly = false"
               :disable='isBech32Pub'

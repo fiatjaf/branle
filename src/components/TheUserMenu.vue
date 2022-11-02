@@ -14,7 +14,8 @@
         v-if='!compactMode'
         :pubkey='$store.state.keys.pub'
         :align-right='true'
-        class='text-accent q-mr-sm gt-sm'
+        :wrap='true'
+        class='gt-sm'
       />
       <BaseUserAvatar
         v-if='!compactMode'
@@ -22,7 +23,7 @@
         :align-right='true'
         :show-verified='true'
         size='lg'
-        class='text-accent q-mr-sm lt-md'
+        class='q-mr-sm lt-md'
       />
       <BaseUserAvatar
         v-if='$store.state.keys.pub && compactMode'
@@ -31,7 +32,8 @@
         size='1.5rem'
       />
     </q-item>
-    <q-separator v-if='!compactMode' color='accent' spaced/>
+    <!-- <q-separator v-if='!compactMode' color='accent' spaced/> -->
+    <div v-if='!compactMode' style='min-height: 1rem;'/>
     <q-item
       v-for='item in filteredUserMenuItems'
       clickable
@@ -56,7 +58,7 @@
         class="relative-position no-padding"
       >
         <q-icon outline :name="item.icon"/>
-        <q-badge
+        <!-- <q-badge
           v-if="item.badge && $store.getters[item.badge]"
           color="secondary"
           floating
@@ -64,6 +66,24 @@
           outline
         >
           {{ $store.getters[item.badge] }}
+        </q-badge> -->
+        <q-badge
+          v-if="item.title === 'notifications' && $store.state.unreadNotifications"
+          color="secondary"
+          floating
+          class='q-mr-md text-bold'
+          outline
+        >
+          {{ $store.state.unreadNotifications }}
+        </q-badge>
+        <q-badge
+          v-if="item.title === 'messages' && $store.getters.unreadChats"
+          color="secondary"
+          floating
+          class='q-mr-md text-bold'
+          outline
+        >
+          {{ $store.getters.unreadChats }}
         </q-badge>
       </q-item-section>
 
@@ -82,7 +102,8 @@
         />
       </div>
     </q-item>
-    <q-separator v-if='!compactMode' color='accent' spaced/>
+    <!-- <q-separator v-if='!compactMode' color='accent' spaced/> -->
+    <div v-if='!compactMode' style='min-height: 1rem;'/>
       <div
         color="primary"
         class='flex '

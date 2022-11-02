@@ -27,17 +27,19 @@ export default function (store) {
     })
   }
 
-  var sub = null
+  let sub = null
   const streamMentionsAndMessages = () => {
-    if (store.state.keys.pub && !sub) streamTag('p', store.state.keys.pub, event => {
-      if (event.kind === 1) setUnreadNotifications
-      else if (event.kind === 4) setUnreadMessages(event.pubkey)
-    })
-    else {
+    if (store.state.keys.pub) {
+      if (sub) sub.cancel()
+      sub = streamTag('p', store.state.keys.pub, event => {
+        if (event.kind === 1) setUnreadNotifications()
+        else if (event.kind === 4) setUnreadMessages(event.pubkey)
+      })
+    } else {
       let interval = setInterval(() => {
         if (store.state.keys.pub && !sub) {
           streamTag('p', store.state.keys.pub, event => {
-              if (event.kind === 1) setUnreadNotifications
+              if (event.kind === 1) setUnreadNotifications()
               else if (event.kind === 4) setUnreadMessages(event.pubkey)
           })
           clearInterval(interval)
@@ -52,7 +54,7 @@ export default function (store) {
 
   store.subscribeAction(({type, payload}, state) => {
     switch (type) {
-      case 'launch':
+      case 'restartMainSubscription':
         streamMentionsAndMessages()
         break
     }

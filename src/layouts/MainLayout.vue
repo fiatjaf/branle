@@ -14,18 +14,18 @@
             </keep-alive>
           </router-view>
         </q-page-container>
-      <div v-if='postEntryOpen || messageMode' id='post-entry' unelevated class='gt-xs flex column align-self'>
-        <q-separator color='accent'/>
-          <q-btn v-if='!messageMode' icon="close" flat @click='togglePostEntry' class='self-end'/>
-        <BasePostEntry
-          :message-mode='messageMode'
-          :event='replyEvent'
-          @clear-event='replyEvent=null'
-          @sent='togglePostEntry'
-          class='q-px-md'
-          :class='messageMode ? "q-pt-sm" : ""'
-        />
-      </div>
+        <div v-if='postEntryOpen || messageMode' id='post-entry' unelevated class='gt-xs flex column align-self'>
+          <q-separator color='accent'/>
+            <q-btn v-if='!messageMode' icon="close" flat @click='togglePostEntry' class='self-end'/>
+          <BasePostEntry
+            :message-mode='messageMode'
+            :event='replyEvent'
+            @clear-event='replyEvent=null'
+            @sent='togglePostEntry'
+            class='q-px-md'
+            :class='messageMode ? "q-pt-sm" : ""'
+          />
+        </div>
         <div id='bottom-post-entry-placeholder' />
         <div id='bottom-menu-placeholder' />
       </div>
@@ -113,12 +113,13 @@
 
 <script>
 import { defineComponent} from 'vue'
-import { scroll, useQuasar } from 'quasar'
+import { scroll, useQuasar, LocalStorage } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
 import { activateSub, deactivateSub, destroyStreams } from '../query'
 import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
+import { setCssVar } from 'quasar'
 
 export default defineComponent({
   name: 'MainLayout',
@@ -157,6 +158,17 @@ export default defineComponent({
         if (this.replyEvent) return 'reply'
         else return 'message'
       } else return null
+    }
+  },
+
+  beforeCreate() {
+    // set customization
+    let config = LocalStorage.getItem('config') || {}
+    if (config.preferences?.color) {
+      let {primary, secondary, accent} = config.preferences.color
+      setCssVar('primary', primary)
+      setCssVar('secondary', secondary)
+      setCssVar('accent', accent, document.body)
     }
   },
 
@@ -279,7 +291,7 @@ export default defineComponent({
 
 </script>
 
-<style lang='scss'>
+<style lang='css'>
 body {
   display: block;
   height: 100vh;
@@ -303,10 +315,9 @@ body {
   width: 700px;
   max-width: 100%;
   height: auto;
-  background: $dark;
   padding-bottom: 2rem;
-  border-right: 2px solid $accent;
-  border-left: 2px solid $accent;
+  border-right: 2px solid var(--q-accent);
+  border-left: 2px solid var(--q-accent);
   display: flex;
   flex-direction: column;
   padding: 0 .5rem;
@@ -324,7 +335,7 @@ body {
 }
 
 #bottom-drawer {
-  background: $dark;
+  background: var(--q-dark);
   width: calc(100% - 4px);
   left: 2px;
 }
@@ -332,7 +343,7 @@ body {
   width: 100%;
 }
 #navagation-buttons .q-fab__actions .q-btn{
-  background: $dark !important;
+  background: var(--q-dark) !important;
 }
 #navagation-buttons .q-btn{
   font-size: .8rem;

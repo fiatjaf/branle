@@ -32,6 +32,10 @@ const getTorRelays = () => ({
   'ws://jgqaglhautb4k6e6i2g34jakxiemqp6z4wynlirltuukgkft2xuglmqd.onion': {
     read: true,
     write: true
+  },
+  'ws://wagvwfrdrikrqzp7h3b5lwl6btyuttu7mqpeji35ljzq36ovzgjhsfqd.onion': {
+    read: true,
+    write: true
   }
 })
 

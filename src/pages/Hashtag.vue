@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md">{{'#' + this.$route.params.hashtagId}}</div>
+    <div class="text-h5 text-bold q-py-md q-px-sm">{{'#' + this.$route.params.hashtagId}}</div>
     <q-separator color='accent' size='2px'/>
         <div>
           <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='processEvent'/>
@@ -77,8 +77,3 @@ export default defineComponent({
 })
 </script>
 
-<style lang='scss' scoped>
-.q-tabs {
-  border-bottom: 1px solid $accent
-}
-</style>

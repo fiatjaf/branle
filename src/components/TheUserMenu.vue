@@ -39,6 +39,7 @@
       clickable
       class='menu-item'
       :dense='compactMode'
+      :style='compactMode ? "" : "min-height: 2.75rem;"'
       :active="$route.name === item.title"
       active-class=''
       :to="item.to"
@@ -46,7 +47,7 @@
       :class="($route.path.split('/')[1] === item.match ? 'menu-item-active text-accent ' : '') +
         (compactMode ? 'no-margin no-padding col' : 'self-end q-px-none')"
     >
-      <q-item-section v-if='!compactMode' class='gt-sm text-uppercase'>
+      <q-item-section v-if='!compactMode' class='gt-sm text-uppercase' style='font-size: 1rem;'>
         <div>
           {{ $t(item.title) }}
         </div>
@@ -56,6 +57,7 @@
         v-if="item.icon && !compactMode"
         avatar
         class="relative-position no-padding"
+        style="min-width: 2.5rem;"
       >
         <q-icon outline :name="item.icon"/>
         <!-- <q-badge
@@ -206,18 +208,6 @@ export default defineComponent({
           to: '/messages/inbox',
           match: 'messages',
         },
-        // {
-        //   title: 'lists',
-        //   // caption: 'forum.quasar.dev',
-        //   icon: 'list',
-        //   to: '/lists',
-        // },
-        // {
-        //   title: 'profile',
-        //   icon: 'account_circle',
-        //   to: '/' + this.$store.state.keys.pub,
-        //   match: this.$store.state.keys.pub,
-        // },
         {
           title: 'settings',
           icon: 'settings',

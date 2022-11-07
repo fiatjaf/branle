@@ -1,7 +1,7 @@
 <template>
-  <q-item
+  <div
     color='accent'
-    class='post-padding cursor-pointer no-hover'
+    class='post-padding cursor-pointer no-hover flex row no-wrap'
     clickable
     manual-focus
     :class='(hasReply ? "post-has-reply" : "") +
@@ -11,94 +11,80 @@
       (hasReplyChildren ? " post-has-child-reply" : "")'
     @click.stop="toEvent(event.id)"
   >
-  <!-- <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
-    <q-item-label caption style='opacity: .8;'>{{ niceDate(event.created_at) }}</q-item-label>
-    <BaseButtonRelays
-      button-class='text-secondary'
-      :event='event'
-    />
-    <BaseButtonInfo
-      button-class='text-secondary'
-      :event='event'
-    />
-  </div> -->
-  <div
-    clickable
-    avatar
-    top
-    class='relative-position'
-  >
-    <div v-if="isReply" class="is-reply-connector"></div>
-      <BaseUserAvatar
-        :pubkey='event.pubkey'
-        size='1.5rem'
-        :round='true'
-        :bordered='hasReply || isReply || hasReplyChildren || isChildReply'
-        :hover-effect='true'
-        style='z-index: 1;'
-      />
-    <div v-if="hasReply" class="has-reply-connector"></div>
     <div
-      v-if="replyMode === 'reply'"
-      class="has-replying-connector"
-      :style='"height: " + (postHeight) + "px;"'
-    />
-    <div
-      ref='hasChildReplyConnector'
-      v-if="hasReplyChildren"
-      class="has-child-reply-connector"
-      style='visibility: hidden;'
-      :style='childReplyConnectorStyle()'
+      clickable
+      avatar
+      top
+      class='relative-position'
     >
+      <div v-if="isReply" class="is-reply-connector"></div>
+        <BaseUserAvatar
+          :pubkey='event.pubkey'
+          size='1.5rem'
+          :round='true'
+          :bordered='hasReply || isReply || hasReplyChildren || isChildReply'
+          :hover-effect='true'
+          style='z-index: 1;'
+        />
+      <div v-if="hasReply" class="has-reply-connector"></div>
       <div
-        v-for="(thread, index) in event.replies"
-        :key="thread[0].id"
-        ref="hasChildReplyConnectorTick"
-        class="has-child-reply-tick"
-        :style='childReplyTickStyle(index)'
+        v-if="replyMode === 'reply'"
+        class="has-replying-connector"
+        :style='"height: " + (postHeight) + "px;"'
       />
+      <div
+        ref='hasChildReplyConnector'
+        v-if="hasReplyChildren"
+        class="has-child-reply-connector"
+        style='visibility: hidden;'
+        :style='childReplyConnectorStyle()'
+      >
+        <div
+          v-for="(thread, index) in event.replies"
+          :key="thread[0].id"
+          ref="hasChildReplyConnectorTick"
+          class="has-child-reply-tick"
+          :style='childReplyTickStyle(index)'
+        />
+      </div>
     </div>
-  </div>
-    <q-item-section>
-    <q-item-section ref='postContent' class='relative-position' style='padding-left: .2rem;'>
+    <div class='flex column no-wrap col full-width'>
+      <q-item-section ref='postContent' class='relative-position' style='padding: 0 .2rem;'>
 
-      <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
-        <q-item-label caption style='opacity: .8;'>{{ niceDate(event.created_at) }}</q-item-label>
-        <BaseButtonRelays
-          button-class='text-secondary'
-          :event='event'
-        />
-        <BaseButtonInfo
-          button-class='text-secondary'
-          :event='event'
-        />
-      </div>
-      <div class='q-pb-sm'>
-        <q-item-label caption class="text-secondary" style='opacity: .7;'>
-            <span @click.stop="toProfile(event.pubkey)">{{ shorten(event.pubkey) }}</span>
-        </q-item-label>
-        <q-space/>
-        <q-item-label :line='1' clickable>
-          <BaseUserName :pubkey="event.pubkey" :show-verified='true' class='text-bold' :show-following='true'/>
-        </q-item-label>
-        <q-item-label
-          v-if="
-            tagged &&
-            ($route.name === 'feed' || $route.name === 'profile' || $route.name === 'notifications') &&
-            !(isReply || isChildReply)
-          "
-          caption
-          class='q-pl-sm'
-        >
-          <span>in reply to&nbsp;</span>
-          <a @click.stop="toEvent(tagged)">
-            {{ shorten(tagged) }}
-          </a>
-        </q-item-label>
-      </div>
-      <!-- <q-item-label
-        class='q-pt-xs break-word-wrap'
-      > -->
+        <div class='absolute-top-right flex row items-center post-info' style='z-index: 1;' @click.stop>
+          <q-item-label class='q-pr-xs' style='opacity: .8; font-size: 90%;'>{{ niceDate(event.created_at) }}</q-item-label>
+          <BaseButtonRelays
+            button-class='text-secondary'
+            :event='event'
+          />
+          <BaseButtonInfo
+            button-class='text-secondary'
+            :event='event'
+          />
+        </div>
+        <div class='q-pb-sm'>
+          <q-item-label caption class="text-secondary" style='opacity: .7;'>
+              <span @click.stop="toProfile(event.pubkey)">{{ shorten(event.pubkey) }}</span>
+          </q-item-label>
+          <q-space/>
+          <q-item-label :line='1' clickable>
+            <BaseUserName :pubkey="event.pubkey" :show-verified='true' class='text-bold' :show-following='true'/>
+          </q-item-label>
+          <q-item-label
+            v-if="
+              tagged &&
+              ($route.name != 'event') &&
+              !(isReply || isChildReply)
+            "
+
+            class='q-pl-sm'
+          >
+            <span >in reply to&nbsp;</span>
+            <a @click.stop="toEvent(tagged)">
+              {{ shorten(tagged) }}
+            </a>
+          </q-item-label>
+        </div>
         <BaseMarkdown v-if="event.kind === 1">
           {{ event.interpolated.text }}
         </BaseMarkdown>
@@ -106,7 +92,7 @@
         <BaseMarkdown v-else> {{ cleanEvent }} </BaseMarkdown>
         <div
           v-if='!isEmbeded && (isQuote || isRepost)'
-          class='reposts flex column q-my-sm q-pa-sm'
+          class='reposts flex column'
           :clickable='false'
         >
           <BasePost
@@ -120,77 +106,77 @@
           />
         </div>
       <!-- </q-item-label> -->
-      <div
-        v-if='!isRepost && $store.state.keys.pub && (replyDepth !== -1)'
-        class='flex row items-center no-wrap reply-buttons'
-        :color="replying ? 'primary' : ''"
-        :class='replying ? "justify-between" : "justify-end"'
-      >
-        <div class='text-primary text-thin col q-pl-xs' style=' font-size: 90%; font-weight: 300;'>{{replyMode}}</div>
-        <div class='flex row no-wrap'>
-          <q-tabs
-            v-model='replyMode'
-            class='no-padding no-margin'
-            unelevated
-            dense
-            flat
-            active-color='primary'
-            :size='highlighted ? "md" : "sm"'
-            @click.stop
-          >
-            <q-tab name='embed' class='no-padding'>
-              <q-icon name='link' >
-                <q-tooltip>
-                  embed
-                </q-tooltip>
-              </q-icon>
-            </q-tab>
-            <q-tab name='repost' class='no-padding'>
-              <q-icon name='repeat' >
-                <q-tooltip>
-                  repost
-                </q-tooltip>
-              </q-icon>
-            </q-tab>
-            <q-tab name='quote' class='no-padding'>
-              <q-icon name='format_quote' >
-                <q-tooltip>
-                  quote
-                </q-tooltip>
-              </q-icon>
-            </q-tab>
-            <q-tab name='reply' class='no-padding'>
-              <q-icon name='chat_bubble_outline' class='flip-horizontal' >
-                <q-tooltip>
-                  reply
-                </q-tooltip>
-              </q-icon>
-            </q-tab>
-          </q-tabs>
-          <div class='flex row no-wrap items-center'>
-            <q-separator v-if='replyMode' color='primary' size='1px' vertical spaced :class='highlighted ? "q-mt-sm" : "q-mt-xs"'/>
-            <q-btn
-              v-if='replyMode'
-              icon="close"
-              color='primary'
-              flat
+        <div
+          v-if='!isRepost && $store.state.keys.pub && (replyDepth !== -1)'
+          class='flex row items-center no-wrap reply-buttons'
+          :color="replying ? 'primary' : ''"
+          :class='replying ? "justify-between" : "justify-end"'
+        >
+          <div class='text-primary text-thin col q-pl-xs' style=' font-size: 90%; font-weight: 300;'>{{replyMode}}</div>
+          <div class='flex row no-wrap'>
+            <q-tabs
+              v-model='replyMode'
+              class='no-padding no-margin'
+              unelevated
               dense
-              @click.stop='replyMode = null'
+              flat
+              active-color='primary'
               :size='highlighted ? "md" : "sm"'
+              @click.stop
             >
-              <q-tooltip>
-                cancel
-              </q-tooltip>
-            </q-btn>
+              <q-tab name='embed' class='no-padding'>
+                <q-icon name='link' >
+                  <q-tooltip>
+                    embed
+                  </q-tooltip>
+                </q-icon>
+              </q-tab>
+              <q-tab name='repost' class='no-padding'>
+                <q-icon name='repeat' >
+                  <q-tooltip>
+                    repost
+                  </q-tooltip>
+                </q-icon>
+              </q-tab>
+              <q-tab name='quote' class='no-padding'>
+                <q-icon name='format_quote' >
+                  <q-tooltip>
+                    quote
+                  </q-tooltip>
+                </q-icon>
+              </q-tab>
+              <q-tab name='reply' class='no-padding'>
+                <q-icon name='chat_bubble_outline' class='flip-horizontal' >
+                  <q-tooltip>
+                    reply
+                  </q-tooltip>
+                </q-icon>
+              </q-tab>
+            </q-tabs>
+            <div class='flex row no-wrap items-center'>
+              <q-separator v-if='replyMode' color='primary' size='1px' vertical spaced :class='highlighted ? "q-mt-sm" : "q-mt-xs"'/>
+              <q-btn
+                v-if='replyMode'
+                icon="close"
+                color='primary'
+                flat
+                dense
+                @click.stop='replyMode = null'
+                :size='highlighted ? "md" : "sm"'
+              >
+                <q-tooltip>
+                  cancel
+                </q-tooltip>
+              </q-btn>
+            </div>
           </div>
         </div>
-      </div>
       </q-item-section>
-      <q-item-section v-if="replyMode" class='full-width new-reply-box' ref='replyContent'>
+      <q-item-section v-if="replyMode" class='new-reply-box' ref='replyContent'>
         <q-tab-panels
           v-model="replyPanel"
           class='no-padding full-width overflow-hidden'
-          style='background-color: inherit; max-width: 100%;'
+          style='background-color: inherit; max-width: 100%; padding: 0 .25 0 0;'
           @transition='calcConnectorValues(10)'
         >
           <q-tab-panel name="embed" class='no-padding' @click.stop>
@@ -214,17 +200,17 @@
         </q-tab-panels>
       </q-item-section>
 
-      <q-item v-if='hasReplyChildren' class='no-padding no-border no-margin column full-width' >
-      <div v-for="thread in event.replies" :key="thread[0].id" ref="childReplyContent">
-        <BasePostThread
-          :events="thread"
-          :reply-depth='replyDepth + 1'
-          @resized='calcConnectorValues(10)'
-        />
+      <div v-if='hasReplyChildren' class='full-width' >
+        <div v-for="thread in event.replies" :key="thread[0].id" ref="childReplyContent">
+          <BasePostThread
+            :events="thread"
+            :reply-depth='replyDepth + 1'
+            @resized='calcConnectorValues(10)'
+          />
+        </div>
       </div>
-      </q-item>
-    </q-item-section>
-  </q-item>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -419,9 +405,11 @@ export default defineComponent({
 .post-padding {
   box-sizing: border-box;
   border-bottom: 1px dotted var(--q-accent);
-  padding: .5rem 0 0;
+  padding: .5rem 0 0 .25rem;
   margin-top: 0;
   width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   overflow: hidden;
   font-size: .9rem;
 }
@@ -433,7 +421,9 @@ export default defineComponent({
 .post-highlighted .reposts {
   font-size: .9rem;
 }
-
+.reposts {
+  margin: .5rem .5rem 0 0;
+}
 .reposts .post-padding {
   border: 0;
 }
@@ -446,9 +436,14 @@ export default defineComponent({
 .post-has-reply {
   border-bottom: 0;
 }
-.post-is-reply,
 .post-is-child-reply {
   padding: 0;
+}
+.has-reply-connector,
+.is-reply-connector,
+.has-child-reply-connector,
+.has-child-reply-tick {
+  opacity: .7;
 }
 .has-reply-connector {
   width: 2px;
@@ -473,9 +468,10 @@ export default defineComponent({
   position: absolute;
   left: calc((100% / 2) - 1px);
   top: 1.5rem;
-  border-left: 2px dotted var(--q-accent);
-  border-bottom: 2px dotted var(--q-accent);
+  border-left: 2px solid var(--q-accent);
+  border-bottom: 2px solid var(--q-accent);
   z-index: 0;
+  opacity: .3;
 }
 .post-highlighted .has-replying-connector {
   top: 1.9rem;
@@ -498,10 +494,10 @@ export default defineComponent({
 }
 
 .new-reply-box {
-  border: 1px dashed var(--q-primary);
+  border: 1px solid var(--q-primary);
   border-radius: .4rem;
   padding: .3rem .3rem 0;
-  margin: 0 0 .3rem;
+  margin: 0 .3rem .3rem 0;
 }
 
 @media screen and (min-width: 600px) {
@@ -510,8 +506,8 @@ export default defineComponent({
 
 <style lang="css">
 .reposts {
-  border-radius: .25rem;
-  border: 1px dotted var(--q-accent);
+  border-radius: .75rem;
+  box-shadow: 0 0 .3rem -.0rem var(--q-accent);
   min-width: 150px;
 }
 </style>

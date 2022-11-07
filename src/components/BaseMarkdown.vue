@@ -236,6 +236,10 @@ p:last-of-type {
   word-break: break-word;
   hyphens: auto !important;
   line-height: 1.3rem !important;
+  max-width: 100%;
+}
+.break-word-wrap pre {
+  overflow: auto;
 }
 </style>
 

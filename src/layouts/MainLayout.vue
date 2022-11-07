@@ -320,7 +320,6 @@ body {
   border-left: 2px solid var(--q-accent);
   display: flex;
   flex-direction: column;
-  padding: 0 .5rem;
 }
 #middle-page .q-page-container {
 }

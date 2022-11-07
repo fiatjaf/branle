@@ -1,8 +1,9 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md">dev tools</div>
+    <div class="text-h5 text-bold q-py-md q-px-sm">dev tools</div>
     <q-separator color='accent' size='2px'/>
-    <div class="text-bold q-py-md">sql query</div>
+    <div class='q-py-md q-px-sm'>
+      <div class="text-bold">sql query</div>
 
       <!-- <h2> sql query </h2> -->
       <!-- <label for='commands'>Enter some SQL</label> -->
@@ -10,7 +11,7 @@
 
       <textarea v-model='sql' id="editor"/>
       <div style='display: flex; flex-direction: row; gap: 1rem; padding: .5rem 0; align-items: center'>
-        <q-btn id="execute" color='primary' @click='execEditorContents'>Execute</q-btn>
+        <q-btn id="execute" color='primary' outline @click='execEditorContents'>Execute</q-btn>
         <!-- <button id='savedb' class="btn btn-secondary btn-sm">Save the db</button> -->
         <!-- <label class="button">Load an SQLite database file: <input type='file' id='dbfile' /></label> -->
       </div>
@@ -23,6 +24,7 @@
         :rows-per-page-options='[10, 50, 100, 0]'
       />
       <pre id="output">Results will be displayed here</pre>
+    </div>
   </q-page>
 </template>
 

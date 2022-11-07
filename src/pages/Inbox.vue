@@ -1,11 +1,11 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md full-width flex row justify-start">
+    <div class="text-h5 text-bold q-py-md q-px-sm full-width flex row justify-start">
       {{ $t('inbox') }}
     </div>
     <q-separator color='accent' size='2px'/>
 
-    <q-list class='q-py-sm q-gutter-sm'>
+    <q-list class='q-py-sm q-pr-sm q-gutter-sm'>
       <div v-if="loading" class='flex row justify-center items-start q-my-md'>
         <q-spinner-orbit color="accent"  size='md'/>
       </div>
@@ -107,5 +107,3 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
-</style>

@@ -176,7 +176,7 @@ export default {
               ${item.original.value.nip05
                 ? '<i class="notranslate material-icons text-accent mr-1 -ml-1" aria-hidden="true" role="presentation">verified</i>'
                 : ''}
-                <div class="text-secondary caption">${shorten(item.original.value.pubkey)}</div>
+                <div class="text-secondary text-caption">${shorten(item.original.value.pubkey)}</div>
               </div>
             `
         },

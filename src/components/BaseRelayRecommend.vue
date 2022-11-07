@@ -1,6 +1,6 @@
 <template>
   <div class="flex column q-gutter-md">
-      <div v-if='!listView' class="" caption>added relay:</div>
+      <div v-if='!listView'>added relay:</div>
       <BaseRelayCard :url='url' />
   </div>
 </template>

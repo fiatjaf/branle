@@ -1,5 +1,5 @@
 <template>
-  <q-list ref='thread'>
+  <q-list ref='thread' class='no-padding'>
     <div
       v-for="(event, index) in filledEvents"
       :key="event.id + index"

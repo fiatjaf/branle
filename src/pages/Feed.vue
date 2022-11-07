@@ -1,7 +1,7 @@
 <template>
   <q-page>
     <div>
-      <div class="text-h5 text-bold q-py-md full-width flex row justify-start">
+      <div class="text-h5 text-bold q-py-md q-px-sm full-width flex row justify-start">
         {{ $t('feed') }}
       </div>
       <q-tabs

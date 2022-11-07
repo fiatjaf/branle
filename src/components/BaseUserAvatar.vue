@@ -34,10 +34,10 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
+<style lang='css' scoped>
 .bordered-avatar .q-avatar img {
-  border: 2px solid $accent;
-  background: $dark;
+  border: 2px solid var(--q-accent);
+  background: var(--q-dark);
   z-index: 1;
 }
 .hovered-avatar .q-avatar:hover {

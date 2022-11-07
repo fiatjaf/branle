@@ -1,8 +1,8 @@
 <template>
   <q-page id='settings-page'>
-    <div class="text-h5 text-bold q-py-md">{{ $t('settings') }}</div>
+    <div class="text-h5 text-bold q-py-md q-px-sm">{{ $t('settings') }}</div>
     <q-separator color='accent' size='2px'/>
-    <q-form class="q-gutter-md q-pt-sm" @submit="setMetadata">
+    <q-form class="q-gutter-md section" @submit="setMetadata">
       <div v-if='editingMetadata' class='flex justify-between' style='display: flex; gap: .2rem;'>
         <q-btn label="save" color="primary" outline size="sm" type="submit"/>
         <q-btn label="cancel" color="negative" outline size="sm" @click='cancel("metadata")'/>
@@ -47,9 +47,9 @@
       />
     </q-form>
 
-    <q-separator color='accent' spaced/>
+    <q-separator color='accent'/>
 
-    <div v-if='Object.keys(preferences).length'>
+    <div v-if='Object.keys(preferences).length' class='section'>
       <div v-if='editingPreferences' class='flex justify-between' style='display: flex; gap: .2rem;'>
         <q-btn label="save" color="primary" outline size="sm" @click='savePreferences'/>
         <q-btn label="cancel" color="negative" outline size="sm" @click='cancel("preferences")'/>
@@ -74,8 +74,8 @@
       <label for="accent">accent</label>
       <input type="color" id="accent" name="accent" :value='this.preferences.color.accent' @input='(event) => updateColor(event, "accent")'> -->
     </div>
-    <q-separator color='accent' spaced/>
-    <div>
+    <q-separator color='accent'/>
+    <div class='section'>
       <div v-if='editingRelays' class='flex justify-between' style='display: flex; gap: .2rem;'>
         <q-btn label="save" color="primary" outline size="sm" @click='saveRelays'/>
         <q-btn label="cancel" color="negative" outline size="sm" @click='cancel("relays")'/>
@@ -162,9 +162,9 @@
       </q-form>
     </div>
 
-    <q-separator color='accent' spaced/>
+    <q-separator color='accent'/>
 
-    <div class="flex no-wrap" style='gap: .2rem;'>
+    <div class="flex no-wrap section" style='gap: .2rem;'>
       <q-btn label="View your keys" color="primary" outline @click="keysDialog = true" />
       <q-btn label="logout" color="primary" outline @click="logout" />
       <q-btn label="Delete Local Data" color="negative" outline @click="hardReset" />
@@ -409,3 +409,9 @@ export default {
   }
 }
 </script>
+
+<style lang='css' scoped>
+.section {
+  padding: .5rem;
+}
+</style>

@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md">{{ $t('notifications') }}</div>
+    <div class="text-h5 text-bold q-py-md q-px-sm">{{ $t('notifications') }}</div>
 
     <q-separator color='accent' size='2px'/>
     <q-infinite-scroll

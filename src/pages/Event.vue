@@ -1,8 +1,7 @@
 <template>
 
   <q-page ref='page'>
-    <div class="text-h5 text-bold q-py-md q-px-sm">{{ $t('thread') }}</div>
-    <q-separator color='accent' size='2px'/>
+    <BaseHeader>{{ $t('thread') }}</BaseHeader>
     <div v-if="ancestorsCompiled.length || rootAncestor">
       <BasePostThread :events="ancestorsCompiled" is-ancestors @add-event='addEventAncestors'/>
     </div>
@@ -21,7 +20,7 @@
     <BaseRelayList v-if="event?.seen_on?.length" :event='event' class='q-px-sm'/>
     </q-item>
 
-    <q-separator color='accent' size='2px'/>
+    <q-separator color='accent' size='1px'/>
 
     <div v-if="childrenThreadsFiltered.length">
       <div class="text-h6 text-bold q-px-sm">{{ $t('replies') }}</div>

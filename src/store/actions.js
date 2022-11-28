@@ -83,8 +83,11 @@ let mainSub = {}
 export async function restartMainSubscription(store) {
   // console.log('restart main subscription for', [store.state.keys.pub].concat(store.state.following), store.state.relays)
 
+  // get lastUserMainSync
+  let lastUserMainSync = LocalStorage.getItem('config')?.timestamps?.lastUserMainSync || 0
+
   // setup pool
-  await setRelays(store.state.relays)
+  await setRelays(store.state.relays, lastUserMainSync - (7 * 24 * 60 * 60))
 
   // sub to bot tracker follows (to filter out bots in feed)
   let botTracker = '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'
@@ -99,10 +102,14 @@ export async function restartMainSubscription(store) {
   // thats all if no pubkey entered
   if (!store.state.keys.pub) return
 
-  // prune old events after 5 min
+  //after 3 min prune old events and update lastUserMainSync
   setTimeout(() => {
     prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.following))
-  }, 5 * 60 * 1000)
+
+    let config = LocalStorage.getItem('config') || {}
+    config.timestamps = {lastUserMainSync: Math.round(Date.now() / 1000)}
+    LocalStorage.set('config', config)
+  }, 3 * 60 * 1000)
 
   if (store.state.following.length)
     store.state.following.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
@@ -149,6 +156,7 @@ export async function addEvent(store, {event, relay = null}) {
 
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
+  tags.push(['client', 'astral'])
 
   try {
     const unpublishedEvent = {
@@ -179,6 +187,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 
 export async function sendChatMessage(store, {now, pubkey, text, tags}) {
   if (text.length === 0) return
+  tags.push(['client', 'astral'])
 
   let ciphertext = '???'
   try {

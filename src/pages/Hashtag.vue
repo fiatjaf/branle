@@ -1,10 +1,7 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md q-px-sm">{{'#' + this.$route.params.hashtagId}}</div>
-    <q-separator color='accent' size='2px'/>
-        <div>
-          <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='processEvent'/>
-        </div>
+    <BaseHeader>{{ '#' + this.$route.params.hashtagId }}</BaseHeader>
+    <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='processEvent'/>
   </q-page>
 </template>
 

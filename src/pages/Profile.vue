@@ -1,13 +1,15 @@
 <template>
   <q-page>
-    <BaseUserCard
-      v-if='$route.params.pubkey'
-      :pubkey='$route.params.pubkey'
-      class='user-card-header q-my-sm'
-      :header-mode='true'
-      :show-following='true'
-      :clickable='false'
-    />
+    <div id='profile-header'>
+      <BaseUserCard
+        v-if='$route.params.pubkey'
+        :pubkey='$route.params.pubkey'
+        class='user-card-header q-ma-sm'
+        :header-mode='true'
+        :show-following='true'
+        :clickable='false'
+      />
+    </div>
     <q-tabs
       v-model="tab"
       dense
@@ -23,7 +25,42 @@
     </q-tabs>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="posts" class='no-padding'>
-        <div>
+        <q-form
+          v-if='threads.length'
+          class='q-pa-sm'
+          @submit="search"
+        >
+          <q-input
+            v-model="searchText"
+            outlined
+            rounded
+            :label='$t("searchPosts")'
+            dense
+            color='secondary'
+            class='no-padding'
+            :loading='searching'
+            @clear.stop='searchText=""'
+            @submit="search"
+            @keypress.ctrl.enter="search"
+          >
+            <template #append>
+              <BaseButtonClear :button-text='searchText' button-class='text-secondary' @clear='searchText=""'/>
+              <q-btn
+                text-color='secondary'
+                class='q-pa-xs'
+                icon="search"
+                type="submit"
+                unelevated
+                :disable='searching'
+                @click='search'
+              />
+            </template>
+          </q-input>
+        </q-form>
+        <div v-if='results.length'>
+          <BasePostThread v-for="result in results" :key="result[0].id" :events="result" @add-event='addEvent'/>
+        </div>
+        <div v-if='!searchText'>
           <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='addEvent'/>
           <BaseButtonLoadMore :loading-more='loadingMore' :reached-end='reachedEnd' @click='loadMore' />
         </div>
@@ -76,12 +113,14 @@
 
 <script>
 import { defineComponent } from 'vue'
+import {debounce} from 'quasar'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import BaseUserCard from 'components/BaseUserCard.vue'
-import { dbStreamUserFollows, dbStreamUserFollowers, streamUserNotes, dbUserNotes } from '../query'
+import { dbStreamUserFollows, dbStreamUserFollowers, streamUserNotes, dbUserNotes, dbQuery } from '../query'
 import BaseRelayRecommend from 'components/BaseRelayRecommend.vue'
 import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
+import BaseButtonClear from 'components/BaseButtonClear.vue'
 
 export default defineComponent({
   name: 'Profile',
@@ -91,6 +130,7 @@ export default defineComponent({
     BaseUserCard,
     BaseRelayRecommend,
     BaseButtonLoadMore,
+    BaseButtonClear,
   },
 
   data() {
@@ -106,6 +146,9 @@ export default defineComponent({
       profilesUsed: new Set(),
       loadingMore: true,
       reachedEnd: false,
+      searchText: '',
+      searching: false,
+      results: [],
     }
   },
 
@@ -187,6 +230,29 @@ export default defineComponent({
       this.processUserNotes(notes, threads)
       this.threads = this.threads.concat(threads)
       this.loadingMore = false
+    },
+
+    async search() {
+      // let query = `%${this.searchText.replace(' ', '%')}%`
+      this.searching = true
+      this.results = []
+      let result = await dbQuery(`
+        SELECT event
+        FROM nostr
+        WHERE json_extract(event,'$.kind') = 1 AND
+          json_extract(event,'$.pubkey') = '${this.$route.params.pubkey}' AND
+          json_extract(event,'$.content') LIKE '%${this.searchText.replace(' ', '%')}%'
+      `)
+      let searchResults = result.map(row => JSON.parse(row.event))
+      this.processUserNotes(searchResults, this.results)
+      this.searching = false
+      console.log('result ', searchResults)
+    },
+
+
+    debouncedSearch() {
+      debounce(this.search(), 1000)
+      console.log('debounced search')
     }
   }
 })
@@ -194,6 +260,9 @@ export default defineComponent({
 
 <style lang='css' scoped>
 .q-tabs {
-  border-bottom: 1px solid var(--q-accent)
+  border-bottom: 1px solid var(--q-accent);
+}
+.q-tab-panels {
+  background: var(--q-background);
 }
 </style>

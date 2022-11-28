@@ -61,21 +61,25 @@ export function subUserNotes(pubkey) {
   return sub('subUserNotes', [pubkey])
 }
 
-export function subUserProfile(pubkey) {
-  return sub('subUserProfile', [pubkey])
+export function subUserProfile(pubkeys) {
+  return sub('subUserProfile', [pubkeys])
 }
 
-export function subUserFollows(pubkey) {
-  return sub('subUserFollows', [pubkey])
+export function subUserFollows(pubkeys) {
+  return sub('subUserFollows', [pubkeys])
 }
 
-export function subUserFollowers(pubkey) {
-  return sub('subUserFollowers', [pubkey])
+export function subUserFollowers(pubkeys) {
+  return sub('subUserFollowers', [pubkeys])
 }
 
-export function subUserMessages(pubkey) {
-  return sub('subUserMessages', [pubkey])
+export function subUserTags(pubkeys) {
+  return sub('subUserTags', [pubkeys])
 }
+
+// export function subUserMessages(pubkey) {
+//   return sub('subUserMessages', [pubkey])
+// }
 
 export function subTag(type, value) {
   return sub('subTag', [type, value])
@@ -101,8 +105,8 @@ export function close() {
   return call('close', [])
 }
 
-export function setRelays(relays) {
-  return call('setRelays', [relays])
+export function setRelays(relays, lastSync) {
+  return call('setRelays', [relays, lastSync])
 }
 
 export function setPort(channel) {

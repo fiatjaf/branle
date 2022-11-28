@@ -53,7 +53,6 @@ export function setRelayOpt(state, {url, opt, value}) {
 }
 
 export function saveRelays(state, relays) {
-  console.log('mutations save relays')
   state.relays = relays
 }
 

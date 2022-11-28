@@ -1,51 +1,64 @@
 <template>
   <q-layout>
-    <TheKeyInitializationDialog v-if='!$store.state.keys.pub'/>
+    <link v-if='!updatingFont' id='font-link' rel="stylesheet" :href="`https://fonts.googleapis.com/css2?family=${googleFontsName}`" crossorigin/>
+    <!-- <TheKeyInitializationDialog v-if='!$store.state.keys.pub' style='max-height: 50vh'/> -->
     <div id='layout-container' :ripple='false'>
       <div id='left-drawer' class='flex justify-end'>
-        <TheUserMenu :item-mode='$q.screen.width < 1023' :show-compact-mode-items='$q.screen.width < 700' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry'/>
+        <TheUserMenu :item-mode='$q.screen.width < 1023' :show-compact-mode-items='$q.screen.width < 700' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry' @scroll-to-rect='scrollToRect'/>
       </div>
 
       <div id='middle-page'>
         <q-page-container ref='pageContainer'>
           <router-view v-slot="{ Component }">
             <keep-alive  >
-              <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent'/>
+              <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent' @update-font='updateFont'/>
             </keep-alive>
           </router-view>
         </q-page-container>
-        <div v-if='postEntryOpen || messageMode' id='post-entry' unelevated class='gt-xs flex column align-self'>
-          <q-separator color='accent'/>
-            <q-btn v-if='!messageMode' icon="close" flat @click='togglePostEntry' class='self-end'/>
+        <!-- <div v-if='postEntryOpen || messageMode' id='post-entry' unelevated class='gt-xs flex column align-self relative-position'> -->
+        <div v-if='($q.screen.width >= 600) && postEntryOpen' id='post-entry' unelevated class='gt-xs flex column align-self relative-position'>
+          <!-- <q-separator color='primary'/> -->
+          <!-- <q-btn v-if='!messageMode' icon="close" flat dense @click='togglePostEntry' class='self-end' style='position: absolute; top: 0; right: 0; z-index: 1;'/> -->
+          <q-btn icon="close" flat dense @click='togglePostEntry' class='self-end' style='position: absolute; top: 0; right: 0; z-index: 1;'/>
+            <!-- :message-mode='messageMode' -->
           <BasePostEntry
-            :message-mode='messageMode'
             :event='replyEvent'
             @clear-event='replyEvent=null'
             @sent='togglePostEntry'
-            class='q-px-md'
-            :class='messageMode ? "q-pt-sm" : ""'
+            class='q-px-md q-pt-sm'
           />
         </div>
-        <div id='bottom-post-entry-placeholder' />
-        <div id='bottom-menu-placeholder' />
+        <div id='bottom-drawer-placeholder' />
+        <!-- <div id='bottom-post-entry-placeholder' />
+        <div id='bottom-message-entry-placeholder' />
+        <div id='bottom-menu-placeholder' /> -->
       </div>
 
       <div id='right-drawer' class='flex justify-start'>
         <TheSearchMenu/>
       </div>
     </div>
-    <q-page-sticky id='bottom-drawer' position="bottom" class='z-top xs'>
-      <q-separator color='accent'/>
-      <div  v-if='postEntryOpen || messageMode' id='bottom-post-entry' unelevated class='flex column align-self'>
-          <q-btn v-if='!messageMode' icon="close" flat @click='togglePostEntry' class='self-end'/>
+    <q-page-sticky v-if='($q.screen.width < 600)' @click.stop='resizePostEntryPlaceholder' id='bottom-drawer' position="bottom" class='z-top xs lt-sm'>
+      <!-- <q-separator color='primary'/> -->
+      <!-- <div  v-if='postEntryOpen || messageMode' id='bottom-post-entry' unelevated class='flex column align-self relative-position'> -->
+      <div  v-if='messageMode' id='bottom-message-entry' unelevated class='flex column align-self relative-position q-px-md'>
         <BasePostEntry
-          :message-mode='messageMode'
           :event='replyEvent'
+          :message-mode='messageMode'
           @clear-event='replyEvent=null'
+          @sent='replyEvent=null'
+          @resized='resizePostEntryPlaceholder'
+          :auto-focus='false'
+        />
+      </div>
+      <div v-if='messageMode' id='bottom-post-entry-top-border'></div>
+      <div v-if='postEntryOpen' id='bottom-post-entry' unelevated class='flex column align-self relative-position q-px-md'>
+        <!-- <q-btn v-if='!messageMode' icon="close" flat dense @click='togglePostEntry' class='self-end' style='position: absolute; top: 0; right: 0; z-index: 1;'/> -->
+        <BasePostEntry
           @sent='togglePostEntry'
           @resized='resizePostEntryPlaceholder'
           :auto-focus='false'
-          class='q-px-md'
+
         />
       </div>
       <TheUserMenu id='bottom-menu' :compact-mode='true' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry'/>
@@ -116,21 +129,20 @@ import { defineComponent} from 'vue'
 import { scroll, useQuasar, LocalStorage } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
 import { activateSub, deactivateSub, destroyStreams } from '../query'
-import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
-import { setCssVar } from 'quasar'
+import { setCssVar, getCssVar } from 'quasar'
 
 export default defineComponent({
   name: 'MainLayout',
   components: {
-    TheKeyInitializationDialog,
     TheUserMenu,
     TheSearchMenu,
   },
 
   setup () {
     const $q = useQuasar()
+
     return $q
   },
 
@@ -145,6 +157,8 @@ export default defineComponent({
       hasLaunched: false,
       postEntryOpen: false,
       replyEvent: null,
+      googleFontsName: '',
+      updatingFont: true,
     }
   },
 
@@ -161,15 +175,9 @@ export default defineComponent({
     }
   },
 
-  beforeCreate() {
-    // set customization
-    let config = LocalStorage.getItem('config') || {}
-    if (config.preferences?.color) {
-      let {primary, secondary, accent} = config.preferences.color
-      setCssVar('primary', primary)
-      setCssVar('secondary', secondary)
-      setCssVar('accent', accent, document.body)
-    }
+  // beforeCreate() {
+  created() {
+    this.loadPreferences()
   },
 
   mounted() {
@@ -196,6 +204,9 @@ export default defineComponent({
     window.onbeforeunload = async () => {
       await destroyStreams()
     }
+    // TODO Shoudl this go in the function?
+    this.updatingFont = false
+    this.resizePostEntryPlaceholder()
   },
 
   beforeUnmount() {
@@ -272,20 +283,110 @@ export default defineComponent({
     },
 
     togglePostEntry() {
-      if (this.messageMode) {
-        this.replyEvent = null
-      } else this.postEntryOpen = !this.postEntryOpen
+      // if (this.messageMode) {
+      //   this.replyEvent = null
+      // } else this.postEntryOpen = !this.postEntryOpen
+      this.postEntryOpen = !this.postEntryOpen
+      // console.log('togglepostentry', this.postEntryOpen)
     },
 
     setReplyEvent(event) {
       this.replyEvent = event
+      console.log('event', event, this.replyEvent)
     },
 
     resizePostEntryPlaceholder() {
       setTimeout(() => {
-        document.querySelector('#bottom-post-entry-placeholder').style.minHeight = `${document.querySelector('#bottom-post-entry').clientHeight}px`
+        document.querySelector('#bottom-drawer-placeholder').style.minHeight = `${document.querySelector('#bottom-drawer')?.clientHeight || 0}px`
+        // document.querySelector('#bottom-post-entry-placeholder').style.minHeight = `${document.querySelector('#bottom-post-entry')?.clientHeight || 0}px`
       }, 1000)
     },
+
+    updateFont(font) {
+      this.updatingFont = true
+      setCssVar('font', font)
+      // let font = getCssVar('font') || ''
+      this.googleFontsName = font.replace(' ', '+')
+      this.updatingFont = false
+    },
+    lightOrDark(color) {
+      // Variables for red, green, blue values
+      var r, g, b, hsp
+
+      // Check the format of the color, HEX or RGB?
+      if (color.match(/^rgb/)) {
+          // If RGB --> store the red, green, blue values in separate variables
+          color = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/)
+
+          r = color[1]
+          g = color[2]
+          b = color[3]
+      } else {
+          // If hex --> Convert it to RGB: http://gist.github.com/983661
+          color = +('0x' + color.slice(1).replace(
+          color.length < 5 && /./g, '$&$&'))
+
+          r = color >> 16
+          g = color >> 8 & 255
+          b = color & 255
+      }
+
+      // HSP (Highly Sensitive Poo) equation from http://alienryderflex.com/hsp.html
+      hsp = Math.sqrt(
+      0.299 * (r * r) +
+      0.587 * (g * g) +
+      0.114 * (b * b)
+      )
+
+      // Using the HSP value, determine whether the color is light or dark
+      if (hsp > 127.5) {
+          return 'light'
+      } else {
+          return 'dark'
+      }
+    },
+    loadPreferences() {
+       // set customization
+    let config = LocalStorage.getItem('config') || {}
+    // console.log('config', config)
+    let preferences = config.preferences
+    if (preferences) {
+      let color = preferences.color
+      if (color) {
+        let {primary, secondary, accent, background} = color
+        if (primary) setCssVar('primary', primary)
+        // else primary = getCssVar('primary')
+        if (secondary) setCssVar('secondary', secondary)
+        // else secondary = getCssVar('secondary')
+        if (accent) setCssVar('accent', accent)
+        // else accent = getCssVar('accent')
+        if (!background) background = getCssVar('background') || getCssVar('dark')
+        setCssVar('background', background)
+        this.$q.dark.set(this.lightOrDark(background) === 'dark')
+      }
+      let font = preferences.font || 'Roboto'
+      this.updateFont(font)
+      // if (!font) {
+      //   font = 'Roboto'
+      //   // else setCssVar('font', 'Roboto')
+      //   // else font = getCssVar('font')
+      // }
+    } else {
+        let background = getCssVar('background') || getCssVar('dark')
+        setCssVar('background', background)
+        this.$q.dark.set(this.lightOrDark(background) === 'dark')
+        let font = 'Roboto'
+        this.updateFont(font)
+      // config.preferences = {
+      //   color: {
+      //     primary: getCssVar('primary'),
+      //     secondary: getCssVar('secondary'),
+      //     accent: getCssVar('accent'),
+      //     background: getCssVar('background') || getCssVar('dark'),
+      //   }
+      }
+      // console.log('font', getCssVar('font'), this.googleFontsName)
+    }
   },
 })
 
@@ -303,6 +404,8 @@ body {
   width: 100%;
   position: relative;
   flex-wrap: nowrap;
+  background: var(--q-background);
+  font-family: var(--q-font), "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 #left-drawer, #right-drawer {
   display: none;
@@ -316,33 +419,57 @@ body {
   max-width: 100%;
   height: auto;
   padding-bottom: 2rem;
-  border-right: 2px solid var(--q-accent);
-  border-left: 2px solid var(--q-accent);
+  border-right: 1px solid var(--q-accent);
+  border-left: 1px solid var(--q-accent);
   display: flex;
   flex-direction: column;
 }
 #middle-page .q-page-container {
 }
+#post-entry {
+  border-top: 1px solid var(--q-accent);
+}
+#post-entry .post-entry-form {
+  border: 2px solid var(--q-primary);
+  border-radius: .5rem;
+  margin: .3rem;
+}
 #bottom-post-entry-placeholder {
 }
 
-#bottom-menu,
-#bottom-menu-placeholder {
-  height: 2rem;
-  min-height: 2rem;
-  width: 100%;
-}
-
 #bottom-drawer {
-  background: var(--q-dark);
-  width: calc(100% - 4px);
-  left: 2px;
+  background: var(--q-background);
+  width: 100%;
+  left: 0;
+  border: 1px solid var(--q-accent);
+  border-bottom: 2px solid var(--q-accent);
 }
 #bottom-drawer > div {
   width: 100%;
 }
+
+#bottom-message-entry {
+}
+#bottom-post-entry {
+  border: 2px solid var(--q-primary);
+  border-radius: .5rem;
+  margin: .3rem;
+}
+#bottom-post-entry-top-border {
+  height: 0;
+  border-bottom: 1px solid var(--q-accent);
+}
+#bottom-menu {
+}
+#bottom-menu,
+#bottom-menu-placeholder {
+  height: 1rem;
+  min-height: 3rem;
+  width: 100%;
+  background: var(--q-background);
+}
 #navagation-buttons .q-fab__actions .q-btn{
-  background: var(--q-dark) !important;
+  background: var(--q-background) !important;
 }
 #navagation-buttons .q-btn{
   font-size: .8rem;
@@ -398,9 +525,7 @@ body {
   }
   #post-entry {
     height: fit-content;
-    flex: 0;
-    flex-shrink: 0;
-    flex-grow: 0;
+    display: unset;
   }
   #bottom-menu,
   #bottom-menu-placeholder,

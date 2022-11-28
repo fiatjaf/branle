@@ -20,9 +20,10 @@ worker.onmessage = ev => {
 
   if (notice) {
     Notify.create({
-      message: `Relay ${notice.relay.url} says: ${notice.message}`,
+      message: `Relay ${notice.relay} says: ${notice.message}`,
       color: 'info'
     })
+    return
   }
 
   if (stream) {
@@ -221,6 +222,10 @@ export function dbStreamUserFollowers(pubkey, callback = () => { }) {
   return stream('dbStreamUserFollowers', [pubkey], callback)
 }
 
+export function streamUserTags(pubkey, callback = () => { }) {
+  return stream('streamUserTags', [pubkey], callback)
+}
+
 export function streamTag(type, value, callback = () => { }) {
   return stream('streamTag', [type, value], callback)
 }
@@ -237,8 +242,8 @@ export async function dbQuery(sql) {
   return call('dbQuery', [sql])
 }
 
-export function setRelays(relays) {
-  return call('setRelays', [JSON.parse(JSON.stringify(relays))])
+export function setRelays(relays, lastSync = 0) {
+  return call('setRelays', [JSON.parse(JSON.stringify(relays)), lastSync])
 }
 
 export function publish(event, relayURL) {

@@ -51,10 +51,10 @@ export default {
 }
 </script>
 
-<style lang='scss'>
+<style lang='css'>
 .emoji-mart {
   flex-direction: row;
-  background: inherit;
+  background: var(--q-background);
   color: inherit;
   height: 10rem;
   position: relative;

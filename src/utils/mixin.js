@@ -125,9 +125,16 @@ export default {
       let replacedText = text.replace(/#\[(\d+)\]/g, replacer)
       let hashtagReplacedText = replacedText.replace(/#([\w]{1,63})/g, hashtagReplacer)
 
-      tags.filter(([t, v, _, replyType]) => (t === 'e') && v && ['root', 'reply'].includes(replyType)).forEach(([t, v], index) => {
+      let rootIdx = tags.findIndex(([t, v, _, marker]) => (t === 'e') && v && marker === 'root')
+      if (rootIdx >= 0) {
+        let [_, v] = tags[rootIdx]
         if (!mentions.mentionEvents.includes(v) && mentions.replyEvents.length < 2) mentions.replyEvents.push(v)
-      })
+        let replyIdx = tags.find(([t, v, _, marker]) => (t === 'e') && v && marker === 'root')
+        if (replyIdx >= 0) {
+          let [_, v] = tags[replyIdx]
+          if (!mentions.mentionEvents.includes(v) && mentions.replyEvents.length < 2) mentions.replyEvents.push(v)
+        }
+      }
       tags.filter(([t, v]) => (t === 'e') && v).forEach(([t, v], index) => {
         if (!mentions.mentionEvents.includes(v) && !mentions.replyEvents.includes(v)) {
           // if (index < 2) mentions.replyEvents.push(v)

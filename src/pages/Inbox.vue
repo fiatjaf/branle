@@ -1,9 +1,6 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md q-px-sm full-width flex row justify-start">
-      {{ $t('inbox') }}
-    </div>
-    <q-separator color='accent' size='2px'/>
+    <BaseHeader>{{ $t('inbox') }}</BaseHeader>
 
     <q-list class='q-py-sm q-pr-sm q-gutter-sm'>
       <div v-if="loading" class='flex row justify-center items-start q-my-md'>

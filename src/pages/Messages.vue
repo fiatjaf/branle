@@ -17,11 +17,11 @@
           style='width: 50%; self-justify: end;'
         />
       </div>
-      <q-separator color='accent' size='2px' spaced/>
+      <q-separator color='accent' size='1px' spaced/>
       <div class='relative-position'>
         <div class='absolute-top flex justify-center'>
           <span
-              class='text-accent bg-dark z-top q-px-sm'
+              class='text-accent z-top q-px-sm'
               style=''
               id='current-datestamp'
             >
@@ -71,6 +71,16 @@
         size='sm'
         @click.stop='scrollToBottom()'
       />
+      <div class='gt-xs'>
+      <q-separator color='accent' size='1px' />
+      <BasePostEntry
+            :message-mode='messageMode'
+            :event='replyEvent'
+            @clear-event='replyEvent=null'
+            @sent='replyEvent=null'
+            class='q-px-md q-pt-sm'
+          />
+      </div>
     </div>
   </q-page>
 </template>
@@ -106,6 +116,15 @@ export default {
       mutex: null,
       replyEvent: null,
       currentDatestamp: null,
+    }
+  },
+
+  computed: {
+    messageMode() {
+      if (this.$route.name === 'messages') {
+        if (this.replyEvent) return 'reply'
+        else return 'message'
+      } else return null
     }
   },
 
@@ -231,12 +250,12 @@ export default {
     },
 
     reply(event) {
-      this.$emit('reply-event', event)
       this.replyEvent = null
       setTimeout(() => {
         let replyEvent = Object.assign({}, event)
         replyEvent.appended = []
         this.replyEvent = replyEvent
+        this.$emit('reply-event', this.replyEvent)
       }, 20)
     },
 
@@ -314,24 +333,29 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
+<style lang='css' scoped>
 #header {
   position: fixed;
   top: 0;
   z-index: 1;
-  background: $dark;
-  width: calc(100vw - 4px);
-  left: 2px;
+  width: calc(100vw - 2px);
+  left: 1px;
+  background: var(--q-background);
 }
 #current-datestamp {
   border-bottom-right-radius: .25rem;
   border-bottom-left-radius: .25rem;
+  background: var(--q-background);
 }
 .unread-messages-button{
   position: absolute;
-  top: -3rem;
-  left: 0
+  top: -2.5rem;
+  left: .3rem;
+  background: var(--q-background) !important;
 }
+  #message-scroll {
+    padding: 0 .3rem;
+  }
 @media screen and (min-width: 600px) {
   .q-page {
     height: inherit;
@@ -352,6 +376,7 @@ export default {
   #message-scroll {
     overflow: auto;
     height: 100%;
+    padding: 0 .3rem;
   }
 }
 </style>

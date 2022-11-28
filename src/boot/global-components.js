@@ -4,6 +4,7 @@ import BaseUserAvatar from '../components/BaseUserAvatar.vue'
 import BaseUserCard from '../components/BaseUserCard.vue'
 import BasePostEntry from '../components/BasePostEntry.vue'
 import BasePostThread from '../components/BasePostThread.vue'
+import BaseHeader from '../components/BaseHeader.vue'
 
 export default ({app}) => {
   app.component('BasePost', BasePost)
@@ -12,4 +13,5 @@ export default ({app}) => {
   app.component('BaseUserCard', BaseUserCard)
   app.component('BasePostEntry', BasePostEntry)
   app.component('BasePostThread', BasePostThread)
+  app.component('BaseHeader', BaseHeader)
 }

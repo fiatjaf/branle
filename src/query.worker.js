@@ -498,6 +498,7 @@ const methods = {
   },
 
   dbMessages(userPubkey, peerPubkey, limit, until) {
+    console.log('dbMessages until:', until)
     let result = queryDb(`
       SELECT n.event
       FROM idx_kind_tag_created_at idx
@@ -506,11 +507,12 @@ const methods = {
         ((idx.tag = '["p","${userPubkey}"]' AND idx.pubkey = '${peerPubkey}') OR
         (idx.tag = '["p","${peerPubkey}"]' AND idx.pubkey = '${userPubkey}')) AND
         idx.created_at <= ${until}
-      ORDER BY idx.created_at
+      ORDER BY idx.created_at DESC
       LIMIT ${limit}
     `)
     let messages = result
       .map(row => JSON.parse(row.event))
+      .reverse()
       .reduce((acc, event) => {
         if (!acc.length) return [event]
         let last = acc[acc.length - 1]
@@ -789,9 +791,34 @@ const methods = {
     }
   },
 
+  streamUserTags(pubkey, callback) {
+    let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
+    // let pubkeyList = `(
+    //   ${pubkeys.map(pubkey => `'["p","${pubkey}"]'`).join(',')}
+    // )`
+    // let result = queryDb(`
+    //   SELECT n.event
+    //   FROM idx_kind_tag_created_at idx
+    //   LEFT JOIN nostr n ON idx.id = n.id
+    //   WHERE json_extract(event,'$.kind') = 3 AND
+    //     idx.tag IN ${pubkeyList}
+    // `)
+    // if (result.length) result.forEach(row => callback(JSON.parse(row.event)))
+    return {
+      filter: {
+        kinds: [1, 3, 4],
+        '#p': pubkeys
+      },
+      callback,
+      subName: 'subUserTags',
+      subArgs: [pubkeys]
+    }
+  },
+
   dbStreamTagKind(type, value, kind, callback) {
     let values = Array.isArray(value) ? value : [value]
     let kinds = Array.isArray(kind) ? kind : [kind]
+    let queryTag = `#${type}`
     let tagList = `(
       ${values.map(value => `'["${type}","${value}"]'`).join(',')}
     )`
@@ -805,7 +832,7 @@ const methods = {
     if (result.length) result.forEach(row => callback(JSON.parse(row.event)))
     return {
       filter: {
-        [type]: values,
+        [queryTag]: values,
         kinds
       },
       callback,
@@ -832,11 +859,12 @@ const methods = {
     let result = queryDb(`
       DELETE
       FROM nostr
-      WHERE json_extract(event,'$.kind') IN (1,2) AND
+      WHERE json_extract(event,'$.kind') NOT IN (0,1,2,3,4,5) OR
+        (json_extract(event,'$.kind') IN (1,2) AND
         json_extract(event,'$.created_at') <= ${until} AND
         json_extract(event,'$.last_updated') <= ${until} AND
         json_extract(event,'$.pubkey') NOT IN ${pubkeyList} AND
-        NOT instr(json_extract(event,'$.tags'), '${user}')
+        NOT instr(json_extract(event,'$.tags'), '${user}'))
         `)
     return result
   },
@@ -846,11 +874,12 @@ const methods = {
     return queryDb(sql)
   },
 
-  setRelays(relays) {
-    relay.setRelays(relays)
+  setRelays(relays, lastSync) {
+    relay.setRelays(relays, lastSync)
   },
 
   publish(event, relayURL) {
+    console.log(event, relayURL)
     return relay.publish(event, relayURL)
   },
 

@@ -58,25 +58,10 @@ export default {
       for (let i = 1; i < this.events.length; i++) {
         let curr = this.events[i]
         let prev = this.events[i - 1]
-        // if (curr.replies && curr.replies.length) console.log('curr: ', curr)
-        let currEventTags = curr.tags.filter(([t, v]) => t === 'e' && v).map(([_, v]) => v)
-        if (currEventTags[currEventTags.length - 1] !== prev.id) {
-        // if (curr.tags[curr.tags.length - 1][1] !== prev.id) {
+        let currEventTags = curr.interpolated.replies || []
+        if (currEventTags.length && currEventTags[currEventTags.length - 1] !== prev.id) {
           filled.push({id: 'FILLER', root: prev.id})
         }
-
-        // if ((i === this.events.length - 1) && curr.replies?.length && this.threadWidth &&
-        //   // (this.replyDepth >= 5)) {
-        //   (this.replyDepth >= 2 || (this.replyDepth > 0 && this.threadWidth < 300))) {
-        //     // let replies = Array.from(curr.replies)
-        //     let event = Object.assign({}, curr)
-        //     event.replies = []
-        //     // curr.replies = []
-        //     filled.push(event)
-        //     filled.push({id: 'FILLER', root: curr.id})
-        //     // filled.concat([curr, {id: 'FILLER', root: curr.id, replies: replies}])
-        //     // console.log('filled', filled)
-        // } else filled.push(curr)
         filled.push(curr)
       }
 
@@ -105,6 +90,7 @@ export default {
     },
 
     addEvent(event) {
+      console.log('basepostthread add-event', event)
       this.$emit('add-event', event)
     },
 

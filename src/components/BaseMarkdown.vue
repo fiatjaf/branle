@@ -1,7 +1,19 @@
 <template>
   <div ref="src" class="hidden break-word-wrap"><slot /></div>
   <div ref="append" class="hidden break-word-wrap"><slot name="append" /></div>
-  <div v-html="html" class="break-word-wrap dynamic-content" @click='handleClicks'/>
+  <div v-html="html" class="break-word-wrap dynamic-content" @click='handleClicks' :class='longForm ? "long-form" : ""'/>
+  <q-btn
+    v-if='longForm'
+    id='long-form-button'
+    dense
+    outline
+    rounded
+    color="accent"
+    class='text-weight-light q-ma-sm justify-between'
+    style='letter-spacing: .1rem; justify-content: space-between;'
+    label='show full post'
+    @click.stop="expand"
+  />
 </template>
 
 <script>
@@ -27,7 +39,7 @@ md.use(subscript)
   .use(emoji)
   .use(md => {
     md.core.ruler.before('normalize', 'auto-imager', state => {
-      state.src = state.src.replace(/https?:[^ ]+/g, m => {
+      state.src = state.src.replace(/https?:[^ \n]+/g, m => {
         if (m) {
           let trimmed = m.split('?')[0]
           if (
@@ -50,19 +62,20 @@ md.use(subscript)
     md.renderer.rules.image = (tokens, idx) => {
       let src = tokens[idx].attrs[[tokens[idx].attrIndex('src')]][1]
       let trimmed = src.split('?')[0]
+      // let classIndex = token.attrIndex('class')
       if (
         trimmed.endsWith('.gif') ||
         trimmed.endsWith('.png') ||
         trimmed.endsWith('.jpeg') ||
         trimmed.endsWith('.jpg')
       ) {
-        return `<img src="${src}" crossorigin async style="max-width: 90%; max-height: 30%">`
+        return `<img src="${src}" crossorigin async style="max-width: 90%; max-height: 50vh;">`
       } else if (
         trimmed.endsWith('.mp4') ||
         trimmed.endsWith('.webm') ||
         trimmed.endsWith('.ogg')
       ) {
-        return `<video controls crossorigin style="max-width: 90%"><source src="${src}"></video>`
+        return `<video src="${src}" controls crossorigin async style="max-width: 90%; max-height: 50vh;"></video>`
       }
     }
     // pulled from https://github.com/markdown-it/markdown-it/blob/master/docs/architecture.md#renderer
@@ -133,11 +146,19 @@ md.linkify
 export default {
   name: 'BaseMarkdown',
   mixins: [helpersMixin],
+  emits: ['expand'],
 
   data() {
     return {
       html: '',
       links: [],
+    }
+  },
+
+  props: {
+    longForm: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -155,7 +176,7 @@ export default {
         md.render(this.$refs.src.innerHTML) + this.$refs.append.innerHTML
     },
 
-    handleClicks (event) {
+    handleClicks(event) {
     // ensure we use the link, in case the click has been received by a subelement
     let { target } = event
     // while (target && target.tagName !== 'A') target = target.parentNode
@@ -183,11 +204,16 @@ export default {
         event.stopPropagation()
         this.$router.push(to)
       }
-    // stop propogation of external links
-    } else if (target && target.matches(".dynamic-content a[href*='://']") && target.href) {
-      event.stopPropagation()
+      // stop propogation of external links
+      } else if (target && target.matches(".dynamic-content a[href*='://']") && target.href) {
+        event.stopPropagation()
+      }
+    },
+    expand(event) {
+      // document.querySelector('#long-form-button').style.display = 'none'
+      // document.querySelector('#post-text').classList.remove('long-form')
+      this.$emit('expand')
     }
-  }
   }
 }
 </script>
@@ -197,49 +223,78 @@ a {
   text-decoration: underline;
   color: #448195;
 }
+p {
+  margin-block-end: .5rem;
+}
 ul {
   list-style-type: disc;
-  list-style-position: outside;
-  padding-inline-start: 1rem;
-  text-align: left;
-}
-.post-highlighted ul {
-  padding-inline-start: 1.5rem;
 }
 ol {
   list-style-type: decimal;
+}
+ul,
+ol {
   list-style-position: outside;
-  padding-inline-start: 1rem;
+  padding-inline-start: 1.5rem;
+  margin-block-start: .5rem;
+  margin-block-end: .5rem;
   text-align: left;
 }
+.post-highlighted ul,
 .post-highlighted ol {
-  padding-inline-start: 1.5rem;
+  padding-inline-start: 2rem;
 }
 ul ul,
 ol ul {
   list-style-type: circle;
   list-style-position: outside;
-  margin-left: 1rem;
+  margin-left: .5rem;
 }
 ol ol,
 ul ol {
   list-style-type: lower-latin;
   list-style-position: outside;
-  margin-left: 1rem;
+  margin-left: .5rem;
 }
-p:last-of-type {
-  margin: 0
+
+.break-word-wrap p:last-of-type {
+  margin: 0;
 }
 .break-word-wrap {
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto !important;
-  line-height: 1.3rem !important;
-  max-width: 100%;
+}
+.break-word-wrap p:has(img),
+.break-word-wrap p:has(video) {
+  display: inline-block;
+}
+.break-word-wrap img,
+.break-word-wrap video {
+  border-radius: 1rem;
+  border: 1px solid var(--q-accent);
 }
 .break-word-wrap pre {
   overflow: auto;
 }
-</style>
+.long-form {
+  max-height: 10rem;
+  overflow-y: hidden;
 
+  /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#000000+0,000000+100&1+0,1+51,0.7+58,0+100 */
+  background: -moz-linear-gradient(top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 51%, rgba(0,0,0,0.7) 58%, rgba(0,0,0,0) 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, rgba(0,0,0,1) 0%,rgba(0,0,0,1) 51%,rgba(0,0,0,0.7) 58%,rgba(0,0,0,0) 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, rgba(0,0,0,1) 0%,rgba(0,0,0,1) 51%,rgba(0,0,0,0.7) 58%,rgba(0,0,0,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000000', endColorstr='#00000000',GradientType=0 ); /* IE6-9 */
+
+  margin: 0;
+  padding: 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.body--dark .long-form {
+  /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#000000+0,000000+100&1+0,1+51,0.7+58,0+100 */
+  background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 51%, rgba(255,255,255,0.7) 58%, rgba(255,255,255,0) 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 51%,rgba(255,255,255,0.7) 58%,rgba(255,255,255,0) 100%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 51%,rgba(255,255,255,0.7) 58%,rgba(255,255,255,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000000', endColorstr='#00000000',GradientType=0 ); /* IE6-9 */
+}
+</style>

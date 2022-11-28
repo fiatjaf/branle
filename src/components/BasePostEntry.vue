@@ -3,7 +3,8 @@
 
     <div
       v-if='replyMode === "quote" || replyMode === "repost"'
-      class='reposts flex column q-px-sm'
+      class='reposts flex column q-px-sm q-py-xs'
+      :class='replyMode === "quote" ? "q-mb-sm" : ""'
       :clickable='false'
     >
       <BasePost
@@ -39,7 +40,7 @@
       <div class="input-area">
         <BaseUserAvatar :pubkey='$store.state.keys.pub' class='avatar-image' />
         <span id="input-placeholder"> {{ placeholderText }}</span>
-        <div id="input-readonly-highlight" contenteditable="true" spellcheck="false"></div>
+        <div v-show='!longForm' id="input-readonly-highlight" contenteditable="true" spellcheck="false"></div>
         <div
           id="input-editable"
           :contenteditable="!sending && !mentionsUpdating"
@@ -81,7 +82,7 @@
           v-model='toolSelected'
           class='flex'
           dense
-            unelevated
+          unelevated
           toggle-color=''
           toggle-text-color='accent'
           :class='toolSelected ? "column" : "row"'
@@ -168,8 +169,26 @@
             cancel
           </q-tooltip>
         </q-btn>
+
+        <!-- <div v-if='charLeft() <= 0'>
+          <input type="checkbox" id="long-form-checkbox" name="long-form-checkbox">
+          <label for="long-form-checkbox">long form</label>
+        </div> -->
+
+        <!-- <q-checkbox v-if='charLeft() <= 0' v-model="shortLong" label="long form" color="primary" size='xs'/> -->
+        <!-- <q-btn-toggle
+          v-model="shortLong"
+          outline
+          toggle-color="primary"
+          color="white"
+          text-color="primary"
+          :options="[
+            {icon: 'short_text', value: 'short'},
+            {icon: 'article', value: 'long'}
+          ]"
+        /> -->
         <div v-if='text && !messageMode' class='char-left-label'>
-          <span v-if='charLeft() <= 0' class='over-limit'>{{ charLeft() }}</span>
+          <span v-if='(charLeft() <= 0) && !longForm' class='over-limit'>{{ charLeft() }}</span>
           <q-circular-progress
             v-if='charLeft() > 0'
             :show-value='charLeft() <= 25'
@@ -185,6 +204,33 @@
             {{ charLeft() }}
           </q-circular-progress>
         </div>
+        <q-btn-toggle
+          v-if='charLeft() <= 0'
+          v-model="longForm"
+          unelevated
+          dense
+          toggle-color="primary"
+          style='border: 1px solid var(--q-primary)'
+          text-color="primary"
+          class='q-ml-md'
+          :options="[
+            {value: false, slot: 'short'},
+            {value: true, slot: 'long'}
+          ]"
+        >
+          <template #short>
+            <q-icon name='short_text' size='xs' :style='longForm ? "" : "color: var(--q-background"'/>
+            <q-tooltip>
+              short form post
+            </q-tooltip>
+          </template>
+          <template #long>
+            <q-icon name='format_align_left' size='xs' :style='longForm ? "color: var(--q-background" : ""'/>
+            <q-tooltip>
+              long form post
+            </q-tooltip>
+          </template>
+        </q-btn-toggle>
         <q-btn
           flat
           unelevated
@@ -204,10 +250,11 @@
 import { colors } from 'quasar'
 const { getPaletteColor } = colors
 import helpersMixin from '../utils/mixin'
-import {getPubKeyTagWithRelay, getEventTagWithRelay, getEventIdTagWithRelay, shorten} from '../utils/helpers'
+import {getPubKeyTagWithRelay, getEventIdTagWithRelay, shorten} from '../utils/helpers'
 import BaseEmojiPicker from 'components/BaseEmojiPicker.vue'
 import BaseLinkForm from 'components/BaseLinkForm.vue'
 import BaseMessage from 'components/BaseMessage.vue'
+// import { ref } from 'vue'
 
 export default {
   name: 'BasePostEntry',
@@ -259,6 +306,8 @@ export default {
       trigger: 1,
       links: [],
       textareaRange: null,
+      // shortLong: 'short',
+      longForm: false,
     }
   },
 
@@ -437,7 +486,7 @@ export default {
       // remove invalid tags and/or not p/e
       let usableTags = this.event.tags.filter(
         ([t, v]) => (t === 'p' || t === 'e') && v
-      ).map(([t, v]) => { return [t, v] })
+      ).map(([...values]) => { return [...values] })
 
       // add last 4 pubkeys mentioned
       let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v)
@@ -455,19 +504,19 @@ export default {
       // add quoted/reposted event
       if (this.replyMode === 'quote' || this.replyMode === 'repost') {
         // if quote or repost, only tag this event and add mention to text
-        let last = await getEventTagWithRelay(this.event)
+        let last = await getEventIdTagWithRelay(this.event.id, 'mention')
         tags.push(last)
         // text += ` #[${tags.length - 1}]`
         textarea.append(` #[${tags.length - 1}]`)
       } else {
         // add the first and the last events being replied to
-        let first = usableTags.find(([t, v]) => t === 'e')
+        let first = usableTags.find(([t, _, __, marker]) => t === 'e' && marker === 'root') || usableTags.find((tag) => tag[0] === 'e' && !tag[3])
         if (first) {
-          if (first.length < 3 || !first[2] || first[2] === '') tags.push(await getEventIdTagWithRelay(first[1], 'root'))
-          else tags.push(first)
+          tags.push(await getEventIdTagWithRelay(first[1], 'root'))
+          tags.push(await getEventIdTagWithRelay(this.event.id, 'reply'))
+        } else {
+          tags.push(await getEventIdTagWithRelay(this.event.id, 'root'))
         }
-        let last = await getEventTagWithRelay(this.event, 'reply')
-        tags.push(last)
       }
 
       // let text = this.textarea.innerText
@@ -501,6 +550,12 @@ export default {
       let text = await this.formatMentionsForPublishing(tags)
       text = this.appendLinks(text)
 
+      console.log('sendChatMessage', {
+        now,
+        pubkey: this.$route.params.pubkey,
+        text,
+        tags
+      })
       return await this.$store.dispatch('sendChatMessage', {
         now,
         pubkey: this.$route.params.pubkey,
@@ -591,7 +646,7 @@ export default {
           if (idx === -1) {
             let tag
             if (mention.tag[0] === 'p') tag = await getPubKeyTagWithRelay(mention.tag[1])
-            else if (mention.tag[0] === 'e') tag = await getEventIdTagWithRelay(mention.tag[1])
+            else if (mention.tag[0] === 'e') tag = await getEventIdTagWithRelay(mention.tag[1], 'mention')
             tags.push(tag)
             idx = tags.length - 1
           }
@@ -859,6 +914,7 @@ export default {
       if (this.links.length) return true
       if (!this.text.length) return false
       if (this.messageMode) return true
+      if (this.longForm) return true
       if (this.overCharLimit()) return false
       return true
     },
@@ -967,6 +1023,9 @@ ul, li {
   width: 100%;
 }
 #tribute-wrapper .tribute-container .highlight {
+  background: rgba(0, 0, 0, 0.1);
+}
+.body--dark #tribute-wrapper .tribute-container .highlight {
   background: rgba(255, 255, 255, 0.1);
 }
 

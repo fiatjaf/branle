@@ -2,7 +2,7 @@ import {
   dbChats,
   dbUnreadMessagesCount,
   dbUnreadMentionsCount,
-  streamTag
+  streamUserTags
 } from '../query'
 
 export default function (store) {
@@ -31,14 +31,14 @@ export default function (store) {
   const streamMentionsAndMessages = () => {
     if (store.state.keys.pub) {
       if (sub) sub.cancel()
-      sub = streamTag('p', store.state.keys.pub, event => {
+      sub = streamUserTags(store.state.keys.pub, event => {
         if (event.kind === 1) setUnreadNotifications()
         else if (event.kind === 4) setUnreadMessages(event.pubkey)
       })
     } else {
       let interval = setInterval(() => {
         if (store.state.keys.pub && !sub) {
-          streamTag('p', store.state.keys.pub, event => {
+          streamUserTags('p', store.state.keys.pub, event => {
               if (event.kind === 1) setUnreadNotifications()
               else if (event.kind === 4) setUnreadMessages(event.pubkey)
           })

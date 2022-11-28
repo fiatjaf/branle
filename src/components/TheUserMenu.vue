@@ -42,7 +42,7 @@
       :style='compactMode ? "" : "min-height: 2.75rem;"'
       :active="$route.name === item.title"
       active-class=''
-      :to="item.to"
+      @click='(event) => handleClick(event, item)'
       :key='item.title'
       :class="($route.path.split('/')[1] === item.match ? 'menu-item-active text-accent ' : '') +
         (compactMode ? 'no-margin no-padding col' : 'self-end q-px-none')"
@@ -124,7 +124,7 @@
         />
         <BaseButtonSetUser
           v-if='!$store.state.keys.pub'
-          :to="{ name: 'settings' }"
+          :to="{ path: '/' }"
           :verbose='true'
           :outline='!compactMode'
           :flat='compactMode'
@@ -163,7 +163,7 @@ import BaseButtonSetUser from 'components/BaseButtonSetUser.vue'
 export default defineComponent({
   name: 'TheUserMenu',
   mixins: [helpersMixin],
-  emits: ['toggle-post-entry'],
+  emits: ['toggle-post-entry', 'scroll-to-rect'],
   props: {
     iconMode: {
       type: Boolean,
@@ -242,12 +242,14 @@ export default defineComponent({
     // }
   },
 
-  // methods: {
-  //   togglePostEntry() {
-  //     this.$emit('toggle-post-entry')
-  //     console.log('toggle-post-entry')
-  //   }
-  // }
+  methods: {
+    handleClick(event, item) {
+      if (item.title === 'feed' && this.$route.name === 'feed') {
+        event.preventDefault()
+        this.$emit('scroll-to-rect', {top: 0})
+      } else this.$router.push(item.to)
+    }
+  }
 })
 </script>
 

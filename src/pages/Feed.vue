@@ -1,9 +1,10 @@
 <template>
   <q-page>
     <div>
-      <div class="text-h5 text-bold q-py-md q-px-sm full-width flex row justify-start">
+      <BaseHeader :separator='false'>{{ $t('feed') }}</BaseHeader>
+      <!-- <div class="text-h5 text-bold q-py-md q-px-sm full-width flex row justify-start">
         {{ $t('feed') }}
-      </div>
+      </div> -->
       <q-tabs
         v-model="tab"
         dense
@@ -23,7 +24,7 @@
       :label='"load " + unreadFeed[tab].length + " unread"'
       @click='loadUnread'
     />
-    <BasePostThread v-for='(item, index) in feed[tab]' :key='index' :events="item" class='full-width'/>
+    <BasePostThread v-for='(item, index) in feed[tab]' :key='index' :events="item" class='full-width' @add-event='processEvent'/>
     <BaseButtonLoadMore
       :loading-more='loadingMore'
       label='load another day'

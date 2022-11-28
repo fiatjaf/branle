@@ -1,18 +1,20 @@
 <template>
   <div>
-    <q-separator color='accent'/>
+    <!-- <q-separator color='accent'/> -->
     <q-btn-group
-    flat
     spread
     dense
+    outline
+    rounded
     text-color="accent"
     >
       <q-btn
         dense
         :loading='loadingMore'
-        flat
+        outline
+        rounded
         color="accent"
-        class='text-weight-light'
+        class='text-weight-light q-ma-sm'
         style='letter-spacing: .1rem;'
         :label='reachedEnd ? "reached end" : label'
         :disable='reachedEnd'
@@ -25,7 +27,7 @@
         </template>
       </q-btn>
     </q-btn-group>
-    <q-separator color='accent'/>
+    <!-- <q-separator color='accent'/> -->
   </div>
 </template>
 
@@ -52,5 +54,8 @@ export default defineComponent({
 })
 </script>
 
-<style>
+<style lang='css' scoped>
+.q-btn-group {
+  background: var(--q-background);
+}
 </style>

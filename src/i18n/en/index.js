@@ -66,6 +66,7 @@ export default {
   cancel: 'cancel',
   save: 'save',
   searchProfiles: 'search profiles',
+  searchPosts: 'search posts',
 
   // pages
   feed: 'feed',
@@ -75,6 +76,7 @@ export default {
   settings: 'settings',
   thread: 'thread',
   event: 'event',
+  devTools: 'dev tools',
   notFound: 'Oops. Nothing here...',
 
   // sections
@@ -88,6 +90,7 @@ export default {
   inactiveRelays: 'inactive relays',
   preferences: 'preferences',
   colors: 'colors',
+  font: 'font',
 
   // text
   noFollows: 'no follows',

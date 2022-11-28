@@ -12,10 +12,8 @@ const getMainnetRelays = () => {
     ['wss://nostr.rocks', {read: true, write: true}],
     ['wss://relayer.fiatjaf.com', {read: true, write: true}],
     ['wss://nostr.onsats.org', {read: true, write: true}],
-    ['wss://nostr-relay.untethr.me', {read: true, write: true}],
     ['wss://nostr-relay.wlvs.space', {read: true, write: true}],
     ['wss://nostr.bitcoiner.social', {read: true, write: true}],
-    ['wss://nostr-relay.freeberty.net', {read: true, write: true}]
   ]
 
   for (let i = 0; i < 3; i++) {

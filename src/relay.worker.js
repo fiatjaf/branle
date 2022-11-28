@@ -5,13 +5,17 @@ export const pool = relayPool()
 let poolSub = null
 
 pool.onNotice((notice, relay) => {
-  let noticeCopy = JSON.parse(JSON.stringify(notice))
-  dbWorkerPort.postMessage({type: 'notice', notice: noticeCopy, relay})
+  try {
+    dbWorkerPort.postMessage({type: 'notice', notice, relay: relay.url})
+  } catch (e) {
+    console.log('error posting message to db from pool', e, 'notice', notice, 'url ', relay.url)
+  }
 })
 
 let relays = {}
 let subs = {}
 let active = true
+let lastSync = 0
 
 let dbWorkerPort = null
 
@@ -30,6 +34,10 @@ function onEvent(event, relay) {
     }
     debouncedEmitEvent([{ event, relay }])
     debounceCount++
+}
+
+function onEose(url) {
+  // console.log('EOSE', url)
 }
 
 function calcFilter() {
@@ -57,7 +65,8 @@ function calcFilter() {
         case 'user':
           return {
             authors: value,
-            kinds: [0, 1, 2, 3, 4]
+            kinds: [0, 1, 2, 3, 4],
+            since: lastSync
           }
         case 'userNotes':
           return {
@@ -79,6 +88,12 @@ function calcFilter() {
             '#p': value,
             kinds: [3]
           }
+        case 'userTags':
+          return {
+            '#p': value,
+            kinds: [1, 3, 4],
+            since: lastSync
+          }
         case 'userMessages':
           return {
             authors: value,
@@ -86,7 +101,8 @@ function calcFilter() {
           }
         case 'feed':
           return {
-            since: value
+            since: value,
+            kinds: [1, 2]
           }
         case 'event':
           return {
@@ -94,7 +110,8 @@ function calcFilter() {
           }
         default:
           return {
-            [type]: value
+            [type]: value,
+            kinds: [0, 1, 2, 3, 4]
           }
       }
     })
@@ -106,7 +123,7 @@ function cancelSub(id) {
   if (!active) return
   if (poolSub) {
     if (Object.keys(subs).length === 0) poolSub.unsub()
-    else poolSub.sub({ cb: onEvent, filter: calcFilter()})
+    else poolSub.sub({filter: calcFilter()})
   }
 }
 
@@ -118,7 +135,7 @@ const methods = {
 
   activateSub() {
     active = true
-    if (poolSub && Object.keys(subs).length) poolSub.sub({ cb: onEvent, filter: calcFilter()})
+    if (poolSub && Object.keys(subs).length) poolSub.sub({filter: calcFilter()})
     return
   },
 
@@ -143,37 +160,45 @@ const methods = {
     }
   },
 
-  subUserProfile(pubkey) {
-    let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
+  subUserProfile(pubkeys) {
+    // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
       type: 'userProfile',
       value: pubkeys
     }
   },
 
-  subUserFollows(pubkey) {
-    let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
+  subUserFollows(pubkeys) {
+    // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
       type: 'userFollows',
       value: pubkeys
     }
   },
 
-  subUserFollowers(pubkey) {
-    let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
+  subUserFollowers(pubkeys) {
+    // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
       type: 'userFollowers',
       value: pubkeys
     }
   },
 
-  subUserMessages(pubkey) {
-    let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
+  subUserTags(pubkeys) {
+    // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
-      type: 'userMessages',
+      type: 'userTags',
       value: pubkeys
     }
   },
+
+  // subUserMessages(pubkey) {
+  //   // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
+  //   return {
+  //     type: 'userMessages',
+  //     value: pubkeys
+  //   }
+  // },
 
   subTag(type, value) {
     let values = Array.isArray(value) ? value : [value]
@@ -201,7 +226,8 @@ const methods = {
     }
   },
 
-  setRelays(newRelays) {
+  setRelays(newRelays, userLastSync) {
+    lastSync = userLastSync
     for (let url in newRelays) {
       if (!relays[url]) pool.addRelay(url, newRelays[url])
       else if (relays[url].read !== newRelays[url].read || relays[url].write !== newRelays[url].write) {
@@ -244,8 +270,8 @@ function handleMessage(ev) {
   } else if (sub) {
     subs[id] = methods[name](...args)
     if (!active) return
-    if (poolSub) poolSub.sub({ cb: onEvent, filter: calcFilter()})
-    else poolSub = pool.sub({ cb: onEvent, filter: calcFilter()})
+    if (poolSub) poolSub.sub({filter: calcFilter()})
+    else poolSub = pool.sub({ cb: onEvent, filter: calcFilter()}, 'main', onEose)
   } else {
     var reply = { id }
     let data

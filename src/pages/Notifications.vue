@@ -1,8 +1,6 @@
 <template>
   <q-page>
-    <div class="text-h5 text-bold q-py-md q-px-sm">{{ $t('notifications') }}</div>
-
-    <q-separator color='accent' size='2px'/>
+    <BaseHeader>{{ $t('notifications') }}</BaseHeader>
     <q-infinite-scroll
       :disable="reachedEnd"
       @load="loadMore"

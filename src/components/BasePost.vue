@@ -62,7 +62,7 @@
             :event='event'
           />
         </div>
-        <div class='q-pb-sm'>
+        <div class='q-pb-xs'>
           <q-item-label caption class="text-secondary" style='opacity: .7;'>
               <span @click.stop="toProfile(event.pubkey)">{{ shorten(event.pubkey) }}</span>
           </q-item-label>
@@ -85,7 +85,7 @@
             </a>
           </q-item-label>
         </div>
-        <BaseMarkdown v-if="event.kind === 1">
+        <BaseMarkdown v-if="event.kind === 1" :long-form='isLongForm' @expand='isLongForm = !isLongForm'>
           {{ event.interpolated.text }}
         </BaseMarkdown>
         <BaseRelayRecommend v-else-if="event.kind === 2" :url="event.content" />
@@ -206,9 +206,11 @@
             :events="thread"
             :reply-depth='replyDepth + 1'
             @resized='calcConnectorValues(10)'
+            @add-event='addEvent'
           />
         </div>
       </div>
+      <div v-if='isRepost' style='min-height: .5rem;'></div>
     </div>
   </div>
 </template>
@@ -255,6 +257,7 @@ export default defineComponent({
       replyMode: '',
       resizing: false,
       trigger: 1,
+      isLongForm: false,
     }
   },
 
@@ -333,6 +336,7 @@ export default defineComponent({
     }
     this.calcConnectorValues()
     this.$emit('mounted')
+    this.isLongForm = this.event.interpolated.text.length > 500
   },
 
   activated() {
@@ -397,7 +401,12 @@ export default defineComponent({
     niceDate(timestamp) {
       if (this.trigger) return this.niceDateUTC(timestamp)
       return this.niceDateUTC(timestamp)
-    }
+    },
+
+    addEvent(event) {
+      console.log('post reply threads add-event', event)
+      this.$emit('add-event', event)
+    },
   }
 })
 </script>

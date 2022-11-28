@@ -37,7 +37,7 @@ export default {
 <style lang='css' scoped>
 .bordered-avatar .q-avatar img {
   border: 2px solid var(--q-accent);
-  background: var(--q-dark);
+  background: var(--q-background);
   z-index: 1;
 }
 .hovered-avatar .q-avatar:hover {

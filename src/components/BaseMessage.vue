@@ -170,7 +170,6 @@ export default {
 
   methods: {
     reply(event) {
-      console.log(event)
       this.$emit('reply', event)
     },
 
@@ -238,7 +237,10 @@ export default {
 }
 .message-bubble {
   padding: .5rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
+}
+.body--dark .message-bubble {
+  background: rgba(255, 255, 255, 0.15);
 }
 .message-menu {
   min-width: 200px;

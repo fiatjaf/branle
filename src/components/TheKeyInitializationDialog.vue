@@ -1,6 +1,7 @@
 <template>
-  <q-dialog v-model="showKeyInitialization" persistent>
-    <q-card class="q-pb-xl q-pt-md q-pl-sm q-pr-sm">
+  <!-- <q-dialog v-model="showKeyInitialization" persistent> -->
+  <div v-if="showKeyInitialization">
+    <q-card style='background: unset'>
       <q-card-section class="intro">
         <h1 class="text-h6">welcome to astral</h1>
         <BaseMarkdown>
@@ -124,7 +125,8 @@
       {{ hexKey }}
       </div>
     </q-card>
-  </q-dialog>
+  </div>
+  <!-- </q-dialog> -->
 </template>
 
 <script>

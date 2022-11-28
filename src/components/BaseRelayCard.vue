@@ -1,6 +1,6 @@
 <template>
   <div class="w-full ml-2">
-    <q-card class="cursor-pointer flex row justify-start items-center">
+    <q-card class="cursor-pointer flex row justify-start items-center" flat>
         <q-btn
           rounded
           flat
@@ -41,8 +41,9 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
+<style lang='css' scoped>
 .q-card {
-  border: 3px double $secondary;
+  border: 3px double var(--q-secondary);
+  background: var(--q-background);
 }
 </style>

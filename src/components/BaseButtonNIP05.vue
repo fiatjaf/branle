@@ -95,9 +95,3 @@ export default {
 }
 </script>
 
-<style lang='scss' scoped>
-.NIP05Frame {
-  background: white;
-  border: 0;
-}
-</style>

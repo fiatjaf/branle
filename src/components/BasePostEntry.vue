@@ -89,6 +89,7 @@
           :options="[
             {value: 'emoji', slot: 'emoji'},
             {value: 'link', slot: 'link'},
+            {value: 'help', slot: 'help'},
             ]"
         >
           <template #emoji>
@@ -122,6 +123,21 @@
               </q-tooltip>
             </q-btn>
           </template>
+          <template #help>
+            <q-btn
+              unelevated
+              class='no-padding button-link'
+              dense
+              size='sm'
+              @click.stop='toggleTool("help")'
+            >
+              <q-icon name='help' size='xs'/>
+              <!-- </q-icon> -->
+              <q-tooltip>
+                how to mention users and posts
+              </q-tooltip>
+            </q-btn>
+          </template>
           <!-- <template #image>
             <q-btn
               unelevated
@@ -152,6 +168,21 @@
                 :links='links'
                 @link-added='addLink'
               />
+            </q-tab-panel>
+            <q-tab-panel name="help" class='q-pa-xs' @click.stop>
+              <div>
+                <span class='text-bold'>{{ "to mention a user: "}}</span>
+                {{ "type "}}
+                <code>{{`"@"`}}</code>
+                {{ " and select user from menu that pops up or paste in "}}
+                <code>{{`"@<pubkey-id>"`}}</code>
+              </div>
+              <!-- <br> -->
+              <div>
+                <span class='text-bold'>{{ "to mention a post: "}}</span>
+                {{ "paste in "}}
+                <code>{{`"&<event-id>"`}}</code>
+              </div>
             </q-tab-panel>
           </q-tab-panels>
         </q-item>
@@ -205,7 +236,7 @@
           </q-circular-progress>
         </div>
         <q-btn-toggle
-          v-if='charLeft() <= 0'
+          v-if='!messageMode && (charLeft() <= 0)'
           v-model="longForm"
           unelevated
           dense
@@ -520,7 +551,8 @@ export default {
       }
 
       // let text = this.textarea.innerText
-      let text = await this.formatMentionsForPublishing(tags, textarea)
+      // let text = await this.formatMentionsForPublishing(tags)
+      let text = await this.formatMentionsForPublishing(tags, true, textarea)
       this.appendHashtags(tags)
       text = this.appendLinks(text)
       // console.log('sendReply', {
@@ -543,19 +575,20 @@ export default {
           tags.push(['p', this.$route.params.pubkey])
       }
       if (this.event && !tags.find(([_, v]) => v === this.event.id)) {
-          tags.push(['e', this.event.id])
+          tags.push(await getEventIdTagWithRelay(this.event.id, 'mention'))
+          // tags.push(['e', this.event.id])
       }
       // this.tags = this.tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
       // let text = this.formatMentionsForPublishing(text, tags, mentions)
-      let text = await this.formatMentionsForPublishing(tags)
+      let text = await this.formatMentionsForPublishing(tags, false)
       text = this.appendLinks(text)
 
-      console.log('sendChatMessage', {
-        now,
-        pubkey: this.$route.params.pubkey,
-        text,
-        tags
-      })
+      // console.log('sendChatMessage', {
+      //   now,
+      //   pubkey: this.$route.params.pubkey,
+      //   text,
+      //   tags
+      // })
       return await this.$store.dispatch('sendChatMessage', {
         now,
         pubkey: this.$route.params.pubkey,
@@ -636,25 +669,38 @@ export default {
       return mentions
     },
 
-    async formatMentionsForPublishing(tags, textarea = this.textarea.cloneNode(true)) {
+    async formatMentionsForPublishing(tags, parseProfile = true, textarea = this.textarea.cloneNode(true)) {
       // let textarea = this.textarea.cloneNode(true)
       let mentions = this.mentions(textarea)
-        for (let key in mentions) {
-          let mention = mentions[key]
-          let idx = tags.findIndex(([t, v]) => t === mention.tag[0] && v === mention.tag[1])
-          // console.log('idx', idx)
-          if (idx === -1) {
-            let tag
-            if (mention.tag[0] === 'p') tag = await getPubKeyTagWithRelay(mention.tag[1])
-            else if (mention.tag[0] === 'e') tag = await getEventIdTagWithRelay(mention.tag[1], 'mention')
+      let last = { el: null, offset: null}
+      for (let key in mentions) {
+        let mention = mentions[key]
+        let idx = tags.findIndex(([t, v]) => t === mention.tag[0] && v === mention.tag[1])
+        // console.log('idx', idx)
+        if (idx === -1) {
+          let tag
+          if (mention.tag[0] === 'p' && parseProfile) tag = await getPubKeyTagWithRelay(mention.tag[1])
+          else if (mention.tag[0] === 'e') tag = await getEventIdTagWithRelay(mention.tag[1], 'mention')
+          if (tag) {
             tags.push(tag)
             idx = tags.length - 1
           }
-          let range = new Range()
-          range.setStart(mention.el, mention.pos)
-          range.setEnd(mention.el, mention.pos + mention.length)
-          this.insertText(`#[${idx}]`, range)
         }
+        if (last.el && last.el !== mention.el) last.offset = 0
+        let offset = (last.el && last.el === mention.el) ? last.offset : 0
+        let range = new Range()
+        range.setStart(mention.el, mention.pos + offset)
+        range.setEnd(mention.el, mention.pos + mention.length + offset)
+        let newText = (mention.tag[0] === 'p' && !parseProfile) ? `@${mention.tag[1]}` : `#[${idx}]`
+        this.insertText(newText, range)
+        last = {
+          el: mention.el,
+          offset: newText.length - mention.length + last.offset || 0
+        }
+        // if (mention.tag[0] === 'p' && !parseProfile) {
+        //   this.insertText(`@${mention.tag[1]}`, range)
+        // } else this.insertText(`#[${idx}]`, range)
+      }
       textarea.style.maxHeight = '0'
       this.postEntry.appendChild(textarea)
       let text = textarea.innerText
@@ -793,12 +839,12 @@ export default {
 
     textareaFocus(e) {
       const placeholder = this.placeholder
-      placeholder.style.opacity = '.5'
+      placeholder.style.opacity = '.3'
     },
 
     textareaBlur(e) {
       const placeholder = this.placeholder
-      placeholder.style.opacity = '.8'
+      placeholder.style.opacity = '.6'
     },
 
     colorText(text) {
@@ -977,7 +1023,7 @@ ul, li {
 .input-area #input-placeholder {
   position: absolute;
   pointer-events: none;
-  opacity: .8;
+  opacity: .5;
   outline: none;
   border: none;
 }
@@ -1012,6 +1058,9 @@ ul, li {
   color: transparent;
   background: transparent;
   pointer-events: none;
+}
+.q-tab-panel {
+  background: var(--q-background);
 }
 </style>
 

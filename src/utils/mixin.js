@@ -121,20 +121,29 @@ export default {
       const hashtagReplacer = (match, hashtag) => {
         return `[${match}](/hashtag/${hashtag})`
       }
+      const untaggedProfileReplacer = (match, profile) => {
+        const displayName = this.$store.getters.displayName(profile)
+        return `[@${displayName}](/${profile})`
+      }
 
       let replacedText = text.replace(/#\[(\d+)\]/g, replacer)
       let hashtagReplacedText = replacedText.replace(/#([\w]{1,63})/g, hashtagReplacer)
+      let untaggedProfileReplacedText = hashtagReplacedText.replace(/@([\w]{64})/g, untaggedProfileReplacer)
+      let replacedTextFinal = untaggedProfileReplacedText
 
       let rootIdx = tags.findIndex(([t, v, _, marker]) => (t === 'e') && v && marker === 'root')
       if (rootIdx >= 0) {
         let [_, v] = tags[rootIdx]
         if (!mentions.mentionEvents.includes(v) && mentions.replyEvents.length < 2) mentions.replyEvents.push(v)
-        let replyIdx = tags.find(([t, v, _, marker]) => (t === 'e') && v && marker === 'root')
+        let replyIdx = tags.find(([t, v, _, marker]) => (t === 'e') && v && marker === 'reply')
         if (replyIdx >= 0) {
           let [_, v] = tags[replyIdx]
           if (!mentions.mentionEvents.includes(v) && mentions.replyEvents.length < 2) mentions.replyEvents.push(v)
         }
       }
+      tags.filter(([t, v, _, marker]) => (t === 'e') && v && marker === 'mention').forEach(([t, v], index) => {
+        if (!mentions.mentionEvents.includes(v)) mentions.mentionEvents.push(v)
+      })
       tags.filter(([t, v]) => (t === 'e') && v).forEach(([t, v], index) => {
         if (!mentions.mentionEvents.includes(v) && !mentions.replyEvents.includes(v)) {
           // if (index < 2) mentions.replyEvents.push(v)
@@ -144,7 +153,7 @@ export default {
       })
 
       return {
-        text: hashtagReplacedText,
+        text: replacedTextFinal,
         replyEvents: mentions.replyEvents,
         mentionEvents: mentions.mentionEvents
       }

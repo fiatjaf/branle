@@ -39,7 +39,6 @@
             color='secondary'
             class='no-padding'
             :loading='searching'
-            @clear.stop='searchText=""'
             @submit="search"
             @keypress.ctrl.enter="search"
           >
@@ -57,8 +56,8 @@
             </template>
           </q-input>
         </q-form>
-        <div v-if='results.length'>
-          <BasePostThread v-for="result in results" :key="result[0].id" :events="result" @add-event='addEvent'/>
+        <div v-if='searchResults.length'>
+          <BasePostThread v-for="result in searchResults" :key="result[0].id" :events="result" @add-event='addEvent'/>
         </div>
         <div v-if='!searchText'>
           <BasePostThread v-for="thread in threads" :key="thread[0].id" :events="thread" @add-event='addEvent'/>
@@ -152,6 +151,13 @@ export default defineComponent({
     }
   },
 
+  computed: {
+    searchResults() {
+      if (this.searchText.length) return this.results
+      return []
+    }
+  },
+
   activated() {
     this.start()
   },
@@ -183,7 +189,7 @@ export default defineComponent({
         this.follows = event.tags
           .filter(([t, v]) => t === 'p' && v)
           .map(([_, v]) => v)
-        this.relays = JSON.parse(event.content)
+        this.relays = event.content.length ? JSON.parse(event.content) : []
         if (this.follows.length)
           this.follows.forEach(pubkey => this.useProfile(pubkey))
       })
@@ -200,12 +206,12 @@ export default defineComponent({
       this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
     },
 
-    processUserNotes(events, threads) {
+    processUserNotes(events, threads, checkDups = true) {
       for (let event of events) {
-        if (this.eventsSet.has(event.id)) continue
+        if (this.eventsSet.has(event.id) && checkDups) continue
 
         this.interpolateEventMentions(event)
-        this.eventsSet.add(event.id)
+        if (checkDups) this.eventsSet.add(event.id)
         addToThread(threads, event)
       }
     },
@@ -244,7 +250,7 @@ export default defineComponent({
           json_extract(event,'$.content') LIKE '%${this.searchText.replace(' ', '%')}%'
       `)
       let searchResults = result.map(row => JSON.parse(row.event))
-      this.processUserNotes(searchResults, this.results)
+      this.processUserNotes(searchResults, this.results, false)
       this.searching = false
       console.log('result ', searchResults)
     },

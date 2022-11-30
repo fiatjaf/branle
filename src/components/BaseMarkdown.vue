@@ -38,6 +38,12 @@ md.use(subscript)
   // .use(markdownHighlightJs)
   .use(emoji)
   .use(md => {
+    // pulled from https://github.com/markdown-it/markdown-it/blob/master/docs/architecture.md#renderer
+    // Remember old renderer, if overridden, or proxy to default renderer
+    var defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options)
+    }
+
     md.core.ruler.before('normalize', 'auto-imager', state => {
       state.src = state.src.replace(/https?:[^ \n]+/g, m => {
         if (m) {
@@ -78,11 +84,6 @@ md.use(subscript)
         return `<video src="${src}" controls crossorigin async style="max-width: 90%; max-height: 50vh;"></video>`
       }
     }
-    // pulled from https://github.com/markdown-it/markdown-it/blob/master/docs/architecture.md#renderer
-    // Remember old renderer, if overridden, or proxy to default renderer
-    var defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
-      return self.renderToken(tokens, idx, options)
-    }
 
     md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
       // If you are sure other plugins can't add `target` - drop check below
@@ -101,6 +102,18 @@ md.use(subscript)
 
       // pass token to default renderer.
       return defaultRender(tokens, idx, options, env, self)
+    }
+
+    md.renderer.rules.code_inline = function (tokens, idx, options, env, self) {
+      var token = tokens[idx]
+
+      return `<code ${self.renderAttrs(token)}>${token.content}</code>`
+    }
+
+    md.renderer.rules.code_block = function (tokens, idx, options, env, self) {
+      var token = tokens[idx]
+
+      return `<code ${self.renderAttrs(token)}>${token.content}</code>`
     }
   })
 
@@ -261,6 +274,8 @@ ul ol {
   margin: 0;
 }
 .break-word-wrap {
+  word-wrap: break-word;
+  word-break: break-word;
 }
 .break-word-wrap p:has(img),
 .break-word-wrap p:has(video) {
@@ -296,5 +311,8 @@ ul ol {
   background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 51%,rgba(255,255,255,0.7) 58%,rgba(255,255,255,0) 100%); /* Chrome10-25,Safari5.1-6 */
   background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 51%,rgba(255,255,255,0.7) 58%,rgba(255,255,255,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000000', endColorstr='#00000000',GradientType=0 ); /* IE6-9 */
+
+  background-clip: text;
+  -webkit-background-clip: text;
 }
 </style>

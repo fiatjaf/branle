@@ -560,7 +560,7 @@ const methods = {
       FROM nostr
       WHERE id = '${id}'
     `)
-    return JSON.parse(result[0].event)
+    return result.length ? JSON.parse(result[0].event) : null
   },
 
   dbStreamEvent(id, updates, callback) {

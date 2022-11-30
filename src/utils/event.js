@@ -22,7 +22,7 @@ export function metadataFromEvent(event) {
 }
 
 export function isValidEvent(event) {
-  if (event.tags.filter(([_, v]) => !v || v.includes(' ')).length) return false
+  if (event.tags.filter(([t, v]) => t === 'e' && (!v || v.includes(' '))).length) return false
   try {
     JSON.parse(event.content)
     return false

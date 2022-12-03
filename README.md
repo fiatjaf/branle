@@ -29,7 +29,14 @@ yarn format
 npm run format
 ```
 
-### Build the app for production
+### Build the app for production in PWA mode:
+```bash
+quasar build -m pwa
+# or if quasar is not installed globally
+./node_modules/.bin/quasar build -m pwa
+```
+
+### Build the app for production in SPA mode:
 ```bash
 quasar build
 # or if quasar is not installed globally
@@ -38,17 +45,14 @@ quasar build
 
 ## Docker
 
-### Build the docker image
+### Build the docker image (uses PWA mode):
 ```bash
 docker build -t astral .
 ```
 
-### Run the container
+### Run the container:
 ```bash
 docker run -d -p 8080:8000 --name astral astral
 ```
 
 and connect to 'http://localhost:8080/'
-
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).

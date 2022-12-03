@@ -13,10 +13,10 @@ RUN apk --no-cache --virtual build-dependencies add \
   && apk del build-dependencies
 
 COPY . /app/build
-RUN npx quasar build
+RUN npx quasar build -m pwa
 
 FROM nginx as nginx-astral
 
 COPY ./nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=build /app/build/dist/spa /app
+COPY --from=build /app/build/dist/pwa /app

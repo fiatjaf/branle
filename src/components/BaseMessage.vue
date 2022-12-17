@@ -49,9 +49,7 @@
           <BaseUserName :pubkey='evt.pubkey' :fallback='true' />
           <span> {{niceDateUTC(event.created_at)}} </span>
         </div>
-        <BaseMarkdown>
-          {{ evt.interpolated.text }}
-        </BaseMarkdown>
+        <BaseMarkdown :content='evt.interpolated.text' />
         <q-menu
         v-if='!isEmbeded'
           v-model='contextMenus[idx]'

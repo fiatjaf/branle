@@ -55,7 +55,7 @@ export default {
         .map(el => (el === '_' || el === this.$store.getters.name(this.pubkey)) ? '' : el).join('@')
     },
     isFollow() {
-      return this.$store.state.following.includes(this.pubkey)
+      return this.$store.state.follows.includes(this.pubkey)
     }
   }
   // methods: {

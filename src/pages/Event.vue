@@ -38,11 +38,24 @@ import {dbStreamEvent, dbStreamTagKind} from '../query'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import BaseRelayList from 'components/BaseRelayList.vue'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - thread',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'Nostr event thread' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default defineComponent({
   name: 'Event',
   emits: ['scroll-to-rect'],
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
   components: {
     BaseRelayList
   },

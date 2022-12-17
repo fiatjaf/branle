@@ -44,7 +44,7 @@
       active-class=''
       @click='(event) => handleClick(event, item)'
       :key='item.title'
-      :class="($route.path.split('/')[1] === item.match ? 'menu-item-active text-accent ' : '') +
+      :class="($route.name === item.title ? 'menu-item-active text-accent ' : '') +
         (compactMode ? 'no-margin no-padding col' : 'self-end q-px-none')"
     >
       <q-item-section v-if='!compactMode' class='gt-sm text-uppercase' style='font-size: 1rem;'>
@@ -124,7 +124,7 @@
         />
         <BaseButtonSetUser
           v-if='!$store.state.keys.pub'
-          :to="{ path: '/' }"
+          @click='(event) => handleClick(event, {title: "set-user"})'
           :verbose='true'
           :outline='!compactMode'
           :flat='compactMode'
@@ -163,7 +163,7 @@ import BaseButtonSetUser from 'components/BaseButtonSetUser.vue'
 export default defineComponent({
   name: 'TheUserMenu',
   mixins: [helpersMixin],
-  emits: ['toggle-post-entry', 'scroll-to-rect'],
+  emits: ['toggle-post-entry', 'scroll-to-rect', 'set-user'],
   props: {
     iconMode: {
       type: Boolean,
@@ -191,7 +191,7 @@ export default defineComponent({
         {
           title: 'feed',
           icon: 'newspaper',
-          to: '/feed',
+          to: '/',
           match: 'feed',
         },
         {
@@ -244,6 +244,11 @@ export default defineComponent({
 
   methods: {
     handleClick(event, item) {
+      if (item.title === 'set-user') {
+        this.$emit('scroll-to-rect', {top: 0})
+        this.$emit('set-user')
+        return
+      }
       if (item.title === 'feed' && this.$route.name === 'feed') {
         event.preventDefault()
         this.$emit('scroll-to-rect', {top: 0})
@@ -253,7 +258,7 @@ export default defineComponent({
 })
 </script>
 
-<style lang='scss' scoped>
+<style lang='css' scoped>
 .q-item {
   transition: all .2s ease-in-out
 }
@@ -266,7 +271,7 @@ export default defineComponent({
   font-weight: bold;
 }
 .menu-item-active {
-  color: $accent;
+  color: var(--q-accent);
   opacity: 1;
   font-weight: bold;
 }

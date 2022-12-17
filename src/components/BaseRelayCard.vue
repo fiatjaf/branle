@@ -31,7 +31,8 @@ export default {
         .dialog({
           title: 'Add relay?',
           message: `Add ${this.url} to your list of relays?`,
-          cancel: true
+          cancel: {color: 'accent'},
+          ok: {color: 'accent'}
         })
         .onOk(() => {
           this.$store.commit('addRelay', this.url)

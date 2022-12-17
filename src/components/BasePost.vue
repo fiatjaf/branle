@@ -85,9 +85,7 @@
             </a>
           </q-item-label>
         </div>
-        <BaseMarkdown v-if="event.kind === 1" :long-form='isLongForm' @expand='isLongForm = !isLongForm'>
-          {{ event.interpolated.text }}
-        </BaseMarkdown>
+        <BaseMarkdown v-if="event.kind === 1" :content='event.interpolated.text' :long-form='isLongForm' @expand='isLongForm = !isLongForm' />
         <BaseRelayRecommend v-else-if="event.kind === 2" :url="event.content" />
         <BaseMarkdown v-else> {{ cleanEvent }} </BaseMarkdown>
         <div
@@ -171,6 +169,7 @@
             </div>
           </div>
         </div>
+        <div v-else style='min-height: 1rem;'/>
       </q-item-section>
       <q-item-section v-if="replyMode" class='new-reply-box' ref='replyContent'>
         <q-tab-panels

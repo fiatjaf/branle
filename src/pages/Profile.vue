@@ -120,10 +120,23 @@ import { dbStreamUserFollows, dbStreamUserFollowers, streamUserNotes, dbUserNote
 import BaseRelayRecommend from 'components/BaseRelayRecommend.vue'
 import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 import BaseButtonClear from 'components/BaseButtonClear.vue'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - profile',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'Nostr user profile' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default defineComponent({
   name: 'Profile',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
 
   components: {
     BaseUserCard,

@@ -32,9 +32,7 @@
         :wrap='wrap'
       />
       <div class='text-secondary pubkey' style='opacity: .9; font-size: 95%; font-weight: 300'>{{ shorten(pubkey) }}</div>
-      <BaseMarkdown v-if='headerMode' >
-        {{ $store.getters.profileDescription(pubkey) }}
-      </BaseMarkdown>
+      <BaseMarkdown v-if='headerMode' :content='$store.getters.profileDescription(pubkey)' />
       <BaseUserCardActions
         v-if="actionButtons"
         :pubkey='pubkey'

@@ -133,7 +133,7 @@ module.exports = configure(function (ctx) {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify', 'Dialog', 'AppFullscreen'],
+      plugins: ['Notify', 'Dialog', 'Meta'],
     },
 
     // animations: 'all', // --- includes all animations
@@ -168,7 +168,7 @@ module.exports = configure(function (ctx) {
     // https://v2.quasar.dev/quasar-cli-webpack/developing-pwa/configuring-pwa
     pwa: {
       workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
-      workboxOptions: {}, // only for GenerateSW
+      workboxOptions: { skipWaiting: true }, // only for GenerateSW
 
       // for the custom service worker ONLY (/src-pwa/custom-service-worker.[js|ts])
       // if using workbox in InjectManifest mode

@@ -5,12 +5,24 @@
 </template>
 
 <script>
-import helpersMixin from '../utils/mixin'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - search, follows',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'Nostr search and follows on astral' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default {
   name: 'SearchFollow',
-  mixins: [helpersMixin],
+  mixins: [createMetaMixin(metaData)],
   components: {
     TheSearchMenu
   }

@@ -282,9 +282,11 @@ import { colors } from 'quasar'
 const { getPaletteColor } = colors
 import helpersMixin from '../utils/mixin'
 import {getPubKeyTagWithRelay, getEventIdTagWithRelay, shorten} from '../utils/helpers'
+import {cleanEvent} from '../utils/event'
 import BaseEmojiPicker from 'components/BaseEmojiPicker.vue'
 import BaseLinkForm from 'components/BaseLinkForm.vue'
 import BaseMessage from 'components/BaseMessage.vue'
+import {publish} from '../query'
 // import { ref } from 'vue'
 
 export default {
@@ -542,6 +544,8 @@ export default {
       } else {
         // add the first and the last events being replied to
         let first = usableTags.find(([t, _, __, marker]) => t === 'e' && marker === 'root') || usableTags.find((tag) => tag[0] === 'e' && !tag[3])
+        if (!first && usableTags.filter(([t, _, __, marker]) => t === 'e' && marker === 'reply').length === 1)
+          first = usableTags.find(([t, _, __, marker]) => t === 'e' && marker === 'reply')
         if (first) {
           tags.push(await getEventIdTagWithRelay(first[1], 'root'))
           tags.push(await getEventIdTagWithRelay(this.event.id, 'reply'))
@@ -559,7 +563,7 @@ export default {
       //   message: text,
       //   tags: tags
       // })
-
+      publish(cleanEvent(this.event))
       return await this.$store.dispatch('sendPost', {
         message: text,
         tags: tags
@@ -733,13 +737,13 @@ export default {
     insertText(insertedText, range = this.textareaRange) {
       let { start, end } = this.startEndOfRange(range)
       let text = start.el.textContent.slice(0, start.pos) + insertedText + end.el.textContent.slice(end.pos)
-      let nextSibling = end.el.nextSibling
-      while (nextSibling?.nodeName === '#text') {
-        text = text + nextSibling.textContent
-        let newNextSibling = nextSibling.nextSibling
-        nextSibling.remove()
-        nextSibling = newNextSibling
-      }
+      // let nextSibling = end.el.nextSibling
+      // while (nextSibling?.nodeName === '#text') {
+      //   text = text + nextSibling.textContent
+      //   let newNextSibling = nextSibling.nextSibling
+      //   nextSibling.remove()
+      //   nextSibling = newNextSibling
+      // }
       if (!range.isCollapsed) {
         range.deleteContents()
         if (end.el !== start.el) end.el.remove()

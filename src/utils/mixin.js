@@ -4,6 +4,7 @@ import {shorten} from './helpers'
 import {date} from 'quasar'
 import { dbStreamEvent } from 'src/query'
 import {decrypt} from 'nostr-tools/nip04'
+import { decode } from 'bech32-buffer'
 const { formatDate } = date
 
 
@@ -189,6 +190,9 @@ export default {
                 <img src=${this.$store.getters.avatar(item.original.value.pubkey)} crossorigin style="object-fit: cover; height: 1.5rem; width: 1.5rem;"/>
               </div>
                 <div class="text-bold">${item.string}</div>
+              ${this.$store.state.follows.includes(item.original.value.pubkey)
+                ? '<i class="notranslate material-icons text-secondary mr-1 -ml-1" aria-hidden="true" role="presentation">visibility</i>'
+                : ''}
               ${item.original.value.nip05
                 ? '<i class="notranslate material-icons text-accent mr-1 -ml-1" aria-hidden="true" role="presentation">verified</i>'
                 : ''}
@@ -275,6 +279,34 @@ export default {
       } catch (err) {
         return '???'
       }
+    },
+
+    isKey(key) {
+      if (key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)) return true
+      return false
+    },
+
+    isBeck32Key(key) {
+      if (typeof key !== 'string') return false
+      try {
+        let { prefix } = decode(key.toLowerCase())
+        if (!['npub', 'nsec'].includes(prefix)) return false
+        if (prefix === 'npub') this.watchOnly = true
+        if (prefix === 'nsec') this.watchOnly = false
+        if (!this.isKey(this.beck32ToHex(key))) return false
+      } catch (error) {
+        return false
+      }
+      return true
+    },
+
+    beck32ToHex(key) {
+      let { data } = decode(key.toLowerCase())
+      return data.reduce((s, byte) => {
+        let hex = byte.toString(16)
+        if (hex.length === 1) hex = '0' + hex
+        return s + hex
+      }, '')
     },
 
   }

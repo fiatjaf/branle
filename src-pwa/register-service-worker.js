@@ -1,4 +1,5 @@
 import { register } from 'register-service-worker'
+// import {Notify} from 'quasar'
 
 // The ready(), registered(), cached(), updatefound() and updated()
 // events passes a ServiceWorkerRegistration instance in their arguments.
@@ -23,12 +24,23 @@ register(process.env.SERVICE_WORKER_FILE, {
     // console.log('Content has been cached for offline use.')
   },
 
-  updatefound (/* registration */) {
-    // console.log('New content is downloading.')
+  updatefound (registration) {
+    console.log('New content is downloading.')
+    try {
+      registration.update()
+    } catch (err) {
+      console.err('SW update failed:', err)
+    }
   },
 
-  updated (/* registration */) {
-    // console.log('New content is available; please refresh.')
+  updated (registration) {
+    console.log('New content is available; please refresh.')
+    try {
+      registration.update()
+      // location.reload(true)
+    } catch (err) {
+      console.err('SW update failed:', err)
+    }
   },
 
   offline () {

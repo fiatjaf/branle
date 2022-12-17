@@ -49,6 +49,7 @@
 <script>
 import {publish} from '../query'
 import helpersMixin from '../utils/mixin'
+import {cleanEvent} from '../utils/event'
 
 export default {
   name: 'BaseRelayList',
@@ -68,7 +69,7 @@ export default {
   },
   methods: {
     publishTo(relayURL) {
-      publish(this.event, relayURL)
+      publish(cleanEvent(this.event), relayURL)
     }
 
   },

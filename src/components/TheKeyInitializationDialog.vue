@@ -1,15 +1,48 @@
 <template>
-  <!-- <q-dialog v-model="showKeyInitialization" persistent> -->
-  <div v-if="showKeyInitialization">
-    <q-card style='background: unset'>
-      <q-card-section class="intro">
-        <h1 class="text-h6">welcome to astral</h1>
-        <BaseMarkdown>
-          astral is a decentralized, censorship resistant social platform
-          powered by the [Nostr](https://github.com/fiatjaf/nostr) protocol. in order to participate in the Nostr
-          network you will need to a public key and private key pair:
-        </BaseMarkdown>
-
+  <!-- <q-dialog persistent> -->
+  <!-- <div v-if="showKeyInitialization"> -->
+    <q-card class='relative-position full-width'>
+      <q-btn icon='close' size='md' flat round class='absolute-top-right z-top' @click='$emit("look-around")'/>
+      <q-expansion-item
+        dense
+        dense-toggle
+        expand-icon='info'
+        expanded-icon='expand_less'
+        class="intro no-padding"
+      >
+        <!-- <div class='flex row justify-between'> -->
+        <template #header>
+          <h1 class="text-h6 q-pr-md">welcome to astral</h1>
+        </template>
+        <!-- </div> -->
+        <p>
+        astral is a social media client for the <a href='https://github.com/fiatjaf/nostr' target='_blank'>Nostr</a> protocol,
+        a decentralized and censorship resistant distributed information network that relies on clients and relays.
+        relays store user data. clients communicate with the relays to save and fetch said user data. users choose
+        which relays to store their data on, meaning no one centralized entity has the power to remove your data from the
+        network (so it is recommended to use multiple relays). users choose which clients to use, meaning no one centralized
+        website can stop you from accessing the network. any client can be used with any relay, meaming users can choose
+        their relays and client independently.
+        </p>
+        <p>
+        while astral is implementing a social media usecase of Nostr, the possibilities of Nostr are endless.
+        <a href='https://jesterui.github.io/#/game/jester1y7du0yq7uzfzhxr2xgd64lmchfpf54evjsa59ff4f2mgh83h79rs9k7ffq'>Jester</a>
+        is a beta peer to peer chess client implemented over Nostr.
+        </p>
+      </q-expansion-item>
+      <q-expansion-item
+        dense
+        dense-toggle
+        expand-icon='info'
+        expanded-icon='expand_less'
+        class="intro no-padding"
+      >
+        <!-- <div class='flex row justify-between'> -->
+        <template #header>
+          <h2 class="text-subtitle2 q-pr-md">enter your key</h2>
+        </template>
+        <q-card-section class="intro no-padding">
+        in order to participate in the Nostr network you will need to a public key and private key pair:
         <q-list bordered padding class="q-mt-sm q-mb-sm">
           <q-item>
             <q-item-section>
@@ -36,24 +69,24 @@
           </q-item>
         </q-list>
       </q-card-section>
-      <q-card-section class="onboard">
+      <q-card-section class="onboard no-padding">
         <p>
-          if you don't have a Nostr key pair you can either
-          <strong>generate</strong> a new key pair or just take a
-          <strong>look around</strong>.
+          if you don't have a Nostr key pair you can either generate a new key
+          pair below or close this popup to just look around. if you would like
+          to login at a later time hit the login <q-icon name='login'/> button.
         </p>
-        <q-btn-group spread unelevated class='q-gutter-xl'>
+        <!-- <q-btn-group spread unelevated class='q-gutter-xl'>
           <q-btn size="sm" outline @click="generate" color="primary">
             generate
           </q-btn>
-          <q-btn size="sm" outline color="primary" :to='{ name: "feed" }'>
+          <q-btn size="sm" outline color="primary" @click='$emit("look-around")'>
             look around
           </q-btn>
-        </q-btn-group>
+        </q-btn-group> -->
       </q-card-section>
+      </q-expansion-item>
       <q-form @submit="proceed">
-        <q-card-section class="key-entry">
-          <h2 class="text-subtitle2">enter your key</h2>
+        <q-card-section class="key-entry no-padding">
           <q-btn-group spread unelevated>
             <q-btn
               size="sm"
@@ -99,13 +132,22 @@
             </template>
             <template #append>
               <q-btn
+                v-if="!isKeyValid"
+                size="sm"
+                color="primary"
+                outline
+                @click="generate"
+              >
+                generate keys
+              </q-btn>
+              <q-btn
                 v-if="hasExtension && !isKeyValid"
                 size="sm"
                 color="primary"
                 outline
                 @click="getFromExtension"
               >
-                Use Public Key from Extension
+                use public key from extension
               </q-btn>
               <q-btn
                 type="submit"
@@ -114,18 +156,81 @@
                 color="positive"
                 :label="isKeyValid ? 'proceed' : ''"
                 icon-right="login"
+                style='color: var(--q-background) !important;'
                 @click="proceed"
                 :disabled="!isKeyValid"
               ></q-btn>
             </template>
           </q-input>
         </q-card-section>
-      </q-form>
       <div v-if='isBeck32Key(key)'>
       {{ hexKey }}
       </div>
+      </q-form>
+      <q-expansion-item
+        v-if='isKeyValid'
+        dense
+        dense-toggle
+        default-opened
+        id='bootstrap-relays'
+      >
+        <template #header>
+          <div class='full-width flex row no-wrap items-center'>
+            <h2 class="text-subtitle2 q-pr-md">enter bootstrap relays (optional)</h2>
+            <q-icon name='info'>
+              <q-tooltip>
+              the selected relays below will be queried to load your user profile, follows, and relay data from Nostr network.
+              please ensure the list of selected relays includes relays you publish your Nostr data to, otherwise astral may
+              not be able to find your data.
+              </q-tooltip>
+            </q-icon>
+          </div>
+        </template>
+        <div class='flex row justify-between no-wrap items-end' >
+          <span>selected relays</span>
+          <div class='flex row items-end' id='new-relay-input'>
+            <q-input v-model='newRelay' placeholder='add a relay...' input-style='padding: 0; width: 10rem;' @keypress.enter='addNewRelay' dense borderless/>
+            <q-btn icon='add' color='positive' size='sm' flat dense @click.stop='addNewRelay'/>
+          </div>
+        </div>
+        <BaseSelectMultiple>
+          <template #selected>
+            <pre class='relay-list' style='border: 1px solid var(--q-primary);'>
+              <li
+                v-for='(relay, index) in Object.keys(selectedRelays)'
+                :key='index + "-" + relay'
+                class='relay-item'
+                @click.stop='delete selectedRelays[relay]'
+              >
+                <div class='flex row justify-between no-wrap'>
+                  <span style='overflow: auto;'>{{relay}}</span>
+                  <q-icon name='remove' size='xs' color='negative'/>
+                </div>
+              </li>
+            </pre>
+          </template>
+          <template #options>
+            <div style='max-height: 6.75rem;'>
+            <pre class='relay-list' >
+              <li
+                v-for='(relay, index) in optionalRelays'
+                :key='index + "-" + relay'
+                class='relay-item'
+                @click.stop='selectedRelays[relay]={read: true, write:false}'
+              >
+                <div class='flex row justify-between no-wrap'>
+                  <span style='overflow: auto;'>{{relay}}</span>
+                  <q-icon name='add' size='xs' color='positive' flat/>
+                </div>
+              </li>
+            </pre>
+            </div>
+          </template>
+        </BaseSelectMultiple>
+      </q-expansion-item>
+      <div style='min-height: 1rem;'/>
     </q-card>
-  </div>
+  <!-- </div> -->
   <!-- </q-dialog> -->
 </template>
 
@@ -135,14 +240,15 @@ import helpersMixin from '../utils/mixin'
 import { validateWords } from 'nostr-tools/nip06'
 import { generatePrivateKey } from 'nostr-tools'
 import { decode } from 'bech32-buffer'
-import BaseMarkdown from 'components/BaseMarkdown.vue'
+import BaseSelectMultiple from 'components/BaseSelectMultiple.vue'
 
 export default defineComponent({
   name: 'TheKeyInitializationDialog',
   mixins: [helpersMixin],
+  emits: ['look-around'],
 
   components: {
-    BaseMarkdown,
+    BaseSelectMultiple,
   },
 
   setup() {
@@ -158,6 +264,8 @@ export default defineComponent({
       watchOnly: false,
       key: null,
       hasExtension: false,
+      selectedRelays: this.$store.state.defaultRelays,
+      newRelay: '',
     }
   },
 
@@ -166,10 +274,10 @@ export default defineComponent({
       return document.getElementById('icon').href
     },
 
-    showKeyInitialization() {
-      if (['profile', 'event', 'hashtag', 'feed'].includes(this.$route.name)) return false
-      return true
-    },
+    // showKeyInitialization() {
+    //   if (['profile', 'event', 'hashtag', 'feed'].includes(this.$route.name)) return false
+    //   return true
+    // },
 
     isKeyKey() {
       if (this.isKey(this.hexKey)) return true
@@ -182,13 +290,16 @@ export default defineComponent({
       return false
     },
 
+    isKeyInvalid() {
+      return !this.isKeyValid
+    },
+
     hexKey() {
       // npub1xtscya34g58tk0z605fvr788k263gsu6cy9x0mhnm87echrgufzsevkk5s
       // nsec1xtscya34g58tk0z605fvr788k263gsu6cy9x0mhnm87echrgufzs46ahj9
       // 32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245
       if (this.isBeck32Key(this.key)) {
-        let { data } = decode(this.key.toLowerCase())
-        return this.toHexString(data)
+        return this.beck32ToHex(this.key)
       }
       return this.key?.toLowerCase()
     },
@@ -208,6 +319,15 @@ export default defineComponent({
       }
       return false
     },
+
+    optionalRelays() {
+      let options = this.$store.state.optionalRelaysList.filter(relay => {
+        if (this.newRelay.length && !relay.toLowerCase().includes(this.newRelay.toLowerCase())) return false
+        if (this.selectedRelays[relay]) return false
+        return true
+      })
+      return options
+    }
   },
 
   async created() {
@@ -254,44 +374,56 @@ export default defineComponent({
         console.warn('Proceed called with invalid key', key)
       }
 
+      this.$store.commit('setDefaultRelays', this.selectedRelays)
       this.$store.dispatch('initKeys', keys)
       this.$store.dispatch('launch')
       this.initializeKeys = false
       this.$router.push({
         name: 'settings',
-        params: { showKeys: true },
+        params: { initUser: true },
       })
     },
 
-    isKey(key) {
-      if (key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)) return true
-      return false
-    },
-
-    isBeck32Key(key) {
-      if (typeof key !== 'string') return false
-      try {
-        let { prefix, data } = decode(key.toLowerCase())
-        if (!['npub', 'nsec'].includes(prefix)) return false
-        if (prefix === 'npub') this.watchOnly = true
-        if (prefix === 'nsec') this.watchOnly = false
-        if (!this.isKey(this.toHexString(data))) return false
-      } catch (error) {
-        return false
-      }
-      return true
-    },
-
-    toHexString(buffer) {
-      return buffer.reduce((s, byte) => {
-        let hex = byte.toString(16)
-        if (hex.length === 1) hex = '0' + hex
-        return s + hex
-      }, '')
+    addNewRelay() {
+      if (this.newRelay && this.newRelay.length) this.selectedRelays[this.newRelay] = {read: true, write: false}
+      this.newRelay = ''
     }
   },
 })
 </script>
 
-<style>
+<style lang='css' scoped>
+.q-card {
+  background: var(--q-background);
+  padding: 1rem;
+}
+</style>
+
+<style lang='css'>
+.relay-list {
+  column-width: 15rem;
+  column-gap: .5rem;
+  width: 100%;
+  min-height: 1px;
+  font-size: .8rem;
+  white-space: nowrap;
+  padding: 0 .5rem;
+  border-radius: .5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.relay-item {
+  overflow: auto;
+}
+#new-relay-input {
+   background: rgba(0, 0, 0, 0.05);
+   border-radius: .3rem;
+   padding: 0 0 0 .5rem;
+}
+.body--dark #new-relay-input {
+   background: rgba(255, 255, 255, 0.08);
+}
+#new-relay-input .q-field--dense .q-field__control {
+  height: 1.4rem !important;
+}
 </style>

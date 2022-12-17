@@ -19,6 +19,7 @@ import {getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
 
 export function initKeys(store, keys) {
+  // passing no arguments will cause a new seed to be generated
   store.commit('setKeys', keys)
 
   // also initialize the lastNotificationRead value
@@ -27,12 +28,12 @@ export function initKeys(store, keys) {
 
 export async function launch(store) {
   console.log('launch for ', store.state.keys.pub)
-  if (!store.state.keys.pub) {
-    store.commit('setKeys') // passing no arguments will cause a new seed to be generated
+  // if (!store.state.keys.pub) {
+  //   store.commit('setKeys') // passing no arguments will cause a new seed to be generated
 
-    // also initialize the lastNotificationRead value
-    store.commit('haveReadNotifications')
-  }
+  //   // also initialize the lastNotificationRead value
+  //   store.commit('haveReadNotifications')
+  // }
 
   // if we have already have a private key
   if (store.state.keys.priv) {
@@ -41,35 +42,57 @@ export async function launch(store) {
     pool.registerSigningFunction(signAsynchronously)
   }
 
-  // translate localStorage into a kind3 event -- or load relays and following from event
-  let contactList = await dbUserFollows(store.state.keys.pub)
-  var {relays, following} = store.state
-  if (contactList) {
-    try {
-      relays = JSON.parse(contactList.content)
-    } catch (err) {
-      /***/
+  let {relays, follows} = store.state
+  if (!relays || !Object.keys(relays).length || !follows || !follows.length || follows === 'undefined') {
+    let contactList = await dbUserFollows(store.state.keys.pub)
+      if (!relays || !Object.keys(relays).length) {
+      try {
+        relays = JSON.parse(contactList.content)
+        store.commit('setRelays', relays)
+      } catch (err) {
+        /***/
+      }
     }
-    following = contactList.tags
-      .filter(([t, v]) => t === 'p' && v)
-      .map(([_, v]) => v)
-  } else {
-    // get stuff from localstorage and save to store -- which will trigger the eventize
-    // plugin to create and publish a contactlist event
-    relays = LocalStorage.getItem('relays') || relays
-    following = LocalStorage.getItem('following') || following
+    if ((!follows || !follows.length || follows === 'undefined')) {
+      try {
+        follows = contactList.tags
+          .filter(([t, v]) => t === 'p' && v)
+          .map(([_, v]) => v)
+        store.commit('setFollows', follows)
+      } catch (err) {
+        /***/
+      }
+    }
   }
 
-  // update store state
-  store.commit('setFollowing', following)
-  store.commit('setRelays', relays)
+  // // translate localStorage into a kind3 event -- or load relays and following from event
+  // let contactList = await dbUserFollows(store.state.keys.pub)
+  // var {relays, following} = store.state
+  // if (contactList) {
+  //   try {
+  //     relays = JSON.parse(contactList.content)
+  //   } catch (err) {
+  //     /***/
+  //   }
+  //   following = contactList.tags
+  //     .filter(([t, v]) => t === 'p' && v)
+  //     .map(([_, v]) => v)
+  // } else {
+  //   // get stuff from localstorage and save to store -- which will trigger the eventize
+  //   // plugin to create and publish a contactlist event
+  //   relays = LocalStorage.getItem('relays') || relays
+  //   following = LocalStorage.getItem('following') || following
+  // }
+
+  // // update store state
+  // store.commit('setFollowing', following)
+  // store.commit('setRelays', relays)
 
   // preload our own profile from the db
   store.dispatch('useProfile', {pubkey: store.state.keys.pub})
 
   // preload our follows profiles from the db
-  for (let pubkey of following) store.dispatch('useProfile', {pubkey})
-
+  for (let pubkey of follows) store.dispatch('useProfile', {pubkey})
   // start listening for nostr events
   // setTimeout(store.dispatch('restartMainSubscription'), 500)
   store.dispatch('restartMainSubscription')
@@ -87,7 +110,8 @@ export async function restartMainSubscription(store) {
   let lastUserMainSync = LocalStorage.getItem('config')?.timestamps?.lastUserMainSync || 0
 
   // setup pool
-  await setRelays(store.state.relays, lastUserMainSync - (7 * 24 * 60 * 60))
+  let relays = Object.keys(store.state.relays).length ? store.state.relays : store.state.defaultRelays
+  await setRelays(relays, lastUserMainSync - (7 * 24 * 60 * 60))
 
   // sub to bot tracker follows (to filter out bots in feed)
   let botTracker = '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'
@@ -104,15 +128,15 @@ export async function restartMainSubscription(store) {
 
   //after 3 min prune old events and update lastUserMainSync
   setTimeout(() => {
-    prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.following))
+    prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.follows))
 
     let config = LocalStorage.getItem('config') || {}
-    config.timestamps = {lastUserMainSync: Math.round(Date.now() / 1000)}
+    config.timestamps = {lastUserMainSync: Object.keys(store.state.relays).length ? Math.round(Date.now() / 1000) : 0 }
     LocalStorage.set('config', config)
   }, 3 * 60 * 1000)
 
-  if (store.state.following.length)
-    store.state.following.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
+  if (store.state.follows.length)
+    store.state.follows.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
   if (!mainSub.streamUser) mainSub.streamUser = await streamUser(
     store.state.keys.pub,
     async event => {
@@ -131,7 +155,7 @@ export async function restartMainSubscription(store) {
         let follows = event.tags
           .filter(([t, v]) => t === 'p' && v)
           .map(([_, v]) => v)
-        store.commit('setFollowing', follows)
+        store.commit('setFollows', follows)
         store.dispatch('restartMainSubscription')
       } else if (event.kind === 0) {
         let result = await dbQuery(`
@@ -172,7 +196,7 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 
     let publishResult = await publish(event)
     if (!publishResult) throw new Error('could not publish post')
-    console.log('sendPost', event, publishResult)
+    // console.log('sendPost', event, publishResult)
 
     store.dispatch('addEvent', {event})
     return event
@@ -205,7 +229,7 @@ export async function sendChatMessage(store, {now, pubkey, text, tags}) {
       pubkey: store.state.keys.pub,
       created_at: now,
       kind: 4,
-      tags: tags.map(([t, v]) => [t, v]),
+      tags,
       content: ciphertext
     }
 
@@ -233,10 +257,10 @@ export async function publishContactList(store) {
 
   // check existing event because it might contain more data in the
   // tags that we don't want to replace, if so push existing event tag,
-  // else push state.following tag
+  // else push state.follows tag
   let newTags = []
   await Promise.all(
-    store.state.following.map(async pubkey => {
+    store.state.follows.map(async pubkey => {
       let index = tags.findIndex(([t, v]) => t === 'p' && v === pubkey)
       if (index >= 0) {
         newTags.push(tags[index])
@@ -267,7 +291,7 @@ export async function publishContactList(store) {
       .map(([_, v]) => v)
 
     // update store state
-    store.commit('setFollowing', follows)
+    store.commit('setFollows', follows)
     store.commit('setRelays', relays)
 
     await store.dispatch('addEvent', {event})
@@ -354,6 +378,13 @@ const debouncedStreamUserProfile = debounce(async (store, users) => {
       }
     )
   } else {
+    if (Object.keys(users).length > 500) {
+      for (let pubkey of users) {
+        if (pubkey in store.state.profilesCache) {
+          store.dispatch('cancelUseProfile', {pubkey})
+        }
+      }
+    }
     mainSub.streamUserProfile.update(users)
   }
 }, 100)

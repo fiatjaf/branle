@@ -1,14 +1,24 @@
 <template>
   <q-layout>
     <link v-if='!updatingFont' id='font-link' rel="stylesheet" :href="`https://fonts.googleapis.com/css2?family=${googleFontsName}`" crossorigin/>
-    <!-- <TheKeyInitializationDialog v-if='!$store.state.keys.pub' style='max-height: 50vh'/> -->
+    <q-dialog v-if='!$store.state.keys.pub' v-model='initializeKeys' persistent>
+    <TheKeyInitializationDialog style='max-height: 85vh' @look-around='lookingAround=true'/>
+    </q-dialog>
     <div id='layout-container' :ripple='false'>
       <div id='left-drawer' class='flex justify-end'>
-        <TheUserMenu :item-mode='$q.screen.width < 1023' :show-compact-mode-items='$q.screen.width < 700' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry' @scroll-to-rect='scrollToRect'/>
+        <TheUserMenu
+          :item-mode='$q.screen.width < 1023'
+          :show-compact-mode-items='$q.screen.width < 700'
+          :posting='postEntryOpen'
+          @toggle-post-entry='togglePostEntry'
+          @scroll-to-rect='scrollToRect'
+          @set-user='lookingAround=false'
+        />
       </div>
 
       <div id='middle-page'>
         <q-page-container ref='pageContainer'>
+          <!-- <TheKeyInitializationDialog v-if='!$store.state.keys.pub && !lookingAround' @look-around='lookingAround=true'/> -->
           <router-view v-slot="{ Component }">
             <keep-alive  >
               <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent' @update-font='updateFont'/>
@@ -61,7 +71,14 @@
 
         />
       </div>
-      <TheUserMenu id='bottom-menu' :compact-mode='true' :posting='postEntryOpen' @toggle-post-entry='togglePostEntry'/>
+      <TheUserMenu
+        id='bottom-menu'
+        :compact-mode='true'
+        :posting='postEntryOpen'
+        @toggle-post-entry='togglePostEntry'
+        @scroll-to-rect='scrollToRect'
+        @set-user='lookingAround=false'
+      />
     </q-page-sticky>
     <q-page-sticky position="top-right" :offset="fabPos" id='navagation-buttons'>
       <q-fab
@@ -131,6 +148,7 @@ const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
 import { activateSub, deactivateSub, destroyStreams } from '../query'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
+import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
 import { setCssVar, getCssVar } from 'quasar'
 
 export default defineComponent({
@@ -138,6 +156,7 @@ export default defineComponent({
   components: {
     TheUserMenu,
     TheSearchMenu,
+    TheKeyInitializationDialog,
   },
 
   setup () {
@@ -159,6 +178,7 @@ export default defineComponent({
       replyEvent: null,
       googleFontsName: '',
       updatingFont: true,
+      lookingAround: false,
     }
   },
 
@@ -172,6 +192,9 @@ export default defineComponent({
         if (this.replyEvent) return 'reply'
         else return 'message'
       } else return null
+    },
+    initializeKeys() {
+      return !this.lookingAround
     }
   },
 

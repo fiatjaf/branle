@@ -24,10 +24,23 @@
 <script>
 import helpersMixin from '../utils/mixin'
 import {dbMentions, streamMentions} from '../query'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - notifications',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'Nostr notifications on astral' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default {
   name: 'Notifications',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
 
   data() {
     return {

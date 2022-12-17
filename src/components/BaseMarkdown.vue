@@ -1,7 +1,7 @@
 <template>
   <div ref="src" class="hidden break-word-wrap"><slot /></div>
   <div ref="append" class="hidden break-word-wrap"><slot name="append" /></div>
-  <div v-html="html" class="break-word-wrap dynamic-content" @click='handleClicks' :class='longForm ? "long-form" : ""'/>
+  <div v-html="html" ref="html" class="break-word-wrap dynamic-content" @click='handleClicks' :class='longForm ? "long-form" : ""'/>
   <q-btn
     v-if='longForm'
     id='long-form-button'
@@ -14,6 +14,9 @@
     label='show full post'
     @click.stop="expand"
   />
+  <!-- <div v-if='links.length'>
+    <BaseLinkPreview v-for='(link, idx) of links' :key='idx' :url='link' />
+  </div> -->
 </template>
 
 <script>
@@ -23,8 +26,8 @@ import superscript from 'markdown-it-sup'
 import deflist from 'markdown-it-deflist'
 import taskLists from 'markdown-it-task-lists'
 import emoji from 'markdown-it-emoji'
-
 import helpersMixin from '../utils/mixin'
+// import BaseLinkPreview from 'components/BaseLinkPreview.vue'
 
 const md = MarkdownIt({
   html: false,
@@ -90,6 +93,22 @@ md.use(subscript)
       var token = tokens[idx]
       var aIndexTarget = token.attrIndex('target')
       var aIndexHref = token.attrIndex('href')
+
+      // // this works but errors bc youtube needs to add header Cross-Origin-Embedder-Policy "require-corp"
+      // // see issue https://issuetracker.google.com/issues/240387105
+      // var ytRegex = /^https:\/\/(www.|m.)youtu(be.com|.be)\/(watch\?v=|shorts\/)(?<v>[a-zA-Z0-9_-]{11})(&t=(?<s>[0-9]+)s)?/
+      // let ytMatch = token.attrs[aIndexHref][1].match(ytRegex)
+      // console.log('ytMatch', ytMatch, token.attrs[aIndexHref][1])
+      // if (ytMatch) {
+      //   let src = `https://www.youtube.com/embed/${ytMatch.groups.v}`
+      //   if (ytMatch.groups.s) src = src + `?start=${ytMatch.groups.s}`
+      //   src = src + `&origin=http://localhost:8080/`
+      // console.log('ytMatch', src)
+      //   return `<iframe crossorigin anonymous async style="max-width: 90%; max-height: 50vh;"" src="${src}"
+      //     title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+      //     </iframe>`
+      // }
+
       var httpRegex = /^https?:\/\//
 
       if (httpRegex.test(token.attrs[aIndexHref][1])) {
@@ -104,17 +123,17 @@ md.use(subscript)
       return defaultRender(tokens, idx, options, env, self)
     }
 
-    md.renderer.rules.code_inline = function (tokens, idx, options, env, self) {
-      var token = tokens[idx]
+    // md.renderer.rules.code_inline = function (tokens, idx, options, env, self) {
+    //   var token = tokens[idx]
 
-      return `<code ${self.renderAttrs(token)}>${token.content}</code>`
-    }
+    //   return `<code ${self.renderAttrs(token)}>${token.content}</code>`
+    // }
 
-    md.renderer.rules.code_block = function (tokens, idx, options, env, self) {
-      var token = tokens[idx]
+    // md.renderer.rules.code_block = function (tokens, idx, options, env, self) {
+    //   var token = tokens[idx]
 
-      return `<code ${self.renderAttrs(token)}>${token.content}</code>`
-    }
+    //   return `<code ${self.renderAttrs(token)}>${token.content}</code>`
+    // }
   })
 
 md.linkify
@@ -160,19 +179,26 @@ export default {
   name: 'BaseMarkdown',
   mixins: [helpersMixin],
   emits: ['expand'],
+  // components: {
+  //   BaseLinkPreview,
+  // },
 
   data() {
     return {
       html: '',
-      links: [],
+      // links: [],
     }
   },
 
   props: {
+    content: {
+      type: String,
+      default: 'todo needs to be updated'
+    },
     longForm: {
       type: Boolean,
       default: false
-    }
+    },
   },
 
   mounted() {
@@ -185,8 +211,24 @@ export default {
 
   methods: {
     render() {
-      this.html =
-        md.render(this.$refs.src.innerHTML) + this.$refs.append.innerHTML
+      this.html = md.render(this.content) + this.$refs.append.innerHTML
+      // md.render(this.$refs.src.innerHTML) + this.$refs.append.innerHTML
+      this.$refs.html.querySelectorAll('img').forEach(img => {
+        img.addEventListener('click', (e) => {
+          e.stopPropagation()
+          if (!document.fullscreenElement) {
+            img.requestFullscreen()
+          } else if (document.exitFullscreen) {
+            document.exitFullscreen()
+          }
+        })
+      })
+      // if (this.links.length === 0) {
+      //   this.$refs.html.querySelectorAll('a').forEach(link => this.links.push(link.href))
+      //   // if (links[0] && links[0].href) this.links.push(links[0].href)
+      //   // links.forEach(link => this.links.push(link.href))
+      //   console.log('links', this.links)
+      // }
     },
 
     handleClicks(event) {
@@ -285,6 +327,7 @@ ul ol {
 .break-word-wrap video {
   border-radius: 1rem;
   border: 1px solid var(--q-accent);
+  display: block;
 }
 .break-word-wrap pre {
   overflow: auto;

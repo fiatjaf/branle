@@ -90,10 +90,24 @@ import helpersMixin from '../utils/mixin'
 import {dbMessages, streamMessages} from '../query'
 import BaseMessage from 'components/BaseMessage.vue'
 import { useQuasar } from 'quasar'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - messages',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: `Nostr messages with ${window.location.pathname.split('/')[2]}` },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
+
 
 export default {
   name: 'Messages',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
   emits: ['reply-event', 'scroll-to-rect'],
   components: {
     BaseMessage,

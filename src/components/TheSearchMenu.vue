@@ -54,7 +54,7 @@
       <div v-if='$store.state.keys.pub' class='flex row justify-between no-wrap'>
         <h2 class='text-h5 text-bold q-my-none'> {{ $t('follows') }} </h2>
         <div>
-          <q-btn v-if='!reordering' flat icon='reorder' @click.stop='reorderFollowing'>
+          <q-btn v-if='!reordering' flat icon='reorder' @click.stop='reorderFollows'>
             <q-tooltip>{{ $t('reorderFollows') }}</q-tooltip>
           </q-btn>
           <q-btn v-if='reordering' flat icon='close' @click.stop='cancelReorder'>
@@ -63,17 +63,17 @@
         </div>
       </div>
     <q-card-section v-if='$store.state.keys.pub' class='no-padding' style='overflow-y: auto;'>
-      <div v-if='$store.state.following.length' class='q-mt-xs q-pl-sm'>
+      <div v-if='$store.state.follows.length' class='q-mt-xs q-pl-sm'>
         <q-list v-if="!reordering">
           <BaseUserCard
-            v-for="pubkey in $store.state.following"
+            v-for="pubkey in $store.state.follows"
             :pubkey="pubkey"
             :key="pubkey + '_' + $store.state.profilesCacheToggle"
           />
         </q-list>
         <Draggable
-          v-else-if='reorderedFollowing.length'
-          v-model='reorderedFollowing'
+          v-else-if='reorderedFollows.length'
+          v-model='reorderedFollows'
           @start="dragging=true"
           @end="dragging=false"
           item-key="pubkey"
@@ -115,7 +115,7 @@ export default defineComponent({
       domainMode: false,
       domainNames: {},
       reordering: false,
-      reorderedFollowing: [],
+      reorderedFollows: [],
       dragging: false,
       profilesUsed: new Set(),
     }
@@ -130,6 +130,7 @@ export default defineComponent({
     validSearch() {
       if (this.searchingProfile === '') return true
       if (this.searchingProfile.match(/^[a-f0-9A-F]{64}$/)) return true
+      if (this.isBeck32Key(this.searchingProfile) && this.beck32ToHex(this.searchingProfile).match(/^[a-f0-9A-F]{64}$/)) return true
       if (this.searchingProfile.match(/^([a-z0-9A-Z-_.\u00C0-\u1FFF\u2800-\uFFFD]*@)?[a-z0-9A-Z-_]+[.]{1}[a-z0-9A-Z-_.]+$/)) return true
       return false
     },
@@ -171,6 +172,13 @@ export default defineComponent({
         return
       }
 
+      if (this.isBeck32Key(this.searchingProfile) && this.beck32ToHex(this.searchingProfile).match(/^[a-f0-9A-F]{64}$/)) {
+        this.toProfile(this.beck32ToHex(this.searchingProfile))
+        this.searchingProfile = ''
+        this.searching = false
+        return
+      }
+
       if (this.searchingProfile.match(/^([a-z0-9-_.\u00C0-\u1FFF\u2800-\uFFFD]*@)?[a-z0-9-_.]+[.]{1}[a-z0-9-_.]+$/)) {
         // if (!this.searchingProfile.match(/^[a-z0-9-_.\u00C0-\u1FFF\u2800-\uFFFD]?@/)) {
           if (this.searchingProfile.match(/^@/) || !this.searchingProfile.match(/@/)) {
@@ -204,20 +212,20 @@ export default defineComponent({
       })
     },
 
-    reorderFollowing() {
-      this.reorderedFollowing = this.$store.state.following.map((pubkey) => { return {pubkey} })
+    reorderFollows() {
+      this.reorderedFollows = this.$store.state.follows.map((pubkey) => { return {pubkey} })
       this.reordering = true
     },
 
     saveReorder() {
-      this.$store.commit('reorderFollows', this.reorderedFollowing.map(follow => follow.pubkey))
+      this.$store.commit('reorderFollows', this.reorderedFollows.map(follow => follow.pubkey))
       this.reordering = false
-      this.reorderedFollowing = []
+      this.reorderedFollows = []
     },
 
     cancelReorder() {
       this.reordering = false
-      this.reorderedFollowing = []
+      this.reorderedFollows = []
     },
 
     useProfile(pubkey) {

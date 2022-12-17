@@ -42,7 +42,7 @@ export default defineComponent({
 
   computed: {
     isFollowing() {
-      return this.$store.state.following.includes(this.pubkey)
+      return this.$store.state.follows.includes(this.pubkey)
     }
   },
 

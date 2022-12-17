@@ -498,7 +498,6 @@ const methods = {
   },
 
   dbMessages(userPubkey, peerPubkey, limit, until) {
-    console.log('dbMessages until:', until)
     let result = queryDb(`
       SELECT n.event
       FROM idx_kind_tag_created_at idx

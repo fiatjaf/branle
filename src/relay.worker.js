@@ -2,7 +2,8 @@ import mergebounce from 'mergebounce'
 import { relayPool } from 'nostr-tools'
 
 export const pool = relayPool()
-let poolSub = null
+let mainUserSub = null
+let adhocSub = null
 
 pool.onNotice((notice, relay) => {
   try {
@@ -40,9 +41,10 @@ function onEose(url) {
   // console.log('EOSE', url)
 }
 
-function calcFilter() {
-  let compiledSubs = Object.entries(subs)
-    .map(([_, sub]) => sub)
+function calcFilter(subName) {
+  let compiledSubs = Object.values(subs)
+    .filter(sub => subName === sub.subName)
+    // .map(([_, sub]) => sub)
     .reduce((acc, { type, value }) => {
       if (type === 'user') {
         acc[type] = [value]
@@ -119,11 +121,19 @@ function calcFilter() {
 }
 
 function cancelSub(id) {
+  let cancelledSub = subs[id]
   delete subs[id]
   if (!active) return
-  if (poolSub) {
-    if (Object.keys(subs).length === 0) poolSub.unsub()
-    else poolSub.sub({filter: calcFilter()})
+  if (cancelledSub.subName === 'mainUser') {
+    if (mainUserSub) {
+      if (Object.keys(subs).filter(id => cancelledSub.subName === 'mainUser').length === 0) mainUserSub.unsub()
+      else mainUserSub.sub({filter: calcFilter('mainUser')})
+    }
+  } else {
+    if (adhocSub) {
+      if (Object.keys(subs).filter(id => !cancelledSub.subName).length === 0) adhocSub.unsub()
+      else adhocSub.sub({filter: calcFilter()})
+    }
   }
 }
 
@@ -135,13 +145,15 @@ const methods = {
 
   activateSub() {
     active = true
-    if (poolSub && Object.keys(subs).length) poolSub.sub({filter: calcFilter()})
+    if (mainUserSub && Object.keys(subs).filter(id => subs[id].subName === 'mainUser').length) mainUserSub.sub({filter: calcFilter('mainUser')})
+    if (adhocSub && Object.keys(subs).filter(id => !subs[id].subName).length) adhocSub.sub({filter: calcFilter()})
     return
   },
 
   deactivateSub() {
     active = false
-    if (poolSub) poolSub.unsub()
+    if (mainUserSub) mainUserSub.unsub()
+    if (adhocSub) adhocSub.unsub()
     debouncedEmitEvent.flush()
     return
   },
@@ -149,7 +161,8 @@ const methods = {
   subUser(pubkey) {
     return {
       type: 'user',
-      value: pubkey
+      value: pubkey,
+      subName: 'mainUser'
     }
   },
 
@@ -188,7 +201,8 @@ const methods = {
     // let pubkeys = Array.isArray(pubkey) ? pubkey : [pubkey]
     return {
       type: 'userTags',
-      value: pubkeys
+      value: pubkeys,
+      subName: 'mainUser'
     }
   },
 
@@ -214,7 +228,8 @@ const methods = {
   subFeed(since) {
     return {
       type: 'feed',
-      value: since
+      value: Math.max(since, 0),
+      subName: 'mainUser'
     }
   },
 
@@ -227,7 +242,7 @@ const methods = {
   },
 
   setRelays(newRelays, userLastSync) {
-    lastSync = userLastSync
+    lastSync = Math.max(userLastSync, 0)
     for (let url in newRelays) {
       if (!relays[url]) pool.addRelay(url, newRelays[url])
       else if (relays[url].read !== newRelays[url].read || relays[url].write !== newRelays[url].write) {
@@ -270,8 +285,13 @@ function handleMessage(ev) {
   } else if (sub) {
     subs[id] = methods[name](...args)
     if (!active) return
-    if (poolSub) poolSub.sub({filter: calcFilter()})
-    else poolSub = pool.sub({ cb: onEvent, filter: calcFilter()}, 'main', onEose)
+    if (subs[id].subName === 'mainUser') {
+      if (mainUserSub) mainUserSub.sub({filter: calcFilter('mainUser')})
+      else mainUserSub = pool.sub({ cb: onEvent, filter: calcFilter('mainUser')}, 'mainUser', onEose)
+    } else {
+      if (adhocSub) adhocSub.sub({filter: calcFilter()})
+      else adhocSub = pool.sub({ cb: onEvent, filter: calcFilter()}, 'adhoc', onEose)
+    }
   } else {
     var reply = { id }
     let data

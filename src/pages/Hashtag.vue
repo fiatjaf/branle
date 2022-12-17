@@ -10,10 +10,23 @@ import { defineComponent } from 'vue'
 import {dbStreamTagKind} from '../query'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
+import { createMetaMixin } from 'quasar'
 
 export default defineComponent({
   name: 'Hashtag',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(() => {
+    return {
+      // sets document title
+      title: `astral - #${window.location.pathname.split('/')[2]}`,
+
+      // meta tags
+      meta: {
+        description: { name: 'description', content: `Nostr events tagged with ${window.location.pathname.split('/')[2]}` },
+        keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+        equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+      },
+    }
+  })],
 
   data() {
     return {
@@ -25,6 +38,7 @@ export default defineComponent({
 
   watch: {
     '$route.params.hashtagId'(curr, prev) {
+      this.hashtag = curr
       if (curr !== prev && curr && prev) {
         this.stop()
         this.start()

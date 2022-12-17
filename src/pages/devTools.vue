@@ -35,15 +35,23 @@ import CodeMirror from 'codemirror/lib/codemirror.js'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/sql/sql.js'
 import 'codemirror/theme/dracula.css'
-// import CodeMirror from 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.js'
-// import(/* webpackIgnore: true */ 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.js')
+import { createMetaMixin } from 'quasar'
 
+const metaData = {
+  // sets document title
+  title: 'astral - dev tools',
 
-// import BaseUserCard from 'components/BaseUserCard.vue'
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'dev tools for astral Nostr client' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default defineComponent({
   name: 'DevTools',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
 
   components: {
     // BaseUserCard,

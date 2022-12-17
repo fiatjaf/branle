@@ -45,10 +45,23 @@
 import {dbChats} from '../query'
 import {streamMessages} from '../query'
 import helpersMixin from '../utils/mixin'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - inbox',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'Nostr direct message inbox' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default {
   name: 'Inbox',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
 
   data() {
     return {

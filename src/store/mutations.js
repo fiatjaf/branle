@@ -28,6 +28,10 @@ export function setRelays(state, relays) {
   state.relays = relays
 }
 
+export function setDefaultRelays(state, relays) {
+  state.defaultRelays = relays
+}
+
 export function addRelay(state, url) {
   try {
     normalizeRelayURL(url)
@@ -56,23 +60,23 @@ export function saveRelays(state, relays) {
   state.relays = relays
 }
 
-export function setFollowing(state, following) {
-  state.following = following
+export function setFollows(state, follows) {
+  state.follows = follows
 }
 
 export function follow(state, key) {
   if (state.keys.pub === key) return
-  if (state.following.includes(key)) return
-  state.following.push(key)
+  if (state.follows.includes(key)) return
+  state.follows.push(key)
 }
 
 export function unfollow(state, key) {
-  let idx = state.following.indexOf(key)
-  if (idx >= 0) state.following.splice(idx, 1)
+  let idx = state.follows.indexOf(key)
+  if (idx >= 0) state.follows.splice(idx, 1)
 }
 
-export function reorderFollows(state, following) {
-  state.following = following
+export function reorderFollows(state, follows) {
+  state.follows = follows
 }
 
 export function addProfileToCache(
@@ -95,7 +99,7 @@ export function addProfileToCache(
   }
 
   // removing older stuff if necessary
-  if (state.profilesCacheLRU.length > 2500) {
+  if (state.profilesCacheLRU.length > 3500) {
     let oldest = state.profilesCacheLRU.shift()
     delete state.profilesCache[oldest]
   }

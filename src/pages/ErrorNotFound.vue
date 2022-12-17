@@ -40,8 +40,15 @@
 
 <script>
 import { defineComponent } from 'vue'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - 404 page not found',
+}
 
 export default defineComponent({
-  name: 'ErrorNotFound'
+  name: 'ErrorNotFound',
+  mixins: [createMetaMixin(metaData)],
 })
 </script>

@@ -3,11 +3,29 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') },
+      // { path: '', component: () => import('pages/IndexPage.vue') },
       {
-        path: '/feed',
-        component: () => import('pages/Feed.vue'),
+        path: '',
+        // path: '/feed',
+        component: () => import(/* webpackChunkName: "about" */ 'pages/Feed.vue'),
         name: 'feed',
+        meta: {
+          title: 'astral - feed',
+          metaTags: [
+            {
+              name: 'og:title',
+              content: 'astral - feed'
+            },
+            {
+              name: 'description',
+              content: 'decentralized social media feed built on Nostr'
+            },
+            {
+              name: 'og:description',
+              content: 'decentralized social media feed built on Nostr'
+            },
+          ]
+        }
       },
       {
         path: '/follow',
@@ -15,7 +33,7 @@ const routes = [
         name: 'follow',
       },
       {
-        path: '/settings',
+        path: '/settings/:initUser?',
         component: () => import('pages/Settings.vue'),
         name: 'settings',
       },

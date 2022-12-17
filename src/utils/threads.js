@@ -1,10 +1,10 @@
 import {addSorted} from './helpers'
 
-function calcReplyTags(event, route) {
-  if (event.interpolated.replyEvents.length) return event.interpolated.replyEvents
-  else if (route === 'feed') return event.interpolated.mentionEvents
-  else return []
-}
+// function calcReplyTags(event, route) {
+//   if (event.interpolated.replyEvents.length) return event.interpolated.replyEvents
+//   else if (route === 'feed') return event.interpolated.mentionEvents
+//   else return []
+// }
 
 function searchAndUpdateThreads(threads, route, ...events) {
   // scenarios:
@@ -26,7 +26,7 @@ function searchAndUpdateThreads(threads, route, ...events) {
     Math.max(acc, curr[0].latest_created_at), events[events.length - 1].latest_created_at)
   else events[0].latest_created_at = events[events.length - 1].latest_created_at
   let event = events[0]
-  let refs = calcReplyTags(event, route)
+  let refs = event.interpolated.replyEvents
   let unshiftThreads = []
   let pushThreads = []
   let insertThreads = []
@@ -34,7 +34,7 @@ function searchAndUpdateThreads(threads, route, ...events) {
   for (let i = 0; i < threads.length; i++) {
     let thread = threads[i]
     let thread0 = thread[0]
-    let thread0Refs = calcReplyTags(thread0, route)
+    let thread0Refs = thread0.interpolated.replyEvents
 
     // new post event
     if (refs.length === 0) {
@@ -63,6 +63,9 @@ function searchAndUpdateThreads(threads, route, ...events) {
         let threadIndex = thread.findIndex((threadEvent) => refs[refs.length - 1] === threadEvent.id)
         if (threadIndex >= 0) {
           insertThreads.push({thread: i, threadIndex})
+          if (event.id === 'de575a697ccd730066cedf7783d2466b7f5ac723fbbdf56ad15d725642ad60bb') {
+            console.log('error search and update threads', event, thread, refs, {unshiftThreads, pushThreads, insertThreads, replyInsertThreads})
+          }
         // check if event could belong in last event replies
         } else if (threadLast.created_at < event.created_at && threadLast.replies?.length) {
           replyInsertThreads.push(i)
@@ -127,7 +130,12 @@ function searchAndUpdateThreads(threads, route, ...events) {
     let index = insertThreads[0].threadIndex
     if (!thread[index].replies) thread[index].replies = []
     let slicedReply = thread.slice(index + 1)
-    slicedReply[0].latest_created_at = slicedReply[slicedReply.length - 1].latest_created_at
+    try {
+      slicedReply[0].latest_created_at = slicedReply[slicedReply.length - 1].latest_created_at
+    } catch (e) {
+      let idx = threads.findIndex(thread => thread[0].id === 'ad18fea76c3e8e3486687815df99067c697e1969a7b7c7d9b4c1e263f4abdaef')
+      console.log('error search and update threads', e, slicedReply, thread, index, events, idx, threads[idx], {unshiftThreads, pushThreads, insertThreads, replyInsertThreads})
+    }
     thread[index].replies.push(slicedReply)
     thread.splice(index + 1, thread.length - index)
     if (unshiftThreads.length === 1 && events.length === 1) {

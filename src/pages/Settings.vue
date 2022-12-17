@@ -8,7 +8,7 @@
       </div>
       <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
           {{ $t('profile') }}
-          <q-btn v-if='!editingMetadata' label="edit" color="primary" outline size="sm" @click='editingMetadata = true'/>
+          <q-btn v-if='!editingMetadata' label="edit" color="primary" outline size="sm" :disable="!$store.getters.canSignEventsAutomatically" @click='editingMetadata = true'/>
       </div>
       <q-input v-model="metadata.name" dense filled type="text" label="Name" :disable='!editingMetadata'>
         <template #before>
@@ -85,27 +85,6 @@
       <div class="text-bold flex justify-between no-wrap" style='font-size: 1rem;'>
         {{ $t('font') }}
       </div>
-      <!-- <div v-if='preferences.font' style='width: 200px; cursor: pointer; padding-left: .2rem;' class='relative-position q-field--filled q-field--dark'>
-        <div id='font-select' class="flex justify-between" :style='(editingPreferences ? "cursor: pointer;" : "cursor: not-allowed;")' @click.stop='choosingFont = editingPreferences && !choosingFont'>
-          <span class='q-pl-sm' :style='(editingPreferences ? "opacity: 1;" : "opacity: .5")'>{{ preferences.font }}</span>
-          <q-icon :name='choosingFont ? "arrow_drop_up" : "arrow_drop_down"' size='xs'/>
-        </div>
-        <div v-if='choosingFont' id='font-list' style="position: absolute; top: 1.3rem; z-index: 1; max-height: 15rem; overflow-y: auto;">
-          <ul class="" style='display: block; margin-block-start: .5rem; margin-block-end: .5rem; padding-inline-start: .5rem;'>
-            <li
-              v-for='(font, index) in fonts'
-              :key='index'
-              class='font-item'
-              @click.stop='updateFont(font)'
-            >
-              <link :href="`https://fonts.googleapis.com/css2?family=${googleFontsName(font)}`" rel="stylesheet" crossorigin/>
-              <span :style="`font-family: '${font}';`">
-              {{font}}
-              </span>
-            </li>
-          </ul>
-        </div>
-      </div> -->
       <BaseSelect v-if='preferences.font' :allow-selection='editingPreferences' :selecting='choosingFont' style='width: 200px;' @toggle='choosingFont= !choosingFont'>
         <template #default>{{ preferences.font }}</template>
         <template #list-items>
@@ -116,10 +95,6 @@
         </template>
       </BaseSelect>
 
-      <!-- <label for="secondary">secondary</label>
-      <input type="color" id="secondary" name="secondary" :value='this.preferences.color.secondary' @input='(event) => updateColor(event, "secondary")'>
-      <label for="accent">accent</label>
-      <input type="color" id="accent" name="accent" :value='this.preferences.color.accent' @input='(event) => updateColor(event, "accent")'> -->
     </div>
     <q-separator color='accent'/>
     <div class='section'>
@@ -130,7 +105,7 @@
       <div class="text-bold flex justify-between no-wrap" style='font-size: 1.1rem;'>
         {{ $t('relays') }}
         <div class="text-normal flex row no-wrap" style='font-size: .9rem; gap: .4rem;'>
-          <q-btn v-if='!editingRelays' label="edit" color="primary" outline size="sm" @click='editingRelays = true'/>
+          <q-btn v-if='!editingRelays' label="edit" color="primary" outline size="sm" :disable="!$store.getters.canSignEventsAutomatically" @click='editingRelays = true'/>
           <div v-if='editingRelays'>read</div>
           <div v-if='editingRelays'>write</div>
         </div>
@@ -144,7 +119,7 @@
         >
           <div>
               <q-btn
-                v-if='relays[url].read || relays[url].write'
+                v-if='!editingRelays && (relays[url].read || relays[url].write)'
                 color="secondary"
                 outline
                 size="sm"
@@ -156,12 +131,11 @@
                 @click="shareRelay(url)"
               />
               <q-btn
-                v-if='editingRelays && !relays[url].read && !relays[url].write'
+                v-if='editingRelays'
                 color="negative"
                 label='remove'
                 outline
                 size="sm"
-                :disable="!$store.getters.canSignEventsAutomatically"
                 @click="removeRelay(url)"
               />
               {{ url }}
@@ -174,6 +148,7 @@
                 size='sm'
                 dense
                 class='no-padding'
+                :disable="!$store.getters.canSignEventsAutomatically"
               />
               <q-toggle
                 v-if='editingRelays'
@@ -182,30 +157,35 @@
                 size='sm'
                 dense
                 class='no-padding'
+                :disable="!$store.getters.canSignEventsAutomatically"
               />
           </div>
         </q-item>
       </q-list>
       <q-form v-if='editingRelays' class='q-py-xs' @submit="addRelay">
-        <q-input
-          v-model="addingRelay"
-          filled
-          dense
-          autofocus
-          label="Add a relay"
-          :disable="!$store.getters.canSignEventsAutomatically"
-        >
-          <template #append>
-            <q-btn
-              label="Add"
-              type="submit"
-              color="primary"
-              outline
-              size="sm"
-              @click="addRelay"
-            />
+          <div class='flex row no-wrap q-mx-sm q-mt-sm' id='new-relay-input'>
+            <q-input v-model='newRelay' placeholder='add a relay...' autofocus class='full-width' input-style='padding: 0;' @keypress.enter='addRelay' dense borderless/>
+            <q-btn icon='add' color='positive' size='sm' flat dense @click.stop='addRelay'/>
+          </div>
+        <BaseSelectMultiple>
+          <template #options>
+            <div style='max-height: 6.75rem;'>
+            <pre class='relay-list' >
+              <li
+                v-for='(relay, index) in optionalRelays'
+                :key='index + "-" + relay'
+                class='relay-item'
+                @click.stop='relays[relay]={read: true, write: true}'
+              >
+                <div class='flex row justify-between no-wrap'>
+                  <span style='overflow: auto;'>{{relay}}</span>
+                  <q-icon name='add' size='xs' color='positive' flat/>
+                </div>
+              </li>
+            </pre>
+            </div>
           </template>
-        </q-input>
+        </BaseSelectMultiple>
       </q-form>
     </div>
 
@@ -264,13 +244,28 @@ import helpersMixin from '../utils/mixin'
 import {dbErase} from '../query'
 import { getCssVar, setCssVar } from 'quasar'
 import BaseSelect from 'components/BaseSelect.vue'
+import BaseSelectMultiple from 'components/BaseSelectMultiple.vue'
+import { createMetaMixin } from 'quasar'
+
+const metaData = {
+  // sets document title
+  title: 'astral - settings',
+
+  // meta tags
+  meta: {
+    description: { name: 'description', content: 'Nostr and astral user configuration' },
+    keywords: { name: 'keywords', content: 'nostr decentralized social media' },
+    equiv: { 'http-equiv': 'Content-Type', content: 'text/html; charset=UTF-8' },
+  },
+}
 
 export default {
   name: 'Settings',
-  mixins: [helpersMixin],
+  mixins: [helpersMixin, createMetaMixin(metaData)],
   emits: ['update-font'],
   components: {
-    BaseSelect
+    BaseSelect,
+    BaseSelectMultiple
   },
 
   data() {
@@ -292,7 +287,7 @@ export default {
       choosingFont: false,
       choosingTheme: false,
       preferences: {},
-      addingRelay: '',
+      newRelay: '',
       unsubscribe: null,
       hasJustSharedRelay: false,
       themes: {
@@ -356,15 +351,39 @@ export default {
     }
   },
 
+  // props: {
+  //   showKeys: {
+  //     type: Boolean,
+  //     default: false
+  //   }
+  // },
+
   watch: {
     '$store.state.relays'(curr, prev) {
       if (curr !== prev) this.cloneRelays()
     },
   },
+  computed: {
+    optionalRelays() {
+      let options = this.$store.state.optionalRelaysList.filter(relay => {
+        if (this.newRelay.length && !relay.toLowerCase().includes(this.newRelay.toLowerCase())) return false
+        if (this.relays[relay]) return false
+        return true
+      })
+      return options
+    },
+  },
 
   mounted() {
-    if (this.$route.params.showKeys) {
-      this.keysDialog = true
+    if (!this.$store.state.keys.pub) this.$router.push('/')
+    console.log('initUser', this.$route.params.initUser)
+    if (this.$store.state.keys.pub && this.$route.params.initUser) {
+          nextTick(() => {
+            setTimeout(() => {
+              this.keysDialog = true
+    console.log('initUser', this.$route.params.initUser)
+            }, 1000)
+          })
     }
 
     this.unsubscribe = this.$store.subscribe((mutation, state) => {
@@ -385,14 +404,14 @@ export default {
 
           break
         }
-        case 'setKeys': {
-          nextTick(() => {
-            setTimeout(() => {
-              this.keysDialog = true
-            }, 1)
-          })
-          break
-        }
+        // case 'setKeys': {
+        //   nextTick(() => {
+        //     setTimeout(() => {
+        //       this.keysDialog = true
+        //     }, 1)
+        //   })
+        //   break
+        // }
       }
     })
     this.cloneRelays()
@@ -409,7 +428,9 @@ export default {
       this.metadata = {name, picture, about, nip05}
     },
     cloneRelays() {
-      this.relays = JSON.parse(JSON.stringify(this.$store.state.relays))
+      // this.relays = JSON.parse(JSON.stringify(this.$store.state.relays))
+      this.relays = Object.assign({},
+        Object.keys(this.$store.state.relays).length ? this.$store.state.relays : this.$store.state.defaultRelays)
     },
     async setMetadata() {
       if (this.metadata.nip05 === '') this.metadata.nip05 = undefined
@@ -426,6 +447,7 @@ export default {
         }
       }
 
+      if (!Object.keys(this.$store.state.relays).length) this.saveRelays()
       this.$store.dispatch('setMetadata', this.metadata)
     },
     clonePreferences() {
@@ -450,21 +472,25 @@ export default {
       }
     },
     addRelay() {
-      this.relays[this.addingRelay] = { read: true, write: true }
-      this.addingRelay = ''
+      if (this.newRelay && this.newRelay.length) this.relays[this.newRelay] = { read: true, write: true }
+      this.newRelay = ''
     },
     removeRelay(url) {
-      this.$q
-        .dialog({
-          title: 'Are you sure?',
-          message: `Do you really want to remove ${url} from the list of relays?`,
-          cancel: true
-        })
-        .onOk(() => {
-          delete this.relays[url]
-        })
+      delete this.relays[url]
     },
     saveRelays() {
+      if (!Object.keys(this.relays).length) {
+        this.$q
+        .dialog({
+          title: 'no relays saved!',
+          message: 'you must have at least one relay selected to save. please add a relay.',
+          ok: {color: 'accent'}
+        })
+        .onOk(() => {
+          return
+        })
+        return
+      }
       if (this.$store.getters.canSignEventsAutomatically) this.$store.commit('saveRelays', this.relays)
     },
     savePreferences() {
@@ -521,11 +547,11 @@ export default {
         .dialog({
           title: 'logout?',
           message: 'this will not delete your local nostr database but will allow you to login as another user. continue?',
-          cancel: true
+          cancel: {color: 'accent'},
+          ok: {color: 'accent'}
         })
         .onOk(async () => {
           LocalStorage.clear()
-          await this.$router.push('/')
           window.location.reload()
         })
     },
@@ -534,7 +560,8 @@ export default {
         .dialog({
           title: 'delete all data?',
           message: 'do you really want to delete all data from this device?',
-          cancel: true
+          cancel: {color: 'accent'},
+          ok: {color: 'accent'}
         })
         .onOk(async () => {
           LocalStorage.clear()

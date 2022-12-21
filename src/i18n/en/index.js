@@ -85,6 +85,7 @@ export default {
   replies: 'replies',
   profile: 'profile',
   relays: 'relays',
+  faq: 'faq',
   users: 'users',
   nip05Maintainer: 'NIP05 maintainer',
   inactiveRelays: 'inactive relays',

@@ -43,7 +43,7 @@
 
 <script>
 import {dbChats} from '../query'
-import {streamMessages} from '../query'
+import {listenMessages} from '../query'
 import helpersMixin from '../utils/mixin'
 import { createMetaMixin } from 'quasar'
 
@@ -79,20 +79,21 @@ export default {
     }
   },
 
-  async activated() {
+  async mounted() {
+    console.log('route', this.$route)
     this.chats = await dbChats(this.$store.state.keys.pub)
     if (this.chats.length === 0) this.noChats = true
     this.chats.forEach(({peer}) => this.useProfile(peer))
     if (this.allChatsNeverRead) this.chats.forEach(({peer}) => this.$store.commit('haveReadMessage', peer))
     this.loading = false
-    this.sub = await streamMessages(async event => {
+    this.sub = await listenMessages(async event => {
       if (event.pubkey === this.$store.state.keys.pub) return
       this.chats = await dbChats(this.$store.state.keys.pub)
       this.useProfile(event.pubkey)
     })
   },
 
-  deactivated() {
+  beforeUnmount() {
     if (this.sub) {
       this.sub.cancel()
       this.sub = null

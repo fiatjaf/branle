@@ -2,7 +2,7 @@
   <q-layout>
     <link v-if='!updatingFont' id='font-link' rel="stylesheet" :href="`https://fonts.googleapis.com/css2?family=${googleFontsName}`" crossorigin/>
     <q-dialog v-if='!$store.state.keys.pub' v-model='initializeKeys' persistent>
-    <TheKeyInitializationDialog style='max-height: 85vh' @look-around='lookingAround=true'/>
+    <TheKeyInitializationDialog style='max-height: 85vh' @look-around='setLookingAroundMode'/>
     </q-dialog>
     <div id='layout-container' :ripple='false'>
       <div id='left-drawer' class='flex justify-end'>
@@ -20,8 +20,8 @@
         <q-page-container ref='pageContainer'>
           <!-- <TheKeyInitializationDialog v-if='!$store.state.keys.pub && !lookingAround' @look-around='lookingAround=true'/> -->
           <router-view v-slot="{ Component }">
-            <keep-alive  >
-              <component :is="Component" :key='$route.path' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent' @update-font='updateFont'/>
+            <keep-alive :include='["Feed", "Messages", "Notifications"]'>
+              <component :is="Component" :key='$route.path' :looking-around='lookingAround' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent' @update-font='updateFont'/>
             </keep-alive>
           </router-view>
         </q-page-container>
@@ -161,12 +161,14 @@ export default defineComponent({
 
   setup () {
     const $q = useQuasar()
+    // const cachedPages = ref(['feed', 'notifications', 'messages'])
 
     return $q
   },
 
   data() {
     return {
+      cachedPages: ['Feed', 'Notifications', 'Messages'],
       middlePagePos: {},
       fabPos: [0, 10],
       draggingFab: false,
@@ -243,7 +245,7 @@ export default defineComponent({
     },
 
     preserveScrollPos(to, from) {
-      this.middlePagePos[from.fullPath] = getVerticalScrollPosition(this.scrollingContainer)
+      if (this.cachedPages.map(page => page.toLowerCase()).includes(from.name)) this.middlePagePos[from.fullPath] = getVerticalScrollPosition(this.scrollingContainer)
     },
 
     restoreScrollPos(to, from) {
@@ -283,11 +285,8 @@ export default defineComponent({
       if (this.hasLaunched) {
         activateSub()
       }
-      if (this.$store.state.keys.pub) {
-        this.$store.dispatch('launch')
-      } else {
-        this.$store.dispatch('launchWithoutKey')
-      }
+      if (this.$store.state.keys.pub) this.$store.dispatch('launch')
+      else this.$store.dispatch('launchWithoutKey')
       this.hasLaunched = true
     },
 
@@ -409,6 +408,9 @@ export default defineComponent({
       //   }
       }
       // console.log('font', getCssVar('font'), this.googleFontsName)
+    },
+    setLookingAroundMode() {
+      this.lookingAround = true
     }
   },
 })

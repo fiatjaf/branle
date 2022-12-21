@@ -85,9 +85,15 @@
             </a>
           </q-item-label>
         </div>
-        <BaseMarkdown v-if="event.kind === 1" :content='event.interpolated.text' :long-form='isLongForm' @expand='isLongForm = !isLongForm' />
-        <BaseRelayRecommend v-else-if="event.kind === 2" :url="event.content" />
-        <BaseMarkdown v-else> {{ cleanEvent }} </BaseMarkdown>
+        <BaseMarkdown
+          v-if="event.kind === 1"
+          :content='event.interpolated.text'
+          :long-form='isLongForm'
+          @expand='isLongForm = !isLongForm'
+          @resized='calcConnectorValues(10)'
+        />
+        <BaseRelayRecommend v-else-if="event.kind === 2" :url="sanitize(event.content)" />
+        <pre v-else> {{ cleanEvent }} </pre>
         <div
           v-if='!isEmbeded && (isQuote || isRepost)'
           class='reposts flex column'
@@ -224,6 +230,7 @@ import BaseButtonInfo from 'components/BaseButtonInfo.vue'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
 import BaseMarkdown from 'components/BaseMarkdown.vue'
 import BaseRelayRecommend from 'components/BaseRelayRecommend.vue'
+import * as DOMPurify from 'dompurify'
 
 export default defineComponent({
   name: 'BasePost',
@@ -323,19 +330,18 @@ export default defineComponent({
     },
 
     cleanEvent() {
-      return JSON.stringify(cleanEvent(this.event), null, '\n\t')
+      return this.sanitize(JSON.stringify(cleanEvent(this.event), null, 2))
     },
   },
 
   mounted() {
-    // console.log('mounted')
     if (!this.isEmbeded && (this.isQuote || this.isRepost)) {
       if (!Array.isArray(this.reposts)) this.reposts = []
       this.processTaggedEvents(this.mentionEvents, this.reposts)
     }
     this.calcConnectorValues()
     this.$emit('mounted')
-    this.isLongForm = this.event.interpolated.text.length > 500
+    this.isLongForm = this.event.content.length > 600
   },
 
   activated() {
@@ -406,6 +412,10 @@ export default defineComponent({
       console.log('post reply threads add-event', event)
       this.$emit('add-event', event)
     },
+
+    sanitize(text) {
+      return DOMPurify.sanitize(text)
+    }
   }
 })
 </script>

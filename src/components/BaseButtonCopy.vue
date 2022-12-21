@@ -9,7 +9,7 @@
       :size='buttonSize'
       class='button-copy'
       dense
-      :label='verbose ? "copy" : ""'
+      :label='(verbose || buttonLabel) ? (buttonLabel || "copy") : ""'
       align="left"
     >
       <q-tooltip v-if='tooltipText'>
@@ -20,13 +20,20 @@
 
 <script>
 import { defineComponent } from 'vue'
+import helpersMixin from '../utils/mixin'
+import {Notify} from 'quasar'
 
 export default defineComponent({
   name: 'BaseButtonCopy',
+  mixins: [helpersMixin],
   props: {
     buttonText: {
       type: String,
       required: true
+    },
+    buttonLabel: {
+      type: String,
+      default: null
     },
     buttonClass: {
       type: String,
@@ -52,20 +59,25 @@ export default defineComponent({
       default: null
     }
   },
-
-  methods: {
-    copy() {
-      let text = this.copyText(this.buttonText)
-      console.log(text)
-      navigator.clipboard.writeText(text)
-    },
-
-    copyText(defaultText) {
+  computed: {
+    copyText() {
       let selection = this.element?.getSelection()?.toString()
       if (selection) {
         return selection
-      } else return defaultText
+      } else return this.buttonText
     },
+  },
+
+  methods: {
+    copy() {
+      let text = this.copyText
+      console.log(text)
+      navigator.clipboard.writeText(text)
+      Notify.create({
+        message: `copied ${this.shorten(this.copyText, 30)}`,
+      })
+    },
+
   }
 })
 </script>

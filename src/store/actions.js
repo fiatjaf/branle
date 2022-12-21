@@ -111,7 +111,7 @@ export async function restartMainSubscription(store) {
 
   // setup pool
   let relays = Object.keys(store.state.relays).length ? store.state.relays : store.state.defaultRelays
-  await setRelays(relays, lastUserMainSync - (7 * 24 * 60 * 60))
+  await setRelays(relays, lastUserMainSync - (1 * 24 * 60 * 60))
 
   // sub to bot tracker follows (to filter out bots in feed)
   let botTracker = '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'
@@ -121,7 +121,7 @@ export async function restartMainSubscription(store) {
   }, 60 * 1000)
 
   // sub feed
-  if (!mainSub.streamFeed) mainSub.streamFeed = await streamFeed(Math.round(Date.now() / 1000) - (5 * 24 * 60 * 60))
+  if (!mainSub.streamFeed) mainSub.streamFeed = await streamFeed(Math.round(Date.now() / 1000) - (1 * 24 * 60 * 60))
 
   // thats all if no pubkey entered
   if (!store.state.keys.pub) return
@@ -133,7 +133,7 @@ export async function restartMainSubscription(store) {
     let config = LocalStorage.getItem('config') || {}
     config.timestamps = {lastUserMainSync: Object.keys(store.state.relays).length ? Math.round(Date.now() / 1000) : 0 }
     LocalStorage.set('config', config)
-  }, 3 * 60 * 1000)
+  }, 5 * 60 * 1000)
 
   if (store.state.follows.length)
     store.state.follows.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
@@ -369,25 +369,19 @@ export async function recommendRelay(store, url) {
 const debouncedStreamUserProfile = debounce(async (store, users) => {
   if (!mainSub.streamUserProfile) {
     mainSub.streamUserProfile = await streamUserProfile(
-      users,
+      users.slice(0, 500),
       async event => {
         if (event.pubkey in store.state.profilesCache) return
         let metadata = metadataFromEvent(event)
         store.commit('addProfileToCache', metadata)
         store.dispatch('useNip05', {metadata})
+        store.dispatch('cancelUseProfile', {pubkey: event.pubkey})
       }
     )
   } else {
-    if (Object.keys(users).length > 500) {
-      for (let pubkey of users) {
-        if (pubkey in store.state.profilesCache) {
-          store.dispatch('cancelUseProfile', {pubkey})
-        }
-      }
-    }
-    mainSub.streamUserProfile.update(users)
+    mainSub.streamUserProfile.update(users.slice(0, 500))
   }
-}, 100)
+}, 3000)
 
 let profilesInUse = {}
 export async function useProfile(store, {pubkey}) {
@@ -403,18 +397,21 @@ export async function useProfile(store, {pubkey}) {
     if (event) {
       let metadata = metadataFromEvent(event)
       store.dispatch('useNip05', {metadata})
+    } else {
+      profilesInUse[pubkey] = profilesInUse[pubkey] || { count: 0, since: Date.now() }
+      profilesInUse[pubkey].count++
+      for (let pubkey of Object.keys(profilesInUse)) {
+        if (profilesInUse[pubkey].since && profilesInUse[pubkey].since < Date.now() - (0.5 * 60 * 1000)) delete profilesInUse[pubkey]
+      }
+      if (profilesInUse[pubkey].count === 1) debouncedStreamUserProfile(store, Object.keys(profilesInUse))
     }
   }
-
-  profilesInUse[pubkey] = profilesInUse[pubkey] || 0
-  profilesInUse[pubkey]++
-  if (profilesInUse[pubkey] === 1) debouncedStreamUserProfile(store, Object.keys(profilesInUse))
 }
 
 export async function cancelUseProfile(store, {pubkey}) {
   if (!profilesInUse[pubkey]) return
-  profilesInUse[pubkey]--
-  if (profilesInUse[pubkey] === 0) {
+  profilesInUse[pubkey].count--
+  if (profilesInUse[pubkey].count <= 0) {
     delete profilesInUse[pubkey]
     debouncedStreamUserProfile(store, Object.keys(profilesInUse))
   }

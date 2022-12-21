@@ -40,11 +40,11 @@
       class='menu-item'
       :dense='compactMode'
       :style='compactMode ? "" : "min-height: 2.75rem;"'
-      :active="$route.name === item.title"
+      :active="($route.name === item.title || $route.path.split('/')[1] === item.title)"
       active-class=''
       @click='(event) => handleClick(event, item)'
       :key='item.title'
-      :class="($route.name === item.title ? 'menu-item-active text-accent ' : '') +
+      :class="(($route.name === item.title || $route.path.split('/')[1] === item.title) ? 'menu-item-active text-accent ' : '') +
         (compactMode ? 'no-margin no-padding col' : 'self-end q-px-none')"
     >
       <q-item-section v-if='!compactMode' class='gt-sm text-uppercase' style='font-size: 1rem;'>

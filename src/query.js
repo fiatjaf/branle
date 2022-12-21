@@ -130,6 +130,13 @@ export function streamFeed(
   return stream('streamFeed', [since], callback)
 }
 
+export function listenFeed(
+  since = Math.round(Date.now() / 1000),
+  callback = () => { }
+) {
+  return stream('listenFeed', [since], callback)
+}
+
 export async function dbChats(pubkey) {
   return call('dbChats', [pubkey])
 }
@@ -142,8 +149,8 @@ export async function streamUserMessages(pubkey, callback = () => { }) {
   return stream('streamUserMessages', [pubkey], callback)
 }
 
-export async function streamMessages(callback = () => { }) {
-  return stream('streamMessages', [], callback)
+export async function listenMessages(callback = () => { }) {
+  return stream('listenMessages', [], callback)
 }
 
 export async function dbEvent(id) {
@@ -170,8 +177,8 @@ export async function dbMentions(pubkey, limit = 50, until = Math.round(Date.now
   return call('dbMentions', [pubkey, limit, until])
 }
 
-export function streamMentions(pubkey, callback = () => { }) {
-  return stream('streamMentions', [pubkey], callback)
+export function listenMentions(pubkey, callback = () => { }) {
+  return stream('listenMentions', [pubkey], callback)
 }
 
 export async function dbUnreadMentionsCount(pubkey, since = Math.round(Date.now() / 1000)) {

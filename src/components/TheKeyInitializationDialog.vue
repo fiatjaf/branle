@@ -3,88 +3,22 @@
   <!-- <div v-if="showKeyInitialization"> -->
     <q-card class='relative-position full-width'>
       <q-btn icon='close' size='md' flat round class='absolute-top-right z-top' @click='$emit("look-around")'/>
+      <h1 class="text-h6 q-pr-md">welcome to astral</h1>
       <q-expansion-item
         dense
-        dense-toggle
-        expand-icon='info'
+        expand-icon='help'
         expanded-icon='expand_less'
-        class="intro no-padding"
+        class="intro no-padding full-width items-center"
+        header-class='items-center'
       >
-        <!-- <div class='flex row justify-between'> -->
         <template #header>
-          <h1 class="text-h6 q-pr-md">welcome to astral</h1>
+          <span class='full-width'>click here to learn about Nostr, your keys, and how to use astral</span>
         </template>
-        <!-- </div> -->
-        <p>
-        astral is a social media client for the <a href='https://github.com/fiatjaf/nostr' target='_blank'>Nostr</a> protocol,
-        a decentralized and censorship resistant distributed information network that relies on clients and relays.
-        relays store user data. clients communicate with the relays to save and fetch said user data. users choose
-        which relays to store their data on, meaning no one centralized entity has the power to remove your data from the
-        network (so it is recommended to use multiple relays). users choose which clients to use, meaning no one centralized
-        website can stop you from accessing the network. any client can be used with any relay, meaming users can choose
-        their relays and client independently.
-        </p>
-        <p>
-        while astral is implementing a social media usecase of Nostr, the possibilities of Nostr are endless.
-        <a href='https://jesterui.github.io/#/game/jester1y7du0yq7uzfzhxr2xgd64lmchfpf54evjsa59ff4f2mgh83h79rs9k7ffq'>Jester</a>
-        is a beta peer to peer chess client implemented over Nostr.
-        </p>
+        <BaseInformation/>
+        <span style='padding: .2rem 0 0 .2rem;'>note: after login this same information can be found in
+        the <strong>faq</strong> section at the bottom of the settings page</span>
       </q-expansion-item>
-      <q-expansion-item
-        dense
-        dense-toggle
-        expand-icon='info'
-        expanded-icon='expand_less'
-        class="intro no-padding"
-      >
-        <!-- <div class='flex row justify-between'> -->
-        <template #header>
-          <h2 class="text-subtitle2 q-pr-md">enter your key</h2>
-        </template>
-        <q-card-section class="intro no-padding">
-        in order to participate in the Nostr network you will need to a public key and private key pair:
-        <q-list bordered padding class="q-mt-sm q-mb-sm">
-          <q-item>
-            <q-item-section>
-              <q-item-label>public key</q-item-label>
-              <q-item-label caption>
-                publicly known unique ID associated with your user on the Nostr
-                network. can be shared freely. others can see your posts or
-                follow you using only your public key.
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-
-          <q-item>
-            <q-item-section>
-              <q-item-label>private key</q-item-label>
-              <q-item-label caption>
-                <strong>KEEP THIS SECRET!</strong> secret key used to sign for
-                (or unlock) your public key. all content from your user public
-                key will need a signature derived from your private key before
-                being relayed. if a bad actor discovers your private key they
-                can impersonate you on Nostr network.
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card-section>
-      <q-card-section class="onboard no-padding">
-        <p>
-          if you don't have a Nostr key pair you can either generate a new key
-          pair below or close this popup to just look around. if you would like
-          to login at a later time hit the login <q-icon name='login'/> button.
-        </p>
-        <!-- <q-btn-group spread unelevated class='q-gutter-xl'>
-          <q-btn size="sm" outline @click="generate" color="primary">
-            generate
-          </q-btn>
-          <q-btn size="sm" outline color="primary" @click='$emit("look-around")'>
-            look around
-          </q-btn>
-        </q-btn-group> -->
-      </q-card-section>
-      </q-expansion-item>
+      <h2 class="text-subtitle2 q-pr-md">enter your key</h2>
       <q-form @submit="proceed">
         <q-card-section class="key-entry no-padding">
           <q-btn-group spread unelevated>
@@ -163,9 +97,9 @@
             </template>
           </q-input>
         </q-card-section>
-      <div v-if='isBeck32Key(key)'>
+      <!-- <div v-if='isBeck32Key(key)'>
       {{ hexKey }}
-      </div>
+      </div> -->
       </q-form>
       <q-expansion-item
         v-if='isKeyValid'
@@ -241,6 +175,7 @@ import { validateWords } from 'nostr-tools/nip06'
 import { generatePrivateKey } from 'nostr-tools'
 import { decode } from 'bech32-buffer'
 import BaseSelectMultiple from 'components/BaseSelectMultiple.vue'
+import BaseInformation from 'components/BaseInformation.vue'
 
 export default defineComponent({
   name: 'TheKeyInitializationDialog',
@@ -249,6 +184,7 @@ export default defineComponent({
 
   components: {
     BaseSelectMultiple,
+    BaseInformation,
   },
 
   setup() {

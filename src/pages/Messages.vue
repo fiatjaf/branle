@@ -87,7 +87,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbMessages, streamMessages} from '../query'
+import {dbMessages, listenMessages} from '../query'
 import BaseMessage from 'components/BaseMessage.vue'
 import { useQuasar } from 'quasar'
 import { createMetaMixin } from 'quasar'
@@ -179,14 +179,14 @@ export default {
         let newMessages = await dbMessages(
           this.$store.state.keys.pub,
           this.$route.params.pubkey,
-          this.$store.state.unreadMessages[this.$route.params.pubkey]
+          50
         )
         let newMessagesFiltered = await this.processMessages(newMessages)
         this.messages.push(...newMessagesFiltered)
       }
       this.$store.commit('haveReadMessage', this.$route.params.pubkey)
       // this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey, request: true})
-      this.sub = await streamMessages(async event => {
+      this.sub = await listenMessages(async event => {
         let eventUserTags = event.tags
             .filter(([t, v]) => t === 'p' && v)
             .map(([_, v]) => v)

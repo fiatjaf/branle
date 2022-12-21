@@ -10,6 +10,7 @@ const mainnetDefaultRelays = {
     'wss://relay.damus.io': {read: true, write: true},
     'wss://nostr.zebedee.cloud': {read: true, write: false},
     'wss://relay.nostr.info': {read: true, write: false},
+    'wss://nostr-pub.semisol.dev': {read: true, write: false},
   }
   // const default = [
   //   ['wss://nostr.rocks', {read: true, write: true}],
@@ -26,6 +27,7 @@ const mainnetDefaultRelays = {
     'wss://nostr.rocks',
     'wss://rsslay.fiatjaf.com',
     'wss://nostr.zebedee.cloud',
+    'wss://nostr-2.zebedee.cloud',
     'wss://expensive-relay.fiatjaf.com',
     'wss://freedom-relay.herokuapp.com/ws',
     'wss://nostr-relay.freeberty.net',

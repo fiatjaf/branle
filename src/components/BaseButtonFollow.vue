@@ -2,7 +2,6 @@
     <q-btn
       :class='buttonClass + (isFollowing ? "button-unfollow" : "button-follow")'
       :size='buttonSize'
-      :disable="!$store.getters.canSignEventsAutomatically"
       unelevated
       :text-color='isFollowing ? "" : "secondary"'
       dense

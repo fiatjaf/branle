@@ -1,7 +1,7 @@
 import {dbUserProfile, dbEvent} from '../query'
 
-export function shorten(str) {
-  return str ? str.slice(0, 5) + '…' + str.slice(-5) : ''
+export function shorten(str, number = 5) {
+  return str ? str.slice(0, number) + '…' + str.slice(-(number)) : ''
 }
 
 export function getElementFullHeight(element) {

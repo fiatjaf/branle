@@ -46,11 +46,11 @@ export default defineComponent({
     }
   },
 
-  activated() {
+  mounted() {
     this.start()
   },
 
-  deactivated() {
+  beforeUnmount() {
     this.stop()
   },
 
@@ -64,9 +64,9 @@ export default defineComponent({
         this.processEvent(event)
       })
 
-      this.sub.hashtagOld = await dbStreamTagKind('hashtag', this.$route.params.hashtagId.toLowerCase(), 1, event => {
-        this.processEvent(event)
-      })
+      // this.sub.hashtagOld = await dbStreamTagKind('hashtag', this.$route.params.hashtagId.toLowerCase(), 1, event => {
+      //   this.processEvent(event)
+      // })
     },
 
     stop() {

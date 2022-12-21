@@ -190,6 +190,21 @@
     </div>
 
     <q-separator color='accent'/>
+      <q-expansion-item
+        dense
+        expand-icon='help'
+        expanded-icon='expand_less'
+        class="full-width items-center"
+        header-class='items-center'
+      >
+        <template #header>
+          <div class="text-bold flex justify-between no-wrap full-width" style='font-size: 1.1rem;'>{{ $t('faq') }}</div>
+        </template>
+        <q-card-section>
+        <BaseInformation/>
+        </q-card-section>
+      </q-expansion-item>
+    <q-separator color='accent'/>
 
     <div class="flex no-wrap section" style='gap: .2rem;'>
       <q-btn label="View your keys" color="primary" outline @click="keysDialog = true" />
@@ -204,13 +219,14 @@
           <div class="text-lg text-bold tracking-wide leading-relaxed py-2">
             Your keys <q-icon name="vpn_key" />
           </div>
-          <p v-if="$store.state.keys.priv">
-            Make sure you back up your private key!
-          </p>
+          <p v-if="$store.state.keys.priv">Make sure you back up your private key!</p>
           <p v-else>Your private key is not here!</p>
           <div class="mt-1 text-xs">
             Posts are published using your private key. Others can see your
             posts or follow you using only your public key.
+
+            **if you entered a key that starts with 'npub' or 'nsec' these keys will look different.
+            it is the same key you entered, just converted to a different display format (hex)**
           </div>
         </q-card-section>
 
@@ -245,6 +261,7 @@ import {dbErase} from '../query'
 import { getCssVar, setCssVar } from 'quasar'
 import BaseSelect from 'components/BaseSelect.vue'
 import BaseSelectMultiple from 'components/BaseSelectMultiple.vue'
+import BaseInformation from 'components/BaseInformation.vue'
 import { createMetaMixin } from 'quasar'
 
 const metaData = {
@@ -265,7 +282,8 @@ export default {
   emits: ['update-font'],
   components: {
     BaseSelect,
-    BaseSelectMultiple
+    BaseSelectMultiple,
+    BaseInformation,
   },
 
   data() {
@@ -376,12 +394,10 @@ export default {
 
   mounted() {
     if (!this.$store.state.keys.pub) this.$router.push('/')
-    console.log('initUser', this.$route.params.initUser)
     if (this.$store.state.keys.pub && this.$route.params.initUser) {
           nextTick(() => {
             setTimeout(() => {
               this.keysDialog = true
-    console.log('initUser', this.$route.params.initUser)
             }, 1000)
           })
     }
@@ -449,6 +465,7 @@ export default {
 
       if (!Object.keys(this.$store.state.relays).length) this.saveRelays()
       this.$store.dispatch('setMetadata', this.metadata)
+      this.editingMetadata = false
     },
     clonePreferences() {
       this.preferences = {}
@@ -492,6 +509,7 @@ export default {
         return
       }
       if (this.$store.getters.canSignEventsAutomatically) this.$store.commit('saveRelays', this.relays)
+      this.editingRelays = false
     },
     savePreferences() {
       // this.loadFont(this.preferences.font)

@@ -29,10 +29,10 @@
       :label='"load " + unreadFeed[tab].length + " unread"'
       @click='loadUnread'
     />
-    <BasePostThread v-for='(item, index) in feed[tab]' :key='index' :events="item" class='full-width' @add-event='processEvent'/>
+    <BasePostThread v-for='(item, index) in items' :key='index' :events="item" class='full-width' @add-event='processEvent'/>
     <BaseButtonLoadMore
       :loading-more='loadingMore'
-      label='load another day'
+      :label='items.length === feed[tab].length ? "load another day" : "load 100 more"'
       @click='loadMore'
     />
   </q-page>
@@ -43,7 +43,7 @@ import { defineComponent } from 'vue'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import {isValidEvent} from '../utils/event'
-import {streamFeed, dbFeed, dbUserFollows} from '../query'
+import {dbFeed, dbUserFollows} from '../query'
 import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 import { createMetaMixin } from 'quasar'
 
@@ -78,15 +78,41 @@ export default defineComponent({
     BaseButtonLoadMore,
   },
 
+  watch: {
+    lookingAround(curr, prev) {
+      if (curr) {
+        this.loadMore()
+      }
+    }
+  },
+
+  props: {
+    lookingAround: {
+      type: Boolean,
+      default: false,
+    }
+  },
+
   data() {
     return {
-      listener: null,
       reachedEnd: false,
       feed: {
         follows: [],
         global: [],
         AI: [],
         bots: []
+      },
+      feedCounts: {
+        follows: 100,
+        global: 100,
+        AI: 100,
+        bots: 100
+      },
+      unreadCounts: {
+        follows: 100,
+        global: 100,
+        AI: 100,
+        bots: 100
       },
       unreadFeed: {
         follows: [],
@@ -101,20 +127,21 @@ export default defineComponent({
       loadingMore: true,
       loadingUnread: false,
       tab: 'follows',
-      sub: null,
-      since: Math.round(Date.now() / 1000) - (1 * 24 * 60 * 60),
+      since: Math.round(Date.now() / 1000),
       profilesUsed: new Set(),
       // index: 0,
-      active: false,
+      lastLoaded: Math.round(Date.now() / 1000),
+      refreshInterval: null,
+      unsubscribe: null,
     }
   },
 
   computed: {
     items() {
-      if (this.tab === 'follows') return this.feed.follows
-      if (this.tab === 'global') return this.feed.global
-      if (this.tab === 'AI') return this.feed.AI
-      if (this.tab === 'bots') return this.feed.bots
+      if (this.tab === 'follows') return this.feed.follows.slice(0, this.feedCounts['follows'])
+      if (this.tab === 'global') return this.feed.global.slice(0, this.feedCounts['global'])
+      if (this.tab === 'AI') return this.feed.AI.slice(0, this.feedCounts['AI'])
+      if (this.tab === 'bots') return this.feed.bots.slice(0, this.feedCounts['bots'])
       return []
     }
   },
@@ -123,76 +150,68 @@ export default defineComponent({
     this.bots = await this.getFollows(this.botTracker)
     this.follows = await this.getFollows(this.$store.state.keys.pub)
 
-    this.loadMore()
+    if (this.$store.state.keys.pub) this.loadMore()
+    else {
+      this.unsubscribe = this.$store.subscribe((mutation, state) => {
+        switch (mutation.type) {
+          case 'setKeys': {
+            this.loadingMore = true
+            setTimeout(this.loadMore(), 6)
+            break
+          }
+        }
+      })
+    }
 
     if (this.follows.length === 0) {
       this.tab = 'global'
     }
   },
 
-  activated() {
-    // console.log('feed activated', this.index)
-    // this.$refs.virtualScroll.refresh(this.index)
-    this.active = true
-  },
-
   async beforeUnmount() {
     if (this.listener) this.listener.cancel()
-    if (this.sub) this.sub.cancel()
-    this.sub = null
     this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
-  },
-
-  deactivated() {
-    // console.log('feed deactivated', this.index)
-    this.active = false
+    if (this.unsubscribe) this.unsubscribe()
   },
 
   methods: {
     async loadMore() {
       this.loadingMore = true
 
+      if (this.items.length < this.feed[this.tab].length) {
+        this.feedCounts[this.tab] += 100
+        this.loadingMore = false
+        return
+      }
+
       let loadedFeed = {}
       for (let feed of Object.keys(this.feed)) {
         loadedFeed[feed] = []
       }
 
-      // let timer = setTimeout(() => { this.loadingMore = false }, 1000)
-      if (this.sub) {
-        this.since = this.since - (24 * 60 * 60)
-        this.sub.update(this.since - (24 * 60 * 60))
-      } else this.sub = await streamFeed(this.since - (24 * 60 * 60), (event) => {
-        this.processEvent(event, this.unreadFeed)
-      })
+      this.since = this.since - (6 * 60 * 60)
       let results = await dbFeed(this.since)
       if (results) for (let event of results) this.processEvent(event, loadedFeed)
       for (let feed of Object.keys(this.feed)) {
         this.feed[feed] = this.feed[feed].concat(loadedFeed[feed])
       }
 
+      this.refreshInterval = setInterval(async () => {
+        let results = await dbFeed(this.lastLoaded)
+        if (results) for (let event of results) this.processEvent(event, this.unreadFeed)
+        for (let feed of Object.keys(this.feed)) {
+          this.feed[feed] = this.feed[feed].concat(this.unreadFeed[feed])
+        }
+      }, 10000)
+
       this.loadingMore = false
-      // this.sub = await dbStreamFeed(this.since, event => {
-      //   if (!timer) {
-      //     this.processEvent(event, this.feed)
-      //     return
-      //   }
-      //   clearTimeout(timer)
-      //   timer = setTimeout(() => {
-      //     for (let feed of Object.keys(this.feed)) {
-      //       this.feed[feed] = this.feed[feed].concat(loadedFeed[feed])
-      //     }
-      //     timer = null
-      //     this.loadingMore = false
-      //   }, 300)
-      //     this.loadingMore = false
-      //   this.processEvent(event, loadedFeed)
-      // })
     },
 
     loadUnread() {
       this.loadingUnread = true
       this.feed[this.tab] = this.unreadFeed[this.tab].concat(this.feed[this.tab])
       this.unreadFeed[this.tab] = []
+      this.lastLoaded = Math.round(Date.now() / 1000)
       this.loadingUnread = false
     },
 

@@ -171,11 +171,11 @@ export default defineComponent({
     }
   },
 
-  activated() {
+  mounted() {
     this.start()
   },
 
-  deactivated() {
+  beforeUnmount() {
     this.stop()
   },
 

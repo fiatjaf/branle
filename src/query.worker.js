@@ -6,7 +6,7 @@ import initSqlJs from '@jlongster/sql.js'
 import { SQLiteFS } from 'absurd-sql'
 import IndexedDBBackend from 'absurd-sql/dist/indexeddb-backend'
 import sqlWasm from '@jlongster/sql.js/dist/sql-wasm.wasm'
-
+import mergebounce from 'mergebounce'
 
 export var channel = new MessageChannel()
 relay.setPort(channel)
@@ -185,6 +185,12 @@ async function initDb() {
 //   return true
 // }
 
+let debouncedHandleInsertedEvent = mergebounce(
+  events => { for (let event of events) handleInsertedEvent(event) },
+  500,
+  { 'concatArrays': true, 'promise': true, maxWait: 1500 }
+)
+
 function handleInsertedEvent(event) {
   event = JSON.parse(event)
   for (let id in streams) {
@@ -214,7 +220,7 @@ function handleUpdatedEvent(event) {
 function createTables(db, output = console.log) {
   console.log('creating tables and indexes', db)
   db.create_function('handleInsertedEvent', event => {
-    handleInsertedEvent(event)
+    debouncedHandleInsertedEvent([event])
   })
   db.create_function('handleUpdatedEvent', event => {
     handleUpdatedEvent(event)
@@ -330,6 +336,7 @@ function saveEventsToDb(events, output = console.log, outputTiming = console.log
   if (!db) return
   if (!active) return
   if (saving) return
+  if (!events.length) return
   saving = true
   let start = Date.now()
   console.debug(`saving ${events.length} events...`)
@@ -462,6 +469,19 @@ const methods = {
     }
   },
 
+  listenFeed(since, callback) {
+    // don't need to open relay sub bc launch already subs the mentions
+    // also don't need date restriction as db should always be up to date
+    // and only new messages will be inserted
+    return {
+      filter: {
+        kinds: [1, 2],
+        since
+      },
+      callback,
+    }
+  },
+
   dbChats(pubkey) {
     let result = queryDb(`
       SELECT peer, MAX(last_message) last_message
@@ -541,7 +561,7 @@ const methods = {
   //   }
   // },
 
-  streamMessages(callback) {
+  listenMessages(callback) {
     // don't need to open relay sub bc launch already subs the mentions
     // also don't need date restriction as db should always be up to date
     // and only new messages will be inserted
@@ -603,7 +623,7 @@ const methods = {
     return result.map(row => JSON.parse(row.event))
   },
 
-  streamMentions(pubkey, callback) {
+  listenMentions(pubkey, callback) {
     // don't need to open relay sub bc launch already subs the mentions
     // also don't need date restriction as db should always be up to date
     // and only new messages will be inserted
@@ -853,7 +873,7 @@ const methods = {
   },
 
   prune(user, pubkeys) {
-    let until = Math.round(Date.now() / 1000) - (10 * 24 * 60 * 60)
+    let until = Math.round(Date.now() / 1000) - (1 * 24 * 60 * 60)
     let pubkeyList = `("${pubkeys.join('","')}")`
     let result = queryDb(`
       DELETE

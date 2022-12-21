@@ -2,7 +2,7 @@
 
   <q-page ref='page'>
     <BaseHeader>{{ $t('thread') }}</BaseHeader>
-    <div v-if="ancestorsCompiled.length || rootAncestor">
+    <div ref='ancestors' v-if="ancestorsCompiled.length || rootAncestor">
       <BasePostThread :events="ancestorsCompiled" is-ancestors @add-event='addEventAncestors'/>
     </div>
 
@@ -17,7 +17,7 @@
       <div v-else>
         {{ $t('event') }} {{ $route.params.eventId }}
       </div>
-    <BaseRelayList v-if="event?.seen_on?.length" :event='event' class='q-px-sm'/>
+      <BaseRelayList v-if="event?.seen_on?.length" :event='event' class='q-px-sm'/>
     </q-item>
 
     <q-separator color='accent' size='1px'/>
@@ -28,7 +28,7 @@
         <BasePostThread :events="thread" @add-event='processChildEvent'/>
       </div>
     </div>
-    <div style='min-height: 70vh;'/>
+    <div style='min-height: 30vh;'/>
   </q-page>
 </template>
 
@@ -86,11 +86,11 @@ export default defineComponent({
     }
   },
 
-  activated() {
+  mounted() {
     this.start()
   },
 
-  deactivated() {
+  beforeUnmount() {
     this.stop()
   },
 

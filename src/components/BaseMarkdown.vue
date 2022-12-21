@@ -14,6 +14,7 @@
     label='show full post'
     @click.stop="expand"
   />
+  <BaseInvoice v-if='invoice' :invoice='invoice'/>
   <!-- <div v-if='links.length'>
     <BaseLinkPreview v-for='(link, idx) of links' :key='idx' :url='link' />
   </div> -->
@@ -27,7 +28,8 @@ import deflist from 'markdown-it-deflist'
 import taskLists from 'markdown-it-task-lists'
 import emoji from 'markdown-it-emoji'
 import helpersMixin from '../utils/mixin'
-// import BaseLinkPreview from 'components/BaseLinkPreview.vue'
+import * as bolt11Parser from 'light-bolt11-decoder'
+import BaseInvoice from 'components/BaseInvoice.vue'
 
 const md = MarkdownIt({
   html: false,
@@ -56,6 +58,7 @@ md.use(subscript)
             trimmed.endsWith('.png') ||
             trimmed.endsWith('.jpeg') ||
             trimmed.endsWith('.jpg') ||
+            trimmed.endsWith('.svg') ||
             trimmed.endsWith('.mp4') ||
             trimmed.endsWith('.webm') ||
             trimmed.endsWith('.ogg')
@@ -76,9 +79,10 @@ md.use(subscript)
         trimmed.endsWith('.gif') ||
         trimmed.endsWith('.png') ||
         trimmed.endsWith('.jpeg') ||
-        trimmed.endsWith('.jpg')
+        trimmed.endsWith('.jpg') ||
+        trimmed.endsWith('.svg')
       ) {
-        return `<img src="${src}" crossorigin async style="max-width: 90%; max-height: 50vh;">`
+        return `<img src="${src}" crossorigin async loading='lazy' style="max-width: 90%; max-height: 50vh;">`
       } else if (
         trimmed.endsWith('.mp4') ||
         trimmed.endsWith('.webm') ||
@@ -178,14 +182,15 @@ md.linkify
 export default {
   name: 'BaseMarkdown',
   mixins: [helpersMixin],
-  emits: ['expand'],
-  // components: {
-  //   BaseLinkPreview,
-  // },
+  emits: ['expand', 'resized'],
+  components: {
+    BaseInvoice,
+  },
 
   data() {
     return {
       html: '',
+      invoice: null,
       // links: [],
     }
   },
@@ -201,6 +206,23 @@ export default {
     },
   },
 
+  computed: {
+    parsedContent() {
+      const bolt11Regex = /\b(?<i>(lnbc|LNBC)[0-9a-zA-Z]*1[0-9a-zA-Z]+)\b/g
+      const replacer = (match, index) => {
+        try {
+          this.invoice = bolt11Parser.decode(match)
+          return ''
+        } catch (e) {
+        console.log('invoice parsing error', e)
+          return match
+        }
+      }
+      let replacedContent = this.content.replace(bolt11Regex, replacer)
+      return replacedContent
+    }
+  },
+
   mounted() {
     this.render()
   },
@@ -211,7 +233,7 @@ export default {
 
   methods: {
     render() {
-      this.html = md.render(this.content) + this.$refs.append.innerHTML
+      this.html = md.render(this.parsedContent) + this.$refs.append.innerHTML
       // md.render(this.$refs.src.innerHTML) + this.$refs.append.innerHTML
       this.$refs.html.querySelectorAll('img').forEach(img => {
         img.addEventListener('click', (e) => {
@@ -221,6 +243,10 @@ export default {
           } else if (document.exitFullscreen) {
             document.exitFullscreen()
           }
+          this.$emit('resized')
+        })
+        img.addEventListener('load', (e) => {
+          this.$emit('resized')
         })
       })
       // if (this.links.length === 0) {

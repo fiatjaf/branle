@@ -23,7 +23,7 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbMentions, streamMentions} from '../query'
+import {dbMentions, listenMentions} from '../query'
 import { createMetaMixin } from 'quasar'
 
 const metaData = {
@@ -56,7 +56,7 @@ export default {
   async activated() {
     if (this.$store.state.unreadNotifications) this.loadNew()
 
-    this.sub = streamMentions(this.$store.state.keys.pub, async event => {
+    this.sub = listenMentions(this.$store.state.keys.pub, async event => {
       let loadedNotificationsFiltered = await this.processNotifications([event])
       if (loadedNotificationsFiltered.length === 0) return
       this.notifications = loadedNotificationsFiltered.concat(this.notifications)

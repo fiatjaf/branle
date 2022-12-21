@@ -2434,6 +2434,11 @@ bech32-buffer@^0.2.0:
   resolved "https://registry.npmjs.org/bech32-buffer/-/bech32-buffer-0.2.0.tgz"
   integrity sha512-Ez8s82a+Xnn/m3/ftGaQJUSFG4EwNIj9adIJBw8OrHASQsXgvwLSducbcJ9El0rsrwJYJ71yBhC/hZzz3FPSCQ==
 
+bech32@^1.1.2:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
+  integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
+
 big.js@^5.2.2:
   version "5.2.2"
   resolved "https://registry.npmjs.org/big.js/-/big.js-5.2.2.tgz"
@@ -2452,6 +2457,11 @@ bl@^4.0.3, bl@^4.1.0:
     buffer "^5.5.0"
     inherits "^2.0.4"
     readable-stream "^3.4.0"
+
+bn.js@^4.11.8:
+  version "4.12.0"
+  resolved "https://registry.yarnpkg.com/bn.js/-/bn.js-4.12.0.tgz#775b3f278efbb9718eec7361f483fb36fbbfea88"
+  integrity sha512-c98Bf3tPniI+scsdk237ku1Dc3ujXQTSgyiPUDEOe7tRkhrqridvh8klBv0HCEso1OLOYcHuCv/cS6DNxKH+ZA==
 
 body-parser@1.20.0:
   version "1.20.0"
@@ -2574,7 +2584,7 @@ buffer-xor@^1.0.3:
   resolved "https://registry.yarnpkg.com/buffer-xor/-/buffer-xor-1.0.3.tgz#26e61ed1422fb70dd42e6e36729ed51d855fe8d9"
   integrity sha512-571s0T7nZWK6vB67HI5dyUF7wXiNcfaPPPTl6zYCNApANjIvYJTg7hlud/+cJpdAhS7dVzqMLmfhfHR3rAcOjQ==
 
-buffer@>=5:
+buffer@>=5, buffer@^6.0.3:
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/buffer/-/buffer-6.0.3.tgz#2ace578459cc8fbe2a70aaa8f52ee63b6a74c6c6"
   integrity sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==
@@ -3287,6 +3297,11 @@ domhandler@^4.0.0, domhandler@^4.2.0, domhandler@^4.3.1:
   integrity sha512-GrwoxYN+uWlzO8uhUXRl0P+kHE4GtVPfYzVLcUxPL7KNdHKj66vvlhiweIHqYYXWlw+T8iLMp42Lm67ghw4WMQ==
   dependencies:
     domelementtype "^2.2.0"
+
+dompurify@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-2.4.1.tgz#f9cb1a275fde9af6f2d0a2644ef648dd6847b631"
+  integrity sha512-ewwFzHzrrneRjxzmK6oVz/rZn9VWspGFRDb4/rRtIsM1n36t9AKma/ye8syCpcw+XJ25kOK/hOG7t1j2I2yBqA==
 
 domutils@^2.5.2, domutils@^2.8.0:
   version "2.8.0"
@@ -4774,6 +4789,15 @@ levn@^0.4.1:
     prelude-ls "^1.2.1"
     type-check "~0.4.0"
 
+light-bolt11-decoder@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/light-bolt11-decoder/-/light-bolt11-decoder-2.1.0.tgz#46b122790ae0eb415841227eba770eae7303ecf5"
+  integrity sha512-/AaSWTldx3aaFD7DgMVbX77MVEgLEPI0Zyx4Fjg23u3WpEoc536vz5LTXBU8oXAcrEcyDyn5GpBi2pEYuL351Q==
+  dependencies:
+    bech32 "^1.1.2"
+    bn.js "^4.11.8"
+    buffer "^6.0.3"
+
 lilconfig@^2.0.3:
   version "2.0.6"
   resolved "https://registry.npmjs.org/lilconfig/-/lilconfig-2.0.6.tgz"
@@ -5187,6 +5211,11 @@ natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz"
   integrity sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==
+
+nayuki-qr-code-generator@^1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/nayuki-qr-code-generator/-/nayuki-qr-code-generator-1.8.0.tgz#dbeebd7b3d2b53119c51a596ad43199ef6798916"
+  integrity sha512-wnpXdJ+zJ+8QzzGJTEnESaRYfNIUHSgX4ykvYuaomqqUbhJdun3v0sK/39BQjw3on/vf7ujPKIg2V07WejjmLw==
 
 negotiator@0.6.3:
   version "0.6.3"

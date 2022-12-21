@@ -14,6 +14,7 @@
 import helpersMixin from '../utils/mixin'
 import {cleanEvent} from '../utils/event'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
+import * as DOMPurify from 'dompurify'
 
 export default {
   name: 'BaseRawEvent',
@@ -25,20 +26,16 @@ export default {
 
   computed: {
     cleaned() {
-      if (Array.isArray(this.event)) return this.event.map(cleanEvent)
-      return cleanEvent(this.event)
+      console.log('cleaned', JSON.parse(DOMPurify.sanitize(JSON.stringify(this.event))))
+      if (Array.isArray(this.event)) return this.event.map(event => cleanEvent(this.sanitize(event)))
+      return cleanEvent(this.sanitize(this.event))
     }
   },
 
-  // methods: {
-  //   copyText(defaultText) {
-  //     console.log('defaultText: ', defaultText)
-  //     let selection = window.getSelection().toString()
-  //       console.log('selection: ', selection)
-  //     if (selection) {
-  //       return selection
-  //     } else return defaultText
-  //   },
-  // }
+  methods: {
+    sanitize(event) {
+      return JSON.parse(DOMPurify.sanitize(JSON.stringify(this.event)))
+    },
+  }
 }
 </script>

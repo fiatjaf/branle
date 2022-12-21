@@ -1,3 +1,5 @@
+import * as DOMPurify from 'dompurify'
+
 export function cleanEvent(event) {
   return {
     id: event.id,
@@ -13,6 +15,7 @@ export function cleanEvent(event) {
 export function metadataFromEvent(event) {
   try {
     let metadata = JSON.parse(event.content)
+    for (let key of Object.keys(metadata)) metadata[key] = DOMPurify.sanitize(metadata[key])
     metadata.pubkey = event.pubkey
     return metadata
   } catch (_) {

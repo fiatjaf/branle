@@ -5,6 +5,7 @@ import {date} from 'quasar'
 import { dbStreamEvent } from 'src/query'
 import {decrypt} from 'nostr-tools/nip04'
 import { decode } from 'bech32-buffer'
+import * as DOMPurify from 'dompurify'
 const { formatDate } = date
 
 
@@ -119,8 +120,8 @@ export default {
           return `[@${displayName}](/${profile})`
         }
       }
-      const hashtagReplacer = (match, hashtag) => {
-        return `[${match}](/hashtag/${hashtag})`
+      const hashtagReplacer = (match, startWhitespace, hashtag) => {
+        return `${startWhitespace}[${match}](/hashtag/${hashtag})`
       }
       const untaggedProfileReplacer = (match, profile) => {
         const displayName = this.$store.getters.displayName(profile)
@@ -128,7 +129,7 @@ export default {
       }
 
       let replacedText = text.replace(/#\[(\d+)\]/g, replacer)
-      let hashtagReplacedText = replacedText.replace(/#([\w]{1,63})/g, hashtagReplacer)
+      let hashtagReplacedText = replacedText.replace(/(?<s>[\s]?)#([\w]{1,63})\b/g, hashtagReplacer)
       let untaggedProfileReplacedText = hashtagReplacedText.replace(/@([\w]{64})/g, untaggedProfileReplacer)
       let replacedTextFinal = untaggedProfileReplacedText
 
@@ -154,7 +155,7 @@ export default {
       })
 
       return {
-        text: replacedTextFinal,
+        text: DOMPurify.sanitize(replacedTextFinal),
         replyEvents: mentions.replyEvents,
         mentionEvents: mentions.mentionEvents
       }

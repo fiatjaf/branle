@@ -134,6 +134,13 @@ module.exports = configure(function (ctx) {
 
       // Quasar plugins
       plugins: ['Notify', 'Dialog', 'Meta'],
+
+      config: {
+        notify: {
+          closeBtn: true,
+        }
+      },
+
     },
 
     // animations: 'all', // --- includes all animations

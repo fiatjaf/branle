@@ -51,6 +51,7 @@ const mainnetDefaultRelays = {
     'wss://relay.cynsar.foundation',
     'wss://nostr.sandwich.farm',
     'wss://relay.nostr.ch',
+    'wss://nostr.mom',
     ]
 
 //   for (let i = 0; i < 3; i++) {

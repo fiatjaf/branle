@@ -11,9 +11,11 @@ npm install
 
 ### Start the app in development mode (hot-code reloading, error reporting, etc.)
 ```bash
+yarn dev
+# or
+npm run dev
+# or if quasar installed locally
 quasar dev
-# or if quasar is not installed globally
-./node_modules/.bin/quasar dev
 ```
 
 ### Lint the files
@@ -22,6 +24,7 @@ yarn lint
 # or
 npm run lint
 ```
+
 ### Format the files
 ```bash
 yarn format
@@ -31,16 +34,20 @@ npm run format
 
 ### Build the app for production in PWA mode:
 ```bash
+yarn build:pwa
+# or
+npm run build:pwa
+# or if quasar installed locally
 quasar build -m pwa
-# or if quasar is not installed globally
-./node_modules/.bin/quasar build -m pwa
 ```
 
 ### Build the app for production in SPA mode:
 ```bash
+yarn build:spa
+# or
+npm run build:spa
+# or if quasar installed locally
 quasar build
-# or if quasar is not installed globally
-./node_modules/.bin/quasar build
 ```
 
 ## Docker

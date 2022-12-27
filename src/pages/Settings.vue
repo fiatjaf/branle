@@ -23,7 +23,7 @@
         dense
         type="text"
         label="About (in 150 chars)"
-        maxlength="150"
+        maxlength="300"
       />
       <q-input
         v-model.trim="metadata.picture"
@@ -45,7 +45,7 @@
         dense
         type="text"
         label="NIP-05 Identifier"
-        maxlength="50"
+        maxlength="100"
       />
     </q-form>
 
@@ -89,7 +89,7 @@
         <template #default>{{ preferences.font }}</template>
         <template #list-items>
           <li v-for='(font, index) in fonts' :key='index' class='font-item' @click.stop='updateFont(font)'>
-            <link :href="`https://fonts.googleapis.com/css2?family=${googleFontsName(font)}`" rel="stylesheet" crossorigin/>
+            <link :href="`https://fonts.googleapis.com/css2?family=${googleFontsName(font)}`" rel="stylesheet"/>
             <span :style="`font-family: '${font}';`">{{font}}</span>
           </li>
         </template>
@@ -224,22 +224,19 @@
           <div class="mt-1 text-xs">
             Posts are published using your private key. Others can see your
             posts or follow you using only your public key.
-
-            **if you entered a key that starts with 'npub' or 'nsec' these keys will look different.
-            it is the same key you entered, just converted to a different display format (hex)**
           </div>
         </q-card-section>
 
         <q-card-section>
           <p>Private Key:</p>
           <q-input
-            v-model="$store.state.keys.priv"
+            v-model="nsecKey"
             class="mb-2"
             readonly
             filled
           />
           <p>Public Key:</p>
-          <q-input v-model="$store.state.keys.pub" readonly filled />
+          <q-input v-model="npubKey" readonly filled />
         </q-card-section>
 
         <q-card-actions align="right" class="text-primary">
@@ -396,6 +393,14 @@ export default {
       })
       return options
     },
+    npubKey() {
+      if (this.$store.state.keys.pub) return this.hexToBech32(this.$store.state.keys.pub, 'npub')
+      return null
+    },
+    nsecKey() {
+      if (this.$store.state.keys.priv) return this.hexToBech32(this.$store.state.keys.priv, 'nsec')
+      return null
+    },
   },
 
   mounted() {
@@ -446,8 +451,8 @@ export default {
 
   methods: {
     cloneMetadata() {
-      let {name, picture, about, nip05} = this.$store.state.profilesCache[this.$store.state.keys.pub]
-      this.metadata = {name, picture, about, nip05}
+      this.metadata = Object.assign({}, this.$store.state.profilesCache[this.$store.state.keys.pub])
+      // this.metadata = {name, picture, about, nip05}
     },
     cloneRelays() {
       // this.relays = JSON.parse(JSON.stringify(this.$store.state.relays))
@@ -533,12 +538,8 @@ export default {
       for (let colorName of Object.keys(theme)) this.updateColor(theme[colorName], colorName)
     },
     updateFont(font) {
-      // this.loadFont(font)
-      // await fetch(`https://fonts.googleapis.com/css2?family=${this.googleFontsName(font)}`)
-      // setCssVar('font', font)
       this.preferences.font = font
       this.$emit('update-font', font)
-          // <link :href="`https://fonts.googleapis.com/css2?family=${googleFontsName(preferences.font)}`" rel="stylesheet" crossorigin/>
     },
     cancel(section) {
       if (section === 'metadata') {
@@ -629,22 +630,6 @@ export default {
           return 'dark'
       }
     },
-    // loadFont(font) {
-    //   // let font = el.children[0].innerText
-    //   let fontLink = document.createElement('link')
-    //   fontLink.href = `https://fonts.googleapis.com/css2?family=${this.googleFontsName(font)}`
-    //   fontLink.type = 'text/css'
-    //   fontLink.setAttribute('ref', 'stylesheet')
-    //   fontLink.setAttribute('crossorigin', '')
-    //   // fontLink.crossorigin = ''
-    //   document.head.appendChild(fontLink)
-    //   // let fontLink = `<link :href="https://fonts.googleapis.com/css2?family=${this.googleFontsName(font)}" rel="stylesheet" crossorigin/>`
-    //   // el.prepend(fontLink)
-    //   console.log('loading font', document.head)
-    // },
-    // easyfontsName(font) {
-    //   return font.toLowerCase().replace(' ', '-')
-    // },
     googleFontsName(font) {
       try {
         return font.replace(' ', '+')

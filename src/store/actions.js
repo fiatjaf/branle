@@ -1,7 +1,8 @@
 import {encrypt} from 'nostr-tools/nip04'
 import {queryName} from 'nostr-tools/nip05'
-import {Notify, LocalStorage, debounce} from 'quasar'
-import {pool, signAsynchronously} from '../pool'
+import {Notify, debounce} from 'quasar'
+import {signAsynchronously} from '../utils/event'
+// import {pool} from '../pool'
 import {
   dbSave,
   dbUserProfile,
@@ -13,7 +14,8 @@ import {
   dbQuery,
   setRelays,
   publish,
-  prune
+  setPrivateKey,
+  // prune
 } from '../query'
 import {getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
@@ -37,9 +39,7 @@ export async function launch(store) {
 
   // if we have already have a private key
   if (store.state.keys.priv) {
-    pool.setPrivateKey(store.state.keys.priv)
-  } else {
-    pool.registerSigningFunction(signAsynchronously)
+    setPrivateKey(store.state.keys.priv)
   }
 
   let {relays, follows} = store.state
@@ -65,36 +65,12 @@ export async function launch(store) {
     }
   }
 
-  // // translate localStorage into a kind3 event -- or load relays and following from event
-  // let contactList = await dbUserFollows(store.state.keys.pub)
-  // var {relays, following} = store.state
-  // if (contactList) {
-  //   try {
-  //     relays = JSON.parse(contactList.content)
-  //   } catch (err) {
-  //     /***/
-  //   }
-  //   following = contactList.tags
-  //     .filter(([t, v]) => t === 'p' && v)
-  //     .map(([_, v]) => v)
-  // } else {
-  //   // get stuff from localstorage and save to store -- which will trigger the eventize
-  //   // plugin to create and publish a contactlist event
-  //   relays = LocalStorage.getItem('relays') || relays
-  //   following = LocalStorage.getItem('following') || following
-  // }
-
-  // // update store state
-  // store.commit('setFollowing', following)
-  // store.commit('setRelays', relays)
-
   // preload our own profile from the db
   store.dispatch('useProfile', {pubkey: store.state.keys.pub})
 
   // preload our follows profiles from the db
   for (let pubkey of follows) store.dispatch('useProfile', {pubkey})
   // start listening for nostr events
-  // setTimeout(store.dispatch('restartMainSubscription'), 500)
   store.dispatch('restartMainSubscription')
 }
 
@@ -107,11 +83,11 @@ export async function restartMainSubscription(store) {
   // console.log('restart main subscription for', [store.state.keys.pub].concat(store.state.following), store.state.relays)
 
   // get lastUserMainSync
-  let lastUserMainSync = LocalStorage.getItem('config')?.timestamps?.lastUserMainSync || 0
+  // let lastUserMainSync = store.state.config.timestamps?.lastUserMainSync || 0
 
   // setup pool
   let relays = Object.keys(store.state.relays).length ? store.state.relays : store.state.defaultRelays
-  await setRelays(relays, lastUserMainSync - (1 * 24 * 60 * 60))
+  await setRelays(relays)
 
   // sub to bot tracker follows (to filter out bots in feed)
   let botTracker = '29f63b70d8961835b14062b195fc7d84fa810560b36dde0749e4bc084f0f8952'
@@ -127,16 +103,29 @@ export async function restartMainSubscription(store) {
   if (!store.state.keys.pub) return
 
   //after 3 min prune old events and update lastUserMainSync
-  setTimeout(() => {
-    prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.follows))
+  // setTimeout(() => {
+  //   prune(store.state.keys.pub, [botTracker, store.state.keys.pub].concat(store.state.follows))
+  //   if (!Object.keys(store.state.relays).length) return
 
-    let config = LocalStorage.getItem('config') || {}
-    config.timestamps = {lastUserMainSync: Object.keys(store.state.relays).length ? Math.round(Date.now() / 1000) : 0 }
-    LocalStorage.set('config', config)
-  }, 5 * 60 * 1000)
+  //   let timestamps = store.state.config.timestamps
+  //   timestamps.lastUserMainSync = Math.round(Date.now() / 1000)
+  //   store.commit('setConfig', {key: 'timestamps', value: timestamps})
+  // }, 5 * 60 * 1000)
 
-  if (store.state.follows.length)
-    store.state.follows.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
+  if (store.state.follows.length) {
+    let distinctPubkeys = {}
+    if (!mainSub.streamFollowsProfiles)
+      mainSub.streamFollowsProfiles = await streamUserProfile(store.state.follows, async event => {
+        let metadata = metadataFromEvent(event)
+        store.commit('addProfileToCache', metadata)
+        store.dispatch('useNip05', {metadata})
+        distinctPubkeys[event.pubkey] = distinctPubkeys[event.pubkey] || 0
+        distinctPubkeys[event.pubkey]++
+        if (store.state.follows.length === Object.keys(distinctPubkeys).length)
+          mainSub.streamFollowsProfiles.cancel()
+      })
+  }
+    // store.state.follows.forEach(pubkey => store.dispatch('useProfile', {pubkey}))
   if (!mainSub.streamUser) mainSub.streamUser = await streamUser(
     store.state.keys.pub,
     async event => {
@@ -191,13 +180,10 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
       content: message
     }
 
-    let event = await pool.publish(unpublishedEvent)
-    if (!event) throw new Error('could not create post for publishing')
 
+    let event = await signAsynchronously(unpublishedEvent, store)
     let publishResult = await publish(event)
     if (!publishResult) throw new Error('could not publish post')
-    // console.log('sendPost', event, publishResult)
-
     store.dispatch('addEvent', {event})
     return event
   } catch (error) {
@@ -233,12 +219,9 @@ export async function sendChatMessage(store, {now, pubkey, text, tags}) {
       content: ciphertext
     }
 
-    let event = await pool.publish(unpublishedEvent)
-    if (!event) throw new Error('could not create message for publishing')
-
+    let event = await signAsynchronously(unpublishedEvent, store)
     let publishResult = await publish(event)
     if (!publishResult) throw new Error('could not publish message')
-
     store.dispatch('addEvent', {event})
     return event
   } catch (error) {
@@ -271,18 +254,18 @@ export async function publishContactList(store) {
   )
 
   try {
-    let event = await pool.publish({
+    let unpublishedEvent = {
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
       kind: 3,
       tags: newTags,
       content: JSON.stringify(store.state.relays)
-    })
+    }
 
-    if (!event) throw new Error('could not create updated list of followed keys and relays')
-
+    let event = await signAsynchronously(unpublishedEvent, store)
     let publishResult = await publish(event)
     if (!publishResult) throw new Error('could not publish updated list of followed keys and relays')
+    store.dispatch('addEvent', {event})
 
     let relays, follows
     relays = JSON.parse(event.content)
@@ -293,6 +276,7 @@ export async function publishContactList(store) {
     // update store state
     store.commit('setFollows', follows)
     store.commit('setRelays', relays)
+    setRelays(relays)
 
     await store.dispatch('addEvent', {event})
 
@@ -312,18 +296,16 @@ export async function publishContactList(store) {
 
 export async function setMetadata(store, metadata) {
   try {
-    let event = await pool.publish({
+    let unpublishedEvent = {
       pubkey: store.state.keys.pub,
       created_at: Math.floor(Date.now() / 1000),
       kind: 0,
       tags: [],
       content: JSON.stringify(metadata)
-    })
-    if (!event) throw new Error('could not create updated profile event')
-
+    }
+    let event = await signAsynchronously(unpublishedEvent, store)
     let publishResult = await publish(event)
-    if (!publishResult) throw new Error('could not publish update profile event')
-
+    if (!publishResult) throw new Error('could not publish updated profile event')
     store.dispatch('addEvent', {event})
     store.commit('addProfileToCache', { pubkey: store.state.keys.pub, ...metadata })
 
@@ -343,18 +325,16 @@ export async function setMetadata(store, metadata) {
 
 export async function recommendRelay(store, url) {
   try {
-    let event = await pool.publish({
+    let unpublishedEvent = {
       pubkey: store.state.keys.pub,
       created_at: Math.round(Date.now() / 1000),
       kind: 2,
       tags: [],
       content: url
-    })
-    if (!event) throw new Error('could not create recommend relay event')
-
+    }
+    let event = await signAsynchronously(unpublishedEvent, store)
     let publishResult = await publish(event)
     if (!publishResult) throw new Error('could not publish recommend relay event')
-
     store.dispatch('addEvent', {event})
     return event
   } catch (error) {
@@ -403,7 +383,7 @@ export async function useProfile(store, {pubkey}) {
       for (let pubkey of Object.keys(profilesInUse)) {
         if (profilesInUse[pubkey].since && profilesInUse[pubkey].since < Date.now() - (0.5 * 60 * 1000)) delete profilesInUse[pubkey]
       }
-      if (profilesInUse[pubkey].count === 1) debouncedStreamUserProfile(store, Object.keys(profilesInUse))
+      if (profilesInUse[pubkey] && profilesInUse[pubkey].count === 1) debouncedStreamUserProfile(store, Object.keys(profilesInUse))
     }
   }
 }

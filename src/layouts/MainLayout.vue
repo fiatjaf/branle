@@ -1,6 +1,6 @@
 <template>
   <q-layout>
-    <link v-if='!updatingFont' id='font-link' rel="stylesheet" :href="`https://fonts.googleapis.com/css2?family=${googleFontsName}`" crossorigin/>
+    <link v-if='!updatingFont' id='font-link' rel="stylesheet" :href="`https://fonts.googleapis.com/css2?family=${googleFontsName}`"/>
     <q-dialog v-if='!$store.state.keys.pub' v-model='initializeKeys' persistent>
     <TheKeyInitializationDialog style='max-height: 85vh' @look-around='setLookingAroundMode'/>
     </q-dialog>
@@ -20,7 +20,7 @@
         <q-page-container ref='pageContainer'>
           <!-- <TheKeyInitializationDialog v-if='!$store.state.keys.pub && !lookingAround' @look-around='lookingAround=true'/> -->
           <router-view v-slot="{ Component }">
-            <keep-alive :include='["Feed", "Messages", "Notifications"]'>
+            <keep-alive :include='cachedPages'>
               <component :is="Component" :key='$route.path' :looking-around='lookingAround' @scroll-to-rect='scrollToRect' @reply-event='setReplyEvent' @update-font='updateFont'/>
             </keep-alive>
           </router-view>
@@ -143,13 +143,13 @@
 
 <script>
 import { defineComponent} from 'vue'
-import { scroll, useQuasar, LocalStorage } from 'quasar'
+import { scroll, useQuasar } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
 import { activateSub, deactivateSub, destroyStreams } from '../query'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
 import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
-import { setCssVar, getCssVar } from 'quasar'
+import { setCssVar } from 'quasar'
 
 export default defineComponent({
   name: 'MainLayout',
@@ -168,7 +168,7 @@ export default defineComponent({
 
   data() {
     return {
-      cachedPages: ['Feed', 'Notifications', 'Messages'],
+      cachedPages: ['Feed', 'Notifications', 'DevTools', 'Settings', 'Inbox', 'Messages'],
       middlePagePos: {},
       fabPos: [0, 10],
       draggingFab: false,
@@ -219,7 +219,7 @@ export default defineComponent({
     window.onfocus = this.activateWindow
 
     // setup scrolling
-    document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll)
+    document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll, {passive: true})
     this.$router.beforeEach((to, from) => { this.preserveScrollPos(to, from) })
     this.$router.afterEach((to, from) => { this.restoreScrollPos(to, from) })
     let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
@@ -369,45 +369,13 @@ export default defineComponent({
     },
     loadPreferences() {
        // set customization
-    let config = LocalStorage.getItem('config') || {}
-    // console.log('config', config)
-    let preferences = config.preferences
-    if (preferences) {
-      let color = preferences.color
-      if (color) {
-        let {primary, secondary, accent, background} = color
-        if (primary) setCssVar('primary', primary)
-        // else primary = getCssVar('primary')
-        if (secondary) setCssVar('secondary', secondary)
-        // else secondary = getCssVar('secondary')
-        if (accent) setCssVar('accent', accent)
-        // else accent = getCssVar('accent')
-        if (!background) background = getCssVar('background') || getCssVar('dark')
+        let {primary, secondary, accent, background} = this.$store.state.config.preferences.color
+        setCssVar('primary', primary)
+        setCssVar('secondary', secondary)
+        setCssVar('accent', accent)
         setCssVar('background', background)
         this.$q.dark.set(this.lightOrDark(background) === 'dark')
-      }
-      let font = preferences.font || 'Roboto'
-      this.updateFont(font)
-      // if (!font) {
-      //   font = 'Roboto'
-      //   // else setCssVar('font', 'Roboto')
-      //   // else font = getCssVar('font')
-      // }
-    } else {
-        let background = getCssVar('background') || getCssVar('dark')
-        setCssVar('background', background)
-        this.$q.dark.set(this.lightOrDark(background) === 'dark')
-        let font = 'Roboto'
-        this.updateFont(font)
-      // config.preferences = {
-      //   color: {
-      //     primary: getCssVar('primary'),
-      //     secondary: getCssVar('secondary'),
-      //     accent: getCssVar('accent'),
-      //     background: getCssVar('background') || getCssVar('dark'),
-      //   }
-      }
-      // console.log('font', getCssVar('font'), this.googleFontsName)
+        this.updateFont(this.$store.state.config.preferences.font)
     },
     setLookingAroundMode() {
       this.lookingAround = true

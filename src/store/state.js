@@ -11,6 +11,7 @@ const mainnetDefaultRelays = {
     'wss://nostr.zebedee.cloud': {read: true, write: false},
     'wss://relay.nostr.info': {read: true, write: false},
     'wss://nostr-pub.semisol.dev': {read: true, write: false},
+    'wss://nostr.walletofsatoshi.com': {read: true, write: false},
   }
   // const default = [
   //   ['wss://nostr.rocks', {read: true, write: true}],
@@ -19,7 +20,6 @@ const mainnetDefaultRelays = {
   //   ['wss://nostr.bitcoiner.social', {read: true, write: true}],
   //   ["wss://relay.damus.io", {read: true, write: true}],
   // ]
-
   const mainnetOptionalRelays = [
     'wss://nostr-pub.wellorder.net',
     'wss://relay.damus.io',
@@ -52,6 +52,7 @@ const mainnetDefaultRelays = {
     'wss://nostr.sandwich.farm',
     'wss://relay.nostr.ch',
     'wss://nostr.mom',
+    'wss://nostr.walletofsatoshi.com',
     ]
 
 //   for (let i = 0; i < 3; i++) {
@@ -78,6 +79,26 @@ const torDefaultRelays = {
 export default function () {
   const defaultRelays = isClientUsingTor() ? torDefaultRelays : mainnetDefaultRelays
   const optionalRelaysList = isClientUsingTor() ? Object.keys(torDefaultRelays) : mainnetOptionalRelays
+  let config = LocalStorage.getItem('config')
+  let { timestamps, preferences } = config || {}
+  let { lastUserMainSync = 0, lastFeedLoad = 0 } = timestamps || {}
+  let { color, font = 'Roboto' } = preferences || {}
+  let { primary = '#ffffff', secondary = '#aaaaaa', accent = '#777777', background = '#1f1f1f' } = color || {}
+  config = {
+    timestamps: {
+      lastUserMainSync,
+      lastFeedLoad
+    },
+    preferences: {
+      color: {
+        primary,
+        secondary,
+        accent,
+        background
+      },
+      font
+    }
+  }
 
   return {
     keys: LocalStorage.getItem('keys') || {}, // {priv, pub }
@@ -97,6 +118,8 @@ export default function () {
     unreadMessages: {},
 
     lastNotificationRead: LocalStorage.getItem('lastNotificationRead') || 0,
-    unreadNotifications: 0
+    unreadNotifications: 0,
+
+    config
   }
 }

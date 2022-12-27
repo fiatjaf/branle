@@ -31,7 +31,7 @@
         :show-following='showFollowing'
         :wrap='wrap'
       />
-      <div class='text-secondary pubkey' style='opacity: .9; font-size: 95%; font-weight: 300'>{{ shorten(pubkey) }}</div>
+      <div class='text-secondary pubkey' style='opacity: .9; font-size: 95%; font-weight: 300'>{{ shorten(npubKey) }}</div>
       <BaseMarkdown v-if='headerMode' :content='$store.getters.profileDescription(pubkey)' />
       <BaseUserCardActions
         v-if="actionButtons"
@@ -94,6 +94,12 @@ export default defineComponent({
     const $q = useQuasar()
     let hasTouch = $q?.platform.has.touch || false
     return {hasTouch}
+  },
+
+  computed: {
+    npubKey() {
+      return this.hexToBech32(this.pubkey, 'npub')
+    }
   },
 })
 </script>

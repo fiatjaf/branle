@@ -164,3 +164,7 @@ export function haveReadMessage(state, peer) {
 export function setUnreadMessages(state, {peer, count}) {
   state.unreadMessages[peer] = count
 }
+
+export function setConfig(state, {key, value}) {
+  state.config[key] = value
+}

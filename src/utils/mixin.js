@@ -4,7 +4,7 @@ import {shorten} from './helpers'
 import {date} from 'quasar'
 import { dbStreamEvent } from 'src/query'
 import {decrypt} from 'nostr-tools/nip04'
-import { decode } from 'bech32-buffer'
+import { decode, encode } from 'bech32-buffer'
 import * as DOMPurify from 'dompurify'
 const { formatDate } = date
 
@@ -49,11 +49,11 @@ export default {
     },
 
     toProfile(pubkey) {
-      this.$router.push('/' + pubkey)
+      this.$router.push('/' + this.hexToBech32(pubkey, 'npub'))
     },
 
     toEvent(id) {
-      if (!window.getSelection().toString().length) this.$router.push('/event/' + id)
+      this.$router.push('/' + this.hexToBech32(id, 'note'))
     },
 
     shorten,
@@ -113,11 +113,11 @@ export default {
           mentions.mentionEvents.push(eventId)
           // if repost remove text
           if (match.length === text.length) return ''
-          return `[&${shorten(eventId)}](/event/${eventId})`
+          return `[${shorten(this.hexToBech32(eventId, 'note'))}](/${this.hexToBech32(eventId, 'note')})`
         } else if (tags[Number(index)][0] === 'p') {
           const profile = tags[Number(index)][1]
           const displayName = this.$store.getters.displayName(profile)
-          return `[@${displayName}](/${profile})`
+          return `[${displayName}](/${this.hexToBech32(profile, 'npub')})`
         }
       }
       const hashtagReplacer = (match, startWhitespace, hashtag) => {
@@ -188,7 +188,7 @@ export default {
           return `
             <div class="flex row no-wrap items-center" style="gap: .2rem; width: 100%;">
               <div style="border-radius: 10px">
-                <img src=${this.$store.getters.avatar(item.original.value.pubkey)} crossorigin style="object-fit: cover; height: 1.5rem; width: 1.5rem;"/>
+                <img src=${this.$store.getters.avatar(item.original.value.pubkey)} style="object-fit: cover; height: 1.5rem; width: 1.5rem;"/>
               </div>
                 <div class="text-bold">${item.string}</div>
               ${this.$store.state.follows.includes(item.original.value.pubkey)
@@ -197,7 +197,7 @@ export default {
               ${item.original.value.nip05
                 ? '<i class="notranslate material-icons text-accent mr-1 -ml-1" aria-hidden="true" role="presentation">verified</i>'
                 : ''}
-                <div class="text-secondary text-caption">${shorten(item.original.value.pubkey)}</div>
+                <div class="text-secondary text-caption">${shorten(this.hexToBech32(item.original.value.pubkey, 'npub'))}</div>
               </div>
             `
         },
@@ -287,21 +287,21 @@ export default {
       return false
     },
 
-    isBeck32Key(key) {
+    isBech32Key(key) {
       if (typeof key !== 'string') return false
       try {
         let { prefix } = decode(key.toLowerCase())
         if (!['npub', 'nsec'].includes(prefix)) return false
         if (prefix === 'npub') this.watchOnly = true
         if (prefix === 'nsec') this.watchOnly = false
-        if (!this.isKey(this.beck32ToHex(key))) return false
+        if (!this.isKey(this.bech32ToHex(key))) return false
       } catch (error) {
         return false
       }
       return true
     },
 
-    beck32ToHex(key) {
+    bech32ToHex(key) {
       let { data } = decode(key.toLowerCase())
       return data.reduce((s, byte) => {
         let hex = byte.toString(16)
@@ -310,5 +310,30 @@ export default {
       }, '')
     },
 
+    hexToBech32(key, prefix) {
+      if (key.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(key)) {
+        return null
+      }
+      let buffer = new Uint8Array(key.length / 2)
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i] = parseInt(key.substr(2 * i, 2), 16)
+      }
+      // var buf = new ArrayBuffer(64) // 2 bytes for each char
+      // var bufView = new Uint8Array(buf)
+      // for (let i = 0; i < key.length; i++) {
+      //   bufView[i] = key.charCodeAt(i)
+      // }
+      // let data = key.toByte(16)
+      return encode(prefix, buffer)
+      // return data.reduce((s, byte) => {
+      //   let hex = byte.toString(16)
+      //   if (hex.length === 1) hex = '0' + hex
+      //   return s + hex
+      // }, '')
+    },
   }
 }
+
+// npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6
+// npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6
+// npub1xd3xvvrrxcekvcmz8yengd3nxscrwctx8ymkzdt9x4jk2d35vessj5nvny

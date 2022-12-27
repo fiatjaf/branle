@@ -5,7 +5,7 @@
     :class='buttonGroupClass'
     >
     <BaseButtonCopy
-      :button-text='pubkey'
+      :button-text='npubKey'
       button-size='sm'
       text-color='secondary'
       tooltip-text='copy pubkey'
@@ -13,7 +13,7 @@
     />
     <BaseButtonMessage
       v-if='(pubkey !== $store.state.keys.pub) && ($store.state.keys.pub)'
-      :button-to="'/messages/' + pubkey"
+      :button-to="'/messages/' + npubKey"
       button-size='sm'
       text-color='primary'
       @click.stop
@@ -32,9 +32,11 @@ import { defineComponent } from 'vue'
 import BaseButtonMessage from 'components/BaseButtonMessage.vue'
 import BaseButtonFollow from 'components/BaseButtonFollow.vue'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
+import helpersMixin from '../utils/mixin'
 
 export default defineComponent({
   name: 'BaseUserCardActions',
+  mixins: [helpersMixin],
   props: {
     pubkey: {
       type: String,
@@ -57,5 +59,10 @@ export default defineComponent({
     BaseButtonCopy,
   },
 
+  computed: {
+    npubKey() {
+      return this.hexToBech32(this.pubkey, 'npub')
+    }
+  },
 })
 </script>

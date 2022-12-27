@@ -4,8 +4,8 @@
     <div id='header' ref='header'>
       <div class='flex row justify-evenly no-wrap full-width q-pt-sm q-px-sm'>
         <BaseUserCard
-          v-if='$route.params.pubkey'
-          :pubkey='$route.params.pubkey'
+          v-if='hexPubkey'
+          :pubkey='hexPubkey'
           :action-buttons='false'
           style='width: 50%;'
         />
@@ -33,7 +33,7 @@
     <div ref='messageScroll' id='message-scroll' @scroll='updateCurrentDatestamp' @touchmove='updateCurrentDatestamp' @touchend='delayedUpdateCurrentDatestamp'>
       <q-infinite-scroll @load="loadMore" reverse ref='messagesScroll'>
         <div
-          v-for="(event, index) in messages"
+          v-for="(event, index) in messagesGrouped"
           :key="event.id + '_' + event.taggedEvents?.length"
           class='flex column items-self'
         >
@@ -77,7 +77,7 @@
             :message-mode='messageMode'
             :event='replyEvent'
             @clear-event='replyEvent=null'
-            @sent='replyEvent=null'
+            @sent='addSentMessage'
             class='q-px-md q-pt-sm'
           />
       </div>
@@ -87,10 +87,11 @@
 
 <script>
 import helpersMixin from '../utils/mixin'
-import {dbMessages, listenMessages} from '../query'
+import { dbUserProfile, streamUserProfile, dbMessages, listenMessages } from '../query'
 import BaseMessage from 'components/BaseMessage.vue'
 import { useQuasar } from 'quasar'
 import { createMetaMixin } from 'quasar'
+import {metadataFromEvent} from '../utils/event'
 
 const metaData = {
   // sets document title
@@ -120,7 +121,7 @@ export default {
 
   data() {
     return {
-      sub: null,
+      sub: {},
       messages: [],
       canLoadMore: true,
       text: '',
@@ -139,6 +140,29 @@ export default {
         if (this.replyEvent) return 'reply'
         else return 'message'
       } else return null
+    },
+    hexPubkey() {
+      if (this.$route.params.pubkey) return this.bech32ToHex(this.$route.params.pubkey)
+      return ''
+    },
+    messagesGrouped() {
+      let grouped = this.messages
+        .reduce((acc, ev) => {
+          let event = Object.assign({}, ev)
+          if (!acc.length) return [event]
+          let last = acc[acc.length - 1]
+          if (
+            last.pubkey === event.pubkey &&
+            last.created_at + 120 >= event.created_at
+          ) {
+            last.appended = last.appended || []
+            last.appended.push(event)
+          } else {
+            acc.push(event)
+          }
+          return acc
+        }, [])
+      return grouped
     }
   },
 
@@ -150,11 +174,8 @@ export default {
   },
 
   async deactivated() {
-    if (this.sub) {
-      this.sub.cancel()
-      this.sub = null
-    }
-    this.$store.dispatch('cancelUseProfile', {pubkey: this.$route.params.pubkey})
+    if (this.sub.listenMessages) this.sub.listenMessages.cancel()
+    if (this.sub.streamUserProfile) this.sub.streamUserProfile.cancel()
   },
 
   methods: {
@@ -169,34 +190,32 @@ export default {
     },
 
     async start() {
-      // this.messagesSet = new Set()
-      if (this.sub) this.sub.cancel()
-
       // load peer profile if it exists
-      this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey})
-
-      if (this.$store.state.unreadMessages[this.$route.params.pubkey]) {
-        let newMessages = await dbMessages(
-          this.$store.state.keys.pub,
-          this.$route.params.pubkey,
-          50
-        )
-        let newMessagesFiltered = await this.processMessages(newMessages)
-        this.messages.push(...newMessagesFiltered)
+      let profile = await dbUserProfile(this.hexPubkey)
+      if (profile) {
+        let metadata = metadataFromEvent(profile)
+        this.$store.commit('addProfileToCache', metadata)
+        this.$store.dispatch('useNip05', {metadata})
       }
-      this.$store.commit('haveReadMessage', this.$route.params.pubkey)
-      // this.$store.dispatch('useProfile', {pubkey: this.$route.params.pubkey, request: true})
-      this.sub = await listenMessages(async event => {
+      this.sub.streamUserProfile = await streamUserProfile(this.hexPubkey, async event => {
+        let metadata = metadataFromEvent(event)
+        this.$store.commit('addProfileToCache', metadata)
+        this.$store.dispatch('useNip05', {metadata})
+      })
+
+      // listen for new messages
+      this.sub.listenMessages = await listenMessages(async event => {
         let eventUserTags = event.tags
             .filter(([t, v]) => t === 'p' && v)
             .map(([_, v]) => v)
-        if ((event.pubkey === this.$route.params.pubkey && eventUserTags.includes(this.$store.state.keys.pub)) ||
-          (event.pubkey === this.$store.state.keys.pub && eventUserTags.includes(this.$route.params.pubkey))
+        if ((event.pubkey === this.hexPubkey && eventUserTags.includes(this.$store.state.keys.pub)) ||
+          (event.pubkey === this.$store.state.keys.pub && eventUserTags.includes(this.hexPubkey))
         )
           this.addMessage(event)
       })
 
-      // this.updateCurrentDatestamp()
+      // commit to reading messages
+      this.$store.commit('haveReadMessage', this.hexPubkey)
     },
 
 
@@ -205,7 +224,7 @@ export default {
         setTimeout(() => {
           this.$refs.messageScroll.scrollTop = this.$refs.messageScroll.scrollHeight
           this.$emit('scroll-to-rect', { top: this.$refs.messageScroll.scrollHeight })
-          this.$store.commit('haveReadMessage', this.$route.params.pubkey)
+          this.$store.commit('haveReadMessage', this.hexPubkey)
           this.unreadMessagesSet.clear()
           resolve()
         }, 100)
@@ -215,40 +234,32 @@ export default {
     async loadMore(_, done) {
       let loadedMessages = await dbMessages(
         this.$store.state.keys.pub,
-        this.$route.params.pubkey,
+        this.hexPubkey,
         50,
         this.messages[0]?.created_at - 1 || Math.round(Date.now() / 1000)
       )
-      // console.log('loadedMessages', loadedMessages)
 
       if (loadedMessages.length < 50) {
         this.canLoadMore = false
       }
 
-      // newMessages = newMessages.filter(event => !this.messagesSet.has(event.id))
       let loadedMessagesFiltered = await this.processMessages(loadedMessages)
-
       this.messages = loadedMessagesFiltered.concat(this.messages)
+      this.messages.sort((p, c) => p.created_at - c.created_at)
       done(!this.canLoadMore)
     },
 
     async processMessages(messages) {
       let messagesFiltered = []
       for (let i = 0; i < messages.length; i++) {
-      // await messages.forEach(async (event) => {
         let event = messages[i]
         if (this.messagesSet.has(event.id)) continue
 
         this.messagesSet.add(event.id)
+        await this.lock()
         event.text = await this.getPlaintext(event)
+        this.unlock()
         this.interpolateMessageMentions(event)
-        if (event.appended) {
-          for (let j = 0; j < event.appended.length; j++) {
-            this.messagesSet.add(event.appended[j].id)
-            event.appended[j].text = await this.getPlaintext(event.appended[j])
-            this.interpolateMessageMentions(event.appended[j])
-          }
-        }
         messagesFiltered.push(event)
       }
       return messagesFiltered
@@ -259,7 +270,7 @@ export default {
       if (!this.unreadMessagesSet.has(element.id)) return
       this.unreadMessagesSet.delete(element.id)
       if (this.unreadMessagesSet.size === 0) {
-        this.$store.commit('haveReadMessage', this.$route.params.pubkey)
+        this.$store.commit('haveReadMessage', this.hexPubkey)
       }
     },
 
@@ -296,46 +307,26 @@ export default {
       // setTimeout(() => { this.updateCurrentDatestamp() }, 1000)
     },
 
-    // async messageSent(event) {
-    //   await this.addMessage(event)
-    //   this.replyEvent = null
-    // },
-
-    async addMessage(event) {
-      if (this.messagesSet.has(event.id)) return
-      this.messagesSet.add(event.id)
-
-      await this.lock()
-      event.text = await this.getPlaintext(event)
-      this.unlock()
-      this.interpolateMessageMentions(event)
-
+    async addMessage(ev) {
       let messageScroll = this.$refs.messageScroll
       let scrollToBottom = 100 > Math.abs((messageScroll.scrollHeight - messageScroll.clientHeight) - messageScroll.scrollTop) ||
         messageScroll.scrollHeight === messageScroll.clientHeight
-
-      if (this.messages.length === 0) {
-        this.messages.push(event)
-      } else {
-        let last = this.messages[this.messages.length - 1]
-        if (
-          event.pubkey === this.$store.state.keys.pub &&
-          last.pubkey === event.pubkey &&
-          last.created_at + 120 >= event.created_at
-        ) {
-          last.appended = last.appended || []
-          last.appended.push(event)
-        } else {
-          this.messages.push(event)
-        }
-      }
-
+      let events = await this.processMessages([ev])
+      if (!events.length) return
+      let event = events[0]
+      this.messages.push(event)
+      this.messages.sort((p, c) => p.created_at - c.created_at)
       if (scrollToBottom) {
-        this.$store.commit('haveReadMessage', this.$route.params.pubkey)
+        this.$store.commit('haveReadMessage', this.hexPubkey)
         this.scrollToBottom()
-      } else if (event.pubkey === this.$route.params.pubkey) {
-        this.unreadMessagesSet.add(event.id)
+      } else if (event.pubkey === this.hexPubkey) {
+          this.unreadMessagesSet.add(event.id)
       }
+    },
+
+    addSentMessage(event) {
+      this.addMessage(event)
+      this.replyEvent = null
     },
 
     resizeHeaderPlaceholder() {

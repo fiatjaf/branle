@@ -130,7 +130,7 @@ export default defineComponent({
     validSearch() {
       if (this.searchingProfile === '') return true
       if (this.searchingProfile.match(/^[a-f0-9A-F]{64}$/)) return true
-      if (this.isBeck32Key(this.searchingProfile) && this.beck32ToHex(this.searchingProfile).match(/^[a-f0-9A-F]{64}$/)) return true
+      if (this.isBech32Key(this.searchingProfile) && this.bech32ToHex(this.searchingProfile).match(/^[a-f0-9A-F]{64}$/)) return true
       if (this.searchingProfile.match(/^([a-z0-9A-Z-_.\u00C0-\u1FFF\u2800-\uFFFD]*@)?[a-z0-9A-Z-_]+[.]{1}[a-z0-9A-Z-_.]+$/)) return true
       return false
     },
@@ -172,8 +172,8 @@ export default defineComponent({
         return
       }
 
-      if (this.isBeck32Key(this.searchingProfile) && this.beck32ToHex(this.searchingProfile).match(/^[a-f0-9A-F]{64}$/)) {
-        this.toProfile(this.beck32ToHex(this.searchingProfile))
+      if (this.isBech32Key(this.searchingProfile) && this.bech32ToHex(this.searchingProfile).match(/^[a-f0-9A-F]{64}$/)) {
+        this.toProfile(this.bech32ToHex(this.searchingProfile))
         this.searchingProfile = ''
         this.searching = false
         return

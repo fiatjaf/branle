@@ -97,7 +97,7 @@
             </template>
           </q-input>
         </q-card-section>
-      <!-- <div v-if='isBeck32Key(key)'>
+      <!-- <div v-if='isBech32Key(key)'>
       {{ hexKey }}
       </div> -->
       </q-form>
@@ -234,14 +234,14 @@ export default defineComponent({
       // npub1xtscya34g58tk0z605fvr788k263gsu6cy9x0mhnm87echrgufzsevkk5s
       // nsec1xtscya34g58tk0z605fvr788k263gsu6cy9x0mhnm87echrgufzs46ahj9
       // 32e1827635450ebb3c5a7d12c1f8e7b2b514439ac10a67eef3d9fd9c5c68e245
-      if (this.isBeck32Key(this.key)) {
-        return this.beck32ToHex(this.key)
+      if (this.isBech32Key(this.key)) {
+        return this.bech32ToHex(this.key)
       }
       return this.key?.toLowerCase()
     },
 
     isBech32Pub() {
-      if (this.isBeck32Key(this.key)) {
+      if (this.isBech32Key(this.key)) {
         let { prefix } = decode(this.key.toLowerCase())
         return prefix === 'npub'
       }
@@ -249,7 +249,7 @@ export default defineComponent({
     },
 
     isBech32Sec() {
-      if (this.isBeck32Key(this.key)) {
+      if (this.isBech32Key(this.key)) {
         let { prefix } = decode(this.key.toLowerCase())
         return prefix === 'nsec'
       }

@@ -74,7 +74,7 @@ export default defineComponent({
       console.log(text)
       navigator.clipboard.writeText(text)
       Notify.create({
-        message: `copied ${this.shorten(this.copyText, 30)}`,
+        message: `copied ${this.copyText.length < 70 ? this.copyText : this.shorten(this.copyText, 30)}`,
       })
     },
 

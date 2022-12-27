@@ -40,7 +40,7 @@ function call(name, args) {
 function sub(name, args) {
   let id = name + ' ' + Math.random().toString().slice(-4)
   // hub[id] = callback
-  console.debug('sub', id, args)
+  // console.debug('sub', id, args)
   worker.postMessage(JSON.stringify({ id, name, args, sub: true }))
   return {
     update(...args) {
@@ -105,8 +105,12 @@ export function close() {
   return call('close', [])
 }
 
-export function setRelays(relays, lastSync) {
-  return call('setRelays', [relays, lastSync])
+export function setRelays(relays) {
+  return call('setRelays', [relays])
+}
+
+export function setPrivateKey(privkey) {
+  return call('setPrivateKey', [privkey])
 }
 
 export function setPort(channel) {

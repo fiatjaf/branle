@@ -58,7 +58,7 @@ export default {
       for (let i = 1; i < this.events.length; i++) {
         let curr = this.events[i]
         let prev = this.events[i - 1]
-        let currEventTags = curr.interpolated.replies || []
+        let currEventTags = curr.interpolated.replyEvents || []
         if (currEventTags.length && currEventTags[currEventTags.length - 1] !== prev.id) {
           filled.push({id: 'FILLER', root: prev.id})
         }

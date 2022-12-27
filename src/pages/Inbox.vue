@@ -12,7 +12,7 @@
         v-ripple
         clickable
         class='flex row no-padding no-margin justify-between items-center q-gutter-xs'
-        @click.capture.stop="$router.push({ name: 'messages', params: { pubkey: chat.peer }})"
+        @click.capture.stop="$router.push({ name: 'messages', params: { pubkey: hexToBech32(chat.peer, 'npub') } })"
       >
         <div class='col q-pl-md q-pr-auto flex row'>
           <BaseUserCard v-if='chat.peer' :pubkey='chat.peer' :action-buttons='false' class='col' :clickable='false' :show-following='true'/>
@@ -31,7 +31,7 @@
       </q-item>
     </q-list>
 
-    <div v-if='noChats' class="m-8 text-base">
+    <div v-if='!loading && !chats.length' class="m-8 text-base">
       <p>
         Start a chat by clicking
         <q-icon unelevated color="primary" name="mail_lock" size="md" /> icon on
@@ -67,7 +67,6 @@ export default {
     return {
       chats: [],
       loading: true,
-      noChats: false,
       profilesUsed: new Set(),
       sub: null,
     }
@@ -80,9 +79,7 @@ export default {
   },
 
   async mounted() {
-    console.log('route', this.$route)
     this.chats = await dbChats(this.$store.state.keys.pub)
-    if (this.chats.length === 0) this.noChats = true
     this.chats.forEach(({peer}) => this.useProfile(peer))
     if (this.allChatsNeverRead) this.chats.forEach(({peer}) => this.$store.commit('haveReadMessage', peer))
     this.loading = false

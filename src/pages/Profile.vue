@@ -2,8 +2,8 @@
   <q-page>
     <div id='profile-header'>
       <BaseUserCard
-        v-if='$route.params.pubkey'
-        :pubkey='$route.params.pubkey'
+        v-if='hexPubkey'
+        :pubkey='hexPubkey'
         class='user-card-header q-ma-sm'
         :header-mode='true'
         :show-following='true'
@@ -36,6 +36,7 @@
             rounded
             :label='$t("searchPosts")'
             dense
+            autofocus
             color='secondary'
             class='no-padding'
             :loading='searching'
@@ -113,10 +114,11 @@
 <script>
 import { defineComponent } from 'vue'
 import {debounce} from 'quasar'
+import {metadataFromEvent} from '../utils/event'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import BaseUserCard from 'components/BaseUserCard.vue'
-import { dbStreamUserFollows, dbStreamUserFollowers, streamUserNotes, dbUserNotes, dbQuery } from '../query'
+import { dbUserProfile, streamUserProfile, dbStreamUserFollows, dbStreamUserFollowers, streamUserNotes, dbUserNotes, dbQuery } from '../query'
 import BaseRelayRecommend from 'components/BaseRelayRecommend.vue'
 import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 import BaseButtonClear from 'components/BaseButtonClear.vue'
@@ -161,6 +163,7 @@ export default defineComponent({
       searchText: '',
       searching: false,
       results: [],
+      interval: null,
     }
   },
 
@@ -168,11 +171,22 @@ export default defineComponent({
     searchResults() {
       if (this.searchText.length) return this.results
       return []
-    }
+    },
+    hexPubkey() {
+      if (this.$route.params.pubkey) return this.bech32ToHex(this.$route.params.pubkey)
+      return ''
+    },
   },
 
   mounted() {
-    this.start()
+    if (this.hexPubkey.length) this.start()
+    else {
+      this.interval = setInterval(() => {
+        if (!this.hexPubkey.length) return
+        this.start()
+        clearInterval(this.interval)
+      }, 500)
+    }
   },
 
   beforeUnmount() {
@@ -181,13 +195,24 @@ export default defineComponent({
 
   methods: {
     async start() {
-      this.useProfile(this.$route.params.pubkey)
+      // this.useProfile(this.hexPubkey)
       this.loadingMore = true
+      let profile = await dbUserProfile(this.hexPubkey)
+      if (profile) {
+        let metadata = metadataFromEvent(profile)
+        this.$store.commit('addProfileToCache', metadata)
+        this.$store.dispatch('useNip05', {metadata})
+      }
+      this.sub.streamUserProfile = await streamUserProfile(this.hexPubkey, async event => {
+        let metadata = metadataFromEvent(event)
+        this.$store.commit('addProfileToCache', metadata)
+        this.$store.dispatch('useNip05', {metadata})
+      })
 
       let timer = setTimeout(async() => {
           this.loadMore()
         }, 4000)
-      this.sub.streamUserNotes = streamUserNotes(this.$route.params.pubkey, event => {
+      this.sub.streamUserNotes = await streamUserNotes(this.hexPubkey, event => {
         if (!timer) this.processUserNotes([event], this.threads)
         if (timer) clearTimeout(timer)
         timer = setTimeout(async() => {
@@ -196,7 +221,7 @@ export default defineComponent({
           timer = null
         }, 500)
       })
-      this.sub.dbStreamUserFollows = dbStreamUserFollows(this.$route.params.pubkey, event => {
+      this.sub.dbStreamUserFollows = await dbStreamUserFollows(this.hexPubkey, event => {
         if (this.followsEvent && event.created_at < this.followsEvent.created_at) return
         this.followsEvent = event
         this.follows = event.tags
@@ -206,17 +231,19 @@ export default defineComponent({
         if (this.follows.length)
           this.follows.forEach(pubkey => this.useProfile(pubkey))
       })
-      this.sub.dbStreamUserFollowers = dbStreamUserFollowers(this.$route.params.pubkey, event => {
+      this.sub.dbStreamUserFollowers = await dbStreamUserFollowers(this.hexPubkey, event => {
         this.followers[event.pubkey] = true
         this.useProfile(event.pubkey)
       })
     },
 
     stop() {
+      if (this.sub.streamUserProfile) this.sub.streamUserProfile.cancel()
       if (this.sub.streamUserNotes) this.sub.streamUserNotes.cancel()
       if (this.sub.dbStreamUserFollows) this.sub.dbStreamUserFollows.cancel()
       if (this.sub.dbStreamUserFollowers) this.sub.dbStreamUserFollowers.cancel()
       this.profilesUsed.forEach(pubkey => this.$store.dispatch('cancelUseProfile', {pubkey}))
+      if (this.interval) clearInterval(this.interval)
     },
 
     processUserNotes(events, threads, checkDups = true) {
@@ -243,7 +270,7 @@ export default defineComponent({
     async loadMore() {
       this.loadingMore = true
       let until = this.threads.length ? this.threads[this.threads.length - 1][0].created_at : Math.round(Date.now() / 1000)
-      let notes = await dbUserNotes(this.$route.params.pubkey, until, 50)
+      let notes = await dbUserNotes(this.hexPubkey, until, 50)
       if (notes.length < 50) this.reachedEnd = true
       let threads = []
       this.processUserNotes(notes, threads)
@@ -259,7 +286,7 @@ export default defineComponent({
         SELECT event
         FROM nostr
         WHERE json_extract(event,'$.kind') = 1 AND
-          json_extract(event,'$.pubkey') = '${this.$route.params.pubkey}' AND
+          json_extract(event,'$.pubkey') = '${this.hexPubkey}' AND
           json_extract(event,'$.content') LIKE '%${this.searchText.replace(' ', '%')}%'
       `)
       let searchResults = result.map(row => JSON.parse(row.event))

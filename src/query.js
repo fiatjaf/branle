@@ -1,16 +1,14 @@
-import {Notify} from 'quasar'
-import {initBackend} from 'absurd-sql/dist/indexeddb-main-thread'
+// import {Notify} from 'quasar'
+// import {initBackend} from 'absurd-sql/dist/indexeddb-main-thread'
 // import { channel } from './relay'
 const worker = new Worker(new URL('./query.worker.js', import.meta.url))
-initBackend(worker)
+// initBackend(worker)
 // worker.postMessage({ name: 'setPort' }, [ channel.port2 ])
 const hub = {}
 // initializeDatabase()
 
 
 worker.onmessage = ev => {
-  // let { id, success, error, data, stream, type } = JSON.parse(ev.data)
-  // let { id, success, error, data, stream, type } = ev.data
   let { id, success, error, data, stream, type, notice } = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data
 
   if (type) {
@@ -19,10 +17,10 @@ worker.onmessage = ev => {
   }
 
   if (notice) {
-    Notify.create({
-      message: `Relay ${notice.relay} says: ${notice.message}`,
-      color: 'info'
-    })
+    // Notify.create({
+    //   message: `Relay ${notice.relay} says: ${notice.message}`,
+    //   color: 'info'
+    // })
     return
   }
 
@@ -33,6 +31,7 @@ worker.onmessage = ev => {
   }
 
   if (!success) {
+  console.log('🖴', id, '->', data)
     hub[id].reject(new Error(error))
     delete hub[id]
     return
@@ -249,8 +248,12 @@ export async function dbQuery(sql) {
   return call('dbQuery', [sql])
 }
 
-export function setRelays(relays, lastSync = 0) {
-  return call('setRelays', [JSON.parse(JSON.stringify(relays)), lastSync])
+export function setRelays(relays) {
+  return call('setRelays', [JSON.parse(JSON.stringify(relays))])
+}
+
+export function setPrivateKey(privkey) {
+  return call('setPrivateKey', [privkey])
 }
 
 export function publish(event, relayURL) {

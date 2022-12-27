@@ -9,23 +9,6 @@ const routes = [
         // path: '/feed',
         component: () => import(/* webpackChunkName: "about" */ 'pages/Feed.vue'),
         name: 'feed',
-        meta: {
-          title: 'astral - feed',
-          metaTags: [
-            {
-              name: 'og:title',
-              content: 'astral - feed'
-            },
-            {
-              name: 'description',
-              content: 'decentralized social media feed built on Nostr'
-            },
-            {
-              name: 'og:description',
-              content: 'decentralized social media feed built on Nostr'
-            },
-          ]
-        }
       },
       {
         path: '/follow',
@@ -43,12 +26,12 @@ const routes = [
         name: 'inbox',
       },
       {
-        path: '/messages/:pubkey([a-f0-9A-F]{64})',
+        path: '/messages/:pubkey(npub[a-z0-9A-Z]{59})',
         component: () => import('pages/Messages.vue'),
         name: 'messages',
       },
       {
-        path: '/event/:eventId([a-f0-9A-F]{64})',
+        path: '/:eventId(note[a-z0-9A-Z]{59})',
         component: () => import('pages/Event.vue'),
         name: 'event',
       },
@@ -58,7 +41,7 @@ const routes = [
         name: 'notifications',
       },
       {
-        path: '/:pubkey([a-f0-9A-F]{64})',
+        path: '/:pubkey(npub[a-z0-9A-Z]{59})',
         component: () => import('pages/Profile.vue'),
         name: 'profile',
       },
@@ -69,7 +52,7 @@ const routes = [
       },
       {
         path: '/devTools',
-        component: () => import('pages/devTools.vue'),
+        component: () => import('pages/DevTools.vue'),
         name: 'devTools',
       },
       {

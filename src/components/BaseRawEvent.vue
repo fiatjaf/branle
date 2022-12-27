@@ -26,7 +26,6 @@ export default {
 
   computed: {
     cleaned() {
-      console.log('cleaned', JSON.parse(DOMPurify.sanitize(JSON.stringify(this.event))))
       if (Array.isArray(this.event)) return this.event.map(event => cleanEvent(this.sanitize(event)))
       return cleanEvent(this.sanitize(this.event))
     }

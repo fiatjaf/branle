@@ -59,6 +59,7 @@ md.use(subscript)
             trimmed.endsWith('.jpeg') ||
             trimmed.endsWith('.jpg') ||
             trimmed.endsWith('.svg') ||
+            trimmed.endsWith('.webp') ||
             trimmed.endsWith('.mp4') ||
             trimmed.endsWith('.webm') ||
             trimmed.endsWith('.ogg')
@@ -80,15 +81,16 @@ md.use(subscript)
         trimmed.endsWith('.png') ||
         trimmed.endsWith('.jpeg') ||
         trimmed.endsWith('.jpg') ||
+        trimmed.endsWith('.webp') ||
         trimmed.endsWith('.svg')
       ) {
-        return `<img src="${src}" crossorigin async loading='lazy' style="max-width: 90%; max-height: 50vh;">`
+        return `<img src="${src}" async loading='lazy' style="max-width: 90%; max-height: 50vh;">`
       } else if (
         trimmed.endsWith('.mp4') ||
         trimmed.endsWith('.webm') ||
         trimmed.endsWith('.ogg')
       ) {
-        return `<video src="${src}" controls crossorigin async style="max-width: 90%; max-height: 50vh;"></video>`
+        return `<video src="${src}" controls async style="max-width: 90%; max-height: 50vh;"></video>`
       }
     }
 
@@ -98,20 +100,20 @@ md.use(subscript)
       var aIndexTarget = token.attrIndex('target')
       var aIndexHref = token.attrIndex('href')
 
-      // // this works but errors bc youtube needs to add header Cross-Origin-Embedder-Policy "require-corp"
-      // // see issue https://issuetracker.google.com/issues/240387105
+      // see issue https://issuetracker.google.com/issues/240387105
       // var ytRegex = /^https:\/\/(www.|m.)youtu(be.com|.be)\/(watch\?v=|shorts\/)(?<v>[a-zA-Z0-9_-]{11})(&t=(?<s>[0-9]+)s)?/
-      // let ytMatch = token.attrs[aIndexHref][1].match(ytRegex)
+      var ytRegex = /^https:\/\/(www.|m.)?youtu(be.com|.be)\/(watch\?v=|shorts\/)?(?<v>[a-zA-Z0-9_-]{11})(&t=(?<s>[0-9]+)s)?/
+      let ytMatch = token.attrs[aIndexHref][1].match(ytRegex)
       // console.log('ytMatch', ytMatch, token.attrs[aIndexHref][1])
-      // if (ytMatch) {
-      //   let src = `https://www.youtube.com/embed/${ytMatch.groups.v}`
-      //   if (ytMatch.groups.s) src = src + `?start=${ytMatch.groups.s}`
-      //   src = src + `&origin=http://localhost:8080/`
-      // console.log('ytMatch', src)
-      //   return `<iframe crossorigin anonymous async style="max-width: 90%; max-height: 50vh;"" src="${src}"
-      //     title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
-      //     </iframe>`
-      // }
+      if (ytMatch) {
+        let src = `https://www.youtube.com/embed/${ytMatch.groups.v}`
+        if (ytMatch.groups.s) src = src + `?start=${ytMatch.groups.s}`
+        // src = src + `&origin=http://localhost:8080/`
+      console.log('ytMatch', src)
+        return `<iframe anonymous async style="height: 15rem; width: 90%; object-fit: cover;" src="${src}"
+          title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+          </iframe>`
+      }
 
       var httpRegex = /^https?:\/\//
 
@@ -344,6 +346,7 @@ ul ol {
 .break-word-wrap {
   word-wrap: break-word;
   word-break: break-word;
+  max-width: 100%;
 }
 .break-word-wrap p:has(img),
 .break-word-wrap p:has(video) {
@@ -356,7 +359,9 @@ ul ol {
   display: block;
 }
 .break-word-wrap pre {
-  overflow: auto;
+  word-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
 }
 .long-form {
   max-height: 10rem;

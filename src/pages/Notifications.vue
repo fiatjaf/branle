@@ -1,30 +1,24 @@
 <template>
   <q-page>
     <BaseHeader>{{ $t('notifications') }}</BaseHeader>
-    <q-infinite-scroll
-      :disable="reachedEnd"
-      @load="loadMore"
-      :offset='150'
-    >
+    <div>
       <div v-for="event in notifications" :key="event.id">
         <BasePost
           :event="event"
           :highlighted="$store.state.lastNotificationRead < event.created_at"
         />
       </div>
-      <template #loading>
-        <div v-if='!reachedEnd' class='row justify-center q-my-md'>
-          <q-spinner-orbit color="accent" size='md' />
-        </div>
-      </template>
-    </q-infinite-scroll>
+      <BaseButtonLoadMore :loading-more='loadingMore' :reached-end='reachedEnd' @click='loadMore' />
+    </div>
   </q-page>
 </template>
 
 <script>
 import helpersMixin from '../utils/mixin'
+import { addSorted } from '../utils/helpers'
 import {dbMentions, listenMentions} from '../query'
 import { createMetaMixin } from 'quasar'
+import BaseButtonLoadMore from 'components/BaseButtonLoadMore.vue'
 
 const metaData = {
   // sets document title
@@ -41,6 +35,9 @@ const metaData = {
 export default {
   name: 'Notifications',
   mixins: [helpersMixin, createMetaMixin(metaData)],
+  components: {
+    BaseButtonLoadMore,
+  },
 
   data() {
     return {
@@ -50,18 +47,12 @@ export default {
       sub: null,
       reading: false,
       profilesUsed: new Set(),
+      loadingMore: true,
     }
   },
 
   async activated() {
-    if (this.$store.state.unreadNotifications) this.loadNew()
-
-    this.sub = listenMentions(this.$store.state.keys.pub, async event => {
-      let loadedNotificationsFiltered = await this.processNotifications([event])
-      if (loadedNotificationsFiltered.length === 0) return
-      this.notifications = loadedNotificationsFiltered.concat(this.notifications)
-      this.highlightUnreadNotifications()
-    })
+    this.start()
   },
 
   async deactivated() {
@@ -71,7 +62,40 @@ export default {
   },
 
   methods: {
-    async loadMore(_, done) {
+    async start() {
+      // this.useProfile(this.hexPubkey)
+      this.loadingMore = true
+
+      if (this.$store.state.unreadNotifications) this.loadNew()
+
+
+      let timer = setTimeout(async() => {
+          this.loadMore()
+      }, 4000)
+
+      this.sub = listenMentions(this.$store.state.keys.pub, async event => {
+        if (!timer) await this.processNotifications([event])
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(async() => {
+          this.loadMore()
+          clearTimeout(timer)
+          timer = null
+        }, 500)
+        // if (loadedNotificationsFiltered.length === 0) return
+        // this.notifications = loadedNotificationsFiltered.concat(this.notifications)
+      })
+      // this.sub.streamUserNotes = await streamUserNotes(this.hexPubkey, event => {
+      //   if (!timer) this.processUserNotes([event], this.threads)
+      //   if (timer) clearTimeout(timer)
+      //   timer = setTimeout(async() => {
+      //     this.loadMore()
+      //     clearTimeout(timer)
+      //     timer = null
+      //   }, 500)
+      // })
+      this.highlightUnreadNotifications()
+    },
+    async loadMore() {
       let until
       if (this.notifications.length) until = this.notifications[this.notifications.length - 1].created_at - 1
       else until = Math.round(Date.now() / 1000)
@@ -80,15 +104,15 @@ export default {
         40,
         until
       )
-      if (loadedNotifications.length < 40) {
-        this.reachedEnd = true
-      }
+      // if (loadedNotifications.length < 40) {
+      //   this.reachedEnd = true
+      // }
 
-      let loadedNotificationsFiltered = await this.processNotifications(loadedNotifications)
-      this.notifications = this.notifications.concat(loadedNotificationsFiltered)
+      await this.processNotifications(loadedNotifications)
+      // this.notifications.push(...loadedNotificationsFiltered)
       // will mark notifications as read after 3 * unread count seconds in the page
       this.highlightUnreadNotifications()
-      done(this.reachedEnd)
+      this.loadingMore = false
     },
 
     async loadNew() {
@@ -96,10 +120,9 @@ export default {
         this.$store.state.keys.pub,
         40
       )
-      let loadedNotificationsFiltered = await this.processNotifications(loadedNotifications)
-      this.notifications = loadedNotificationsFiltered.concat(this.notifications)
+      await this.processNotifications(loadedNotifications)
+      // this.notifications = loadedNotificationsFiltered.concat(this.notifications)
       // will mark notifications as read after 3 * unread count seconds in the page
-      this.highlightUnreadNotifications()
     },
 
     processNotifications(notifications) {
@@ -112,7 +135,8 @@ export default {
         this.notificationsSet.add(event.id)
         this.interpolateEventMentions(event)
         // if (event.tags.filter(([t, v]) => t === 'e' && v).length) this.processTaggedEvents(event)
-        notificationsFiltered.push(event)
+        // notificationsFiltered.push(event)
+        addSorted(this.notifications, event, (a, b) => a.created_at < b.created_at)
         this.useProfile(event.pubkey)
       }
       return notificationsFiltered

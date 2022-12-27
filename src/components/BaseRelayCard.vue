@@ -11,19 +11,23 @@
           :disable="url in $store.state.relays"
           @click.stop="addRelay"
         />
-        <div class="text-bold">{{ url }}</div>
+        <div class="text-bold">{{ cleanUrl }}</div>
     </q-card>
   </div>
 </template>
 
 <script>
-import helpersMixin from '../utils/mixin'
+import * as DOMPurify from 'dompurify'
 
 export default {
   name: 'BaseRelayCard',
-  mixins: [helpersMixin],
   props: {
     url: {type: String, required: true}
+  },
+  computed: {
+    cleanUrl() {
+      return DOMPurify.sanitize(this.url)
+    }
   },
   methods: {
     addRelay() {

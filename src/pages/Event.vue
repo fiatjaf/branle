@@ -15,9 +15,9 @@
         @add-event='processChildEvent'
       />
       <div v-else>
-        {{ $t('event') }} {{ $route.params.eventId }}
+        {{ $route.params.eventId }}
       </div>
-      <BaseRelayList v-if="event?.seen_on?.length" :event='event' class='q-px-sm'/>
+      <BaseRelayList v-if="event" :event='event' class='q-px-sm'/>
     </q-item>
 
     <q-separator color='accent' size='1px'/>
@@ -77,12 +77,15 @@ export default defineComponent({
 
   computed: {
     childrenThreadsFiltered() {
-      return this.childrenThreads.filter(thread => thread[0].interpolated.replyEvents.includes(this.$route.params.eventId))
+      return this.childrenThreads.filter(thread => thread[0].interpolated.replyEvents.includes(this.hexEventId))
     },
     ancestorsCompiled() {
       if (!this.rootAncestor) return this.ancestors
       if (this.ancestors.length && this.rootAncestor && this.ancestors[0].id === this.rootAncestor.id) return this.ancestors
       return [this.rootAncestor].concat(this.ancestors)
+    },
+    hexEventId() {
+      return this.bech32ToHex(this.$route.params.eventId)
     }
   },
 
@@ -96,7 +99,7 @@ export default defineComponent({
 
   methods: {
     async start() {
-      this.sub.event = await dbStreamEvent(this.$route.params.eventId, event => {
+      this.sub.event = await dbStreamEvent(this.hexEventId, event => {
         let getAncestorsChildren = false
         if (!this.event) getAncestorsChildren = true
         this.interpolateEventMentions(event)
@@ -127,7 +130,7 @@ export default defineComponent({
     },
 
     async subAncestorsChildren() {
-      let tags = this.event?.interpolated?.replyEvents?.length ? [this.$route.params.eventId, this.event.interpolated.replyEvents[0]] : [this.$route.params.eventId]
+      let tags = this.event?.interpolated?.replyEvents?.length ? [this.hexEventId, this.event.interpolated.replyEvents[0]] : [this.hexEventId]
 
       if (this.sub.ancestorsChildren) this.sub.ancestorsChildren.update('e', tags, 1)
       else this.sub.ancestorsChildren = await dbStreamTagKind('e', tags, 1, event => {
@@ -166,7 +169,7 @@ export default defineComponent({
     },
 
     processChildEvent(event) {
-      if (event.id === this.$route.params.eventId) return
+      if (event.id === this.hexEventId) return
       if (this.childrenSet.has(event.id)) return
 
       this.childrenSet.add(event.id)

@@ -35,8 +35,27 @@
       style='gap: 5px;'
       @click.stop
     >
-      <q-list id='tribute-wrapper' class='overflow-auto flex row z-top' style='max-height: 70vh' @click.stop='focusInput'>
+      <!-- <div style='max-height: 0; overflow: visible; position: relative; z-index: 5;'> -->
+      <q-list id='tribute-wrapper' class='overflow-auto flex row z-top' style='max-height: 40vh' @click.stop='focusInput'>
       </q-list>
+      <!-- </div> -->
+      <div v-if='!messageMode && replyUserTags.length  && this.replyMode !== "embed"' class='flex row items-center' style='gap: .3rem;'>
+        <q-icon name='alternate_email' color='secondary' size='sm'/>
+        <q-btn
+          v-for='pubkey in replyUserTags'
+          :key='pubkey'
+          color='secondary'
+          outline
+          rounded
+          :label='$store.getters.displayName(pubkey)'
+          icon='close'
+          dense
+          size='sm'
+          class='q-pr-sm'
+          no-caps
+          @click.stop='removeReplyUserTag(pubkey)'
+        />
+      </div>
       <div class="input-area">
         <BaseUserAvatar :pubkey='$store.state.keys.pub' class='avatar-image' />
         <span id="input-placeholder"> {{ placeholderText }}</span>
@@ -281,7 +300,7 @@
 import { colors } from 'quasar'
 const { getPaletteColor } = colors
 import helpersMixin from '../utils/mixin'
-import {getPubKeyTagWithRelay, getEventIdTagWithRelay, shorten} from '../utils/helpers'
+import {getPubKeyTagWithRelay, getEventIdTagWithRelay} from '../utils/helpers'
 import {cleanEvent} from '../utils/event'
 import BaseEmojiPicker from 'components/BaseEmojiPicker.vue'
 import BaseLinkForm from 'components/BaseLinkForm.vue'
@@ -328,7 +347,7 @@ export default {
       sending: false,
       toolSelected: '',
       sendIconTranslation: 0,
-      tags: [],
+      tags: [], // tags in the content (user added)
       mentionsUpdating: false,
       focusInput() {
         setTimeout(async () => {
@@ -341,6 +360,7 @@ export default {
       textareaRange: null,
       // shortLong: 'short',
       longForm: false,
+      replyUserTags: [] // tags from previous reply authors
     }
   },
 
@@ -435,10 +455,15 @@ export default {
       }
       return null
     },
+    hexPubkey() {
+      if (this.$route.params.pubkey) return this.bech32ToHex(this.$route.params.pubkey)
+      return ''
+    }
   },
 
   mounted() {
     if (!this.messageMode) this.profileMentionsProvider.attach(this.textarea)
+    if (this.replyMode) this.replyUserTags = this.getReplyUserTags()
     if (this.autoFocus) this.focusInput()
     this.$emit('resized')
   },
@@ -516,25 +541,30 @@ export default {
       let tags = []
       let textarea = this.textarea.cloneNode(true)
 
-      // remove invalid tags and/or not p/e
-      let usableTags = this.event.tags.filter(
-        ([t, v]) => (t === 'p' || t === 'e') && v
-      ).map(([...values]) => { return [...values] })
+      this.replyUserTags.forEach(async (pubkey) => tags.push(await getPubKeyTagWithRelay(pubkey)))
+      // // remove invalid tags and/or not p/e
+      // let usableTags = this.event.tags.filter(
+      //   ([t, v]) => (t === 'p' || t === 'e') && v
+      // ).map(([...values]) => { return [...values] })
 
-      // add last 4 pubkeys mentioned
-      let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v)
-      // console.log('pubkeys: ', pubkeys)
-      for (let i = 0; i < Math.min(4, pubkeys.length); i++) {
-        tags.push(await getPubKeyTagWithRelay(pubkeys[pubkeys.length - 1 - i]))
-      }
-      // plus the author of the note being replied to, if not present already
-      if (!tags.find(([_, v]) => v === this.event.pubkey)) {
-        tags.push(await getPubKeyTagWithRelay(this.event.pubkey))
-      }
-      // remove ourselves
-      tags = tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
+      // // add last 4 pubkeys mentioned
+      // let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v)
+      // // console.log('pubkeys: ', pubkeys)
+      // for (let i = 0; i < Math.min(4, pubkeys.length); i++) {
+      //   tags.push(await getPubKeyTagWithRelay(pubkeys[pubkeys.length - 1 - i]))
+      // }
+      // // plus the author of the note being replied to, if not present already
+      // if (!tags.find(([_, v]) => v === this.event.pubkey)) {
+      //   tags.push(await getPubKeyTagWithRelay(this.event.pubkey))
+      // }
+      // // remove ourselves
+      // tags = tags.filter(([_, v]) => v !== this.$store.state.keys.pub)
         // console.log('tags: ', tags)
       // add quoted/reposted event
+      // remove invalid tags and/or not e
+      let usableTags = this.event.tags.filter(
+        ([t, v]) => (t === 'e') && v
+      ).map(([...values]) => { return [...values] })
       if (this.replyMode === 'quote' || this.replyMode === 'repost') {
         // if quote or repost, only tag this event and add mention to text
         let last = await getEventIdTagWithRelay(this.event.id, 'mention')
@@ -575,8 +605,8 @@ export default {
       // let mentions = Object.assign({}, this.mentions())
       let tags = []
       // add the pubkey of the person we are messaging
-      if (!tags.find(([_, v]) => v === this.$route.params.pubkey)) {
-          tags.push(['p', this.$route.params.pubkey])
+      if (!tags.find(([_, v]) => v === this.hexPubkey)) {
+          tags.push(['p', this.hexPubkey])
       }
       if (this.event && !tags.find(([_, v]) => v === this.event.id)) {
           tags.push(await getEventIdTagWithRelay(this.event.id, 'mention'))
@@ -589,13 +619,13 @@ export default {
 
       // console.log('sendChatMessage', {
       //   now,
-      //   pubkey: this.$route.params.pubkey,
+      //   pubkey: this.hexPubkey,
       //   text,
       //   tags
       // })
       return await this.$store.dispatch('sendChatMessage', {
         now,
-        pubkey: this.$route.params.pubkey,
+        pubkey: this.hexPubkey,
         text,
         tags
       })
@@ -625,8 +655,8 @@ export default {
             tagIndexMap[value] = tagEntries[idx][0]
           } else {
             if (type === 'e') {
-              let mention = `event${shorten(value)}`
-              tags[mention] = ['e', value]
+              let mention = `${this.shorten(this.hexToBech32(value, 'note'))}`
+              tags[mention] = await getEventIdTagWithRelay(value, 'mention')
               tagIndexMap[value] = mention
             } else {
               let mention = `@${this.$store.getters.displayName(value)}`
@@ -723,6 +753,10 @@ export default {
           this.setCaret(start.el, start.el.length)
         else this.setCaret(start.el, start.pos)
         this.updateText()
+        console.log('updateMentionTags', this.tags)
+        Object.keys(this.tags).forEach((key) => {
+          if (!this.replyUserTags.includes(this.tags[key][1])) this.replyUserTags.push(this.tags[key][1])
+        })
         this.mentionsUpdating = false
       }
     },
@@ -968,6 +1002,39 @@ export default {
       if (this.overCharLimit()) return false
       return true
     },
+    getReplyUserTags() {
+      // remove invalid tags and/or not p
+      if (!this.event || !this.event.tags?.length) return []
+      let usableTags = this.event.tags.filter(
+        ([t, v]) => (t === 'p') && v
+      ).map(([...values]) => { return [...values] })
+
+      // add last 4 pubkeys mentioned
+      let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v).slice(0, 9)
+      // plus the author of the note being replied to, if not present already
+      if (!pubkeys.find((pubkey) => pubkey === this.event.pubkey)) {
+        pubkeys.push(this.event.pubkey)
+      }
+      // remove ourselves
+      pubkeys = pubkeys.filter((pubkey) => pubkey !== this.$store.state.keys.pub)
+      return pubkeys
+    },
+    removeReplyUserTag(pubkey) {
+      let mentions = this.mentions()
+      Object.keys(mentions).forEach((key) => {
+        let mention = mentions[key]
+        if (mention.tag[1] === pubkey) {
+          let range = new Range()
+          range.setStart(mention.el, mention.pos)
+          range.setEnd(mention.el, mention.pos + mention.length)
+          this.insertText('', range)
+          this.updateText()
+        }
+      })
+      let tagIdx = Object.keys(this.tags).find((k) => pubkey === this.tags[k][1])
+      delete this.tags[tagIdx]
+      this.replyUserTags = this.replyUserTags.filter((pk) => pubkey !== pk)
+    }
   }
 }
 </script>

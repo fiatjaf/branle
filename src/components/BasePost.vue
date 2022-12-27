@@ -64,7 +64,7 @@
         </div>
         <div class='q-pb-xs'>
           <q-item-label caption class="text-secondary" style='opacity: .7;'>
-              <span @click.stop="toProfile(event.pubkey)">{{ shorten(event.pubkey) }}</span>
+              <span @click.stop="toProfile(event.pubkey)">{{ shorten(hexToBech32(event.pubkey, 'npub')) }}</span>
           </q-item-label>
           <q-space/>
           <q-item-label :line='1' clickable>
@@ -76,12 +76,12 @@
               ($route.name != 'event') &&
               !(isReply || isChildReply)
             "
-
             class='q-pl-sm'
+            style='font-size: .9rem;'
           >
             <span >in reply to&nbsp;</span>
             <a @click.stop="toEvent(tagged)">
-              {{ shorten(tagged) }}
+              {{ shorten(hexToBech32(tagged, 'note')) }}
             </a>
           </q-item-label>
         </div>
@@ -96,7 +96,7 @@
         <pre v-else> {{ cleanEvent }} </pre>
         <div
           v-if='!isEmbeded && (isQuote || isRepost)'
-          class='reposts flex column'
+          class='reposts flex column q-pr-md'
           :clickable='false'
         >
           <BasePost
@@ -205,7 +205,7 @@
         </q-tab-panels>
       </q-item-section>
 
-      <div v-if='hasReplyChildren' class='full-width' >
+      <div v-if='hasReplyChildren && replyDepth !== -1' class='full-width' >
         <div v-for="thread in event.replies" :key="thread[0].id" ref="childReplyContent">
           <BasePostThread
             :events="thread"
@@ -438,6 +438,7 @@ export default defineComponent({
 }
 .post-highlighted .reposts {
   font-size: .9rem;
+  max-width: 100%;
 }
 .reposts {
   margin: .5rem .5rem 0 0;

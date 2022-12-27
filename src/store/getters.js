@@ -1,4 +1,5 @@
 import Identicon from 'identicon.js'
+import * as helpersMixin from '../utils/mixin'
 
 export function namedProfiles(state, getters) {
   return Object.entries(state.profilesCache).reduce(
@@ -30,7 +31,7 @@ export function displayName(state, getters) {
 
     if (nip05) return nip05.startsWith('_@') ? nip05.slice(2) : nip05
     if (name) return name
-    return pubkey.slice(0, 3) + '...' + pubkey.slice(-4)
+    return helpersMixin.default.methods.shorten(helpersMixin.default.methods.hexToBech32(pubkey, 'npub'))
   }
 }
 
@@ -56,6 +57,14 @@ export function profileDescription(state) {
     return about
   }
 }
+
+// export function profileLud06(state) {
+//   return pubkey => {
+//     console.log('lud06', pubkey, state.profilesCache[pubkey])
+//     let {lud06 = ''} = state.profilesCache[pubkey] || {}
+//     return lud06
+//   }
+// }
 
 // export function contacts(state) {
 //   return (pubkey, short = true) =>

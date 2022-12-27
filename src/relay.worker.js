@@ -10,7 +10,7 @@ let poolSubs = {}
 let relays = {}
 let subs = {}
 let active = true
-let lastSync = 0
+// let lastSync = 0
 
 let dbWorkerPort = null
 
@@ -80,13 +80,13 @@ function calcFilter(subName) {
         case 'user':
           return {
             authors: value,
-            kinds: [0, 1, 2, 3, 4],
-            since: lastSync
+            kinds: [0, 1, 2, 3, 4]
           }
         case 'userNotes':
           return {
             authors: value,
-            kinds: [1]
+            kinds: [1],
+            limit: 5000
           }
         case 'userProfile':
           return {
@@ -107,12 +107,13 @@ function calcFilter(subName) {
           return {
             '#p': value,
             kinds: [1, 3, 4],
-            since: lastSync
+            limit: 5000
           }
         case 'userMessages':
           return {
             authors: value,
-            kinds: [4]
+            kinds: [4],
+            limit: 5000
           }
         case 'feed':
           return {
@@ -264,13 +265,14 @@ const methods = {
     }
   },
 
-  setRelays(newRelays, userLastSync) {
-    lastSync = Math.max(userLastSync, 0)
+  setRelays(newRelays) {
+    // lastSync = Math.max(userLastSync, 0)
     for (let url in newRelays) {
       if (!relays[url]) pool.addRelay(url, newRelays[url])
       else if (relays[url].read !== newRelays[url].read || relays[url].write !== newRelays[url].write) {
         pool.removeRelay(url)
         pool.addRelay(url, newRelays[url])
+        console.log(url, newRelays[url])
       }
     }
     for (let url in relays) {
@@ -281,8 +283,13 @@ const methods = {
     return relays
   },
 
+  setPrivateKey(privkey) {
+    pool.setPrivateKey(privkey)
+    return true
+  },
+
   publish(event, relayURL) {
-    if (relayURL) return pool.relays[relayURL]?.relay?.publish?.(event)
+    if (relayURL) pool.relays[relayURL]?.relay?.publish?.(event)
     else pool.publish(event, (status, url) => {
       if (status === 0) {
         console.log(`publish request sent to ${url}`)
@@ -291,6 +298,7 @@ const methods = {
         console.log(`event published by ${url}`, event)
       }
     })
+    return event
   }
 }
 
@@ -310,7 +318,10 @@ function handleMessage(ev) {
     if (!active) return
     let subName = subs[id].subName || 'adhoc'
     if (poolSubs[subName]) poolSubs[subName].sub({filter: calcFilter(subName)})
-    else poolSubs[subName] = pool.sub({ cb: onEvent, filter: calcFilter(subName)}, subName, onEose)
+    else {
+      let subNameId = subName + ' ' + Math.random().toString().slice(-4)
+      poolSubs[subName] = pool.sub({ cb: onEvent, filter: calcFilter(subName)}, subNameId, onEose)
+    }
     // if (subs[id].subName === 'mainUser') {
     //   if (mainUserSub) mainUserSub.sub({filter: calcFilter('mainUser')})
     //   else mainUserSub = pool.sub({ cb: onEvent, filter: calcFilter('mainUser')}, 'mainUser', onEose)

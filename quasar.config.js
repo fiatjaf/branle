@@ -104,10 +104,10 @@ module.exports = configure(function (ctx) {
       },
       port: 8080,
       open: false, // opens browser window automatically
-      headers: {
-        'Cross-Origin-Opener-Policy': 'same-origin',
-        'Cross-Origin-Embedder-Policy': 'require-corp'
-      },
+      // headers: {
+      //   'Cross-Origin-Opener-Policy': 'same-origin',
+      //   'Cross-Origin-Embedder-Policy': 'require-corp'
+      // },
       // proxy: {
       //   '/api': {
       //     target: 'https://astral.ninja',
@@ -119,7 +119,10 @@ module.exports = configure(function (ctx) {
     // https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js#Property%3A-framework
     framework: {
       config: {
-        dark: true
+        dark: true,
+        notify: {
+          closeBtn: true,
+        }
       },
 
       // iconSet: 'material-icons', // Quasar icon set
@@ -134,12 +137,6 @@ module.exports = configure(function (ctx) {
 
       // Quasar plugins
       plugins: ['Notify', 'Dialog', 'Meta'],
-
-      config: {
-        notify: {
-          closeBtn: true,
-        }
-      },
 
     },
 

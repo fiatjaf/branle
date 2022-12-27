@@ -163,7 +163,7 @@ export default {
         this.processTaggedEvents(tagged, this.taggedEvents[ev.id])
       }
     }
-    if (this.event.created_at < this.$store.state.lastMessageRead[this.$route.params.pubkey]) this.$emit('mounted')
+    if (this.event.created_at < this.$store.state.lastMessageRead[this.bech32ToHex(this.$route.params.pubkey)]) this.$emit('mounted')
   },
 
   methods: {

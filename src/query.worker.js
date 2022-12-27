@@ -2,10 +2,13 @@ self.process = {env: {}}
 
 import * as relay from './relay'
 import { matchFilter } from 'nostr-tools'
-import initSqlJs from '@jlongster/sql.js'
-import { SQLiteFS } from 'absurd-sql'
-import IndexedDBBackend from 'absurd-sql/dist/indexeddb-backend'
-import sqlWasm from '@jlongster/sql.js/dist/sql-wasm.wasm'
+// import initSqlJs from '@jlongster/sql.js'
+// import { SQLiteFS } from 'absurd-sql'
+// import MemoryBackend from 'absurd-sql/dist/memory-backend'
+// // import IndexedDBBackend from 'absurd-sql/dist/indexeddb-backend'
+// import sqlWasm from '@jlongster/sql.js/dist/sql-wasm.wasm'
+import initSqlJs from 'sql.js'
+import sqlWasm from './sql-wasm.wasm'
 import mergebounce from 'mergebounce'
 
 export var channel = new MessageChannel()
@@ -50,9 +53,10 @@ const dbName = `events.absurd-sql`
 const path = `/nostr/${dbName}`
 let SQL = null
 
-let idbBackend = new IndexedDBBackend(() => {
-  console.error('Unable to write!')
-})
+// let memoryBackend = new MemoryBackend({})
+// let idbBackend = new IndexedDBBackend(() => {
+//   console.error('Unable to write!')
+// })
 
 var db = null
 
@@ -114,25 +118,8 @@ function output(msg) {
 
 async function initDb() {
   // if (db) return
-  if (SQL == null) {
-    SQL = await initSqlJs({ locateFile: () => sqlWasm })
-    let sqlFS = new SQLiteFS(SQL.FS, idbBackend)
-    SQL.register_for_idb(sqlFS)
-    if (typeof SharedArrayBuffer === 'undefined') {
-      output(
-        '<code>SharedArrayBuffer</code> is not available in your browser. Falling back.'
-      )
-    }
-
-    SQL.FS.mkdir('/nostr')
-    SQL.FS.mount(sqlFS, {}, '/nostr')
-  }
-  if (typeof SharedArrayBuffer === 'undefined') {
-    let stream = SQL.FS.open(path, 'a+')
-    await stream.node.contents.readIfFallback()
-    SQL.FS.close(stream)
-  }
-  db = new SQL.Database(path, { filename: true })
+  if (SQL === null) SQL = await initSqlJs({ locateFile: () => sqlWasm })
+  db = new SQL.Database()
   db.run(`
     PRAGMA cache_size=-${cacheSize};
     PRAGMA journal_mode=MEMORY;
@@ -143,6 +130,41 @@ async function initDb() {
 
   createTables(db)
   return
+  // if (SQL == null) {
+  //   SQL = await initSqlJs({ locateFile: () => sqlWasm })
+
+  //   // if (currentBackendType === 'memory') {
+  //   //   sqlFS.backend = memoryBackend;
+  //   // } else {
+  //   //   sqlFS.backend = idbBackend;
+  //   // }
+  //   let sqlFS = new SQLiteFS(SQL.FS, memoryBackend)
+  //   SQL.register_for_idb(sqlFS)
+  //   if (typeof SharedArrayBuffer === 'undefined') {
+  //     output(
+  //       '<code>SharedArrayBuffer</code> is not available in your browser. Falling back.'
+  //     )
+  //   }
+
+  //   SQL.FS.mkdir('/nostr')
+  //   SQL.FS.mount(sqlFS, {}, '/nostr')
+  // }
+  // if (typeof SharedArrayBuffer === 'undefined') {
+  //   let stream = SQL.FS.open(path, 'a+')
+  //   await stream.node.contents.readIfFallback()
+  //   SQL.FS.close(stream)
+  // }
+  // db = new SQL.Database(path, { filename: true })
+  // db.run(`
+  //   PRAGMA cache_size=-${cacheSize};
+  //   PRAGMA journal_mode=MEMORY;
+  //   PRAGMA page_size=${pageSize};
+  //   VACUUM;
+  // `)
+  // output(`Opened ${dbName} (${currentBackendType}) cache size: ${cacheSize}`)
+
+  // createTables(db)
+  // return
 }
 
 // function setupDb(db) {
@@ -357,7 +379,7 @@ function saveEventsToDb(events, output = console.log, outputTiming = console.log
   for (let i = 0; i < events.length; i++) {
     let event = events[i].event
     if (event.created_at > Math.round(Date.now() / 1000)) continue
-    let relay = events[i].relay
+    let relay = events[i].relay || []
     event.first_seen = Math.round(Date.now() / 1000)
     event.last_updated = Math.round(Date.now() / 1000)
     event.seen_on = []
@@ -531,21 +553,21 @@ const methods = {
     `)
     let messages = result
       .map(row => JSON.parse(row.event))
-      .reverse()
-      .reduce((acc, event) => {
-        if (!acc.length) return [event]
-        let last = acc[acc.length - 1]
-        if (
-          last.pubkey === event.pubkey &&
-          last.created_at + 120 >= event.created_at
-        ) {
-          last.appended = last.appended || []
-          last.appended.push(event)
-        } else {
-          acc.push(event)
-        }
-        return acc
-      }, [])
+      // .reverse()
+      // .reduce((acc, event) => {
+      //   if (!acc.length) return [event]
+      //   let last = acc[acc.length - 1]
+      //   if (
+      //     last.pubkey === event.pubkey &&
+      //     last.created_at + 120 >= event.created_at
+      //   ) {
+      //     last.appended = last.appended || []
+      //     last.appended.push(event)
+      //   } else {
+      //     acc.push(event)
+      //   }
+      //   return acc
+      // }, [])
     return messages
   },
 
@@ -893,12 +915,15 @@ const methods = {
     return queryDb(sql)
   },
 
-  setRelays(relays, lastSync) {
-    relay.setRelays(relays, lastSync)
+  setRelays(relays) {
+    relay.setRelays(relays)
+  },
+
+  setPrivateKey(privkey) {
+    relay.setPrivateKey(privkey)
   },
 
   publish(event, relayURL) {
-    console.log(event, relayURL)
     return relay.publish(event, relayURL)
   },
 

@@ -302,14 +302,24 @@ export default {
     },
 
     bech32ToHex(key) {
-      let { data } = decode(key)
-      return this.toHexString(data)
+      try {
+        let { data } = decode(key)
+        return this.toHexString(data)
+      } catch (error) {
+        // continue
+      }
+      return ''
     },
 // note14s4haycwqpzpdfhm68wlmpwz4rrmlya9e3eeet9p50jekpk023zsrkfr69
 // npub19hmfe5xx4w27pr6xd2l8kwdmvnn5fm33llpsg8e8p007c23hasrq9ja0z2
     hexToBech32(key, prefix) {
-      let buffer = this.fromHexString(key)
-      return encode(prefix, buffer, 'bech32')
+      try {
+        let buffer = this.fromHexString(key)
+        return encode(prefix, buffer, 'bech32')
+      } catch (error) {
+        // continue
+      }
+      return ''
     },
 
 

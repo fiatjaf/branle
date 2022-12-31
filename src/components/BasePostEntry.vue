@@ -1005,7 +1005,7 @@ export default {
       // remove invalid tags and/or not p
       if (!this.event || !this.event.tags) return []
       let usableTags = this.event.tags.filter(
-        ([t, v]) => (t === 'p') && v
+        ([t, v]) => (t === 'p') && this.isKey(v)
       ).map(([...values]) => { return [...values] })
 
       // add last 9 pubkeys mentioned

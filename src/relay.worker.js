@@ -33,8 +33,8 @@ let debounceCount = 0
 
 let debouncedEmitEvent = mergebounce(
   events => dbWorkerPort.postMessage({ type: 'events', events }),
-  1000,
-  { 'concatArrays': true, 'promise': true, maxWait: 3000 }
+  700,
+  { 'concatArrays': true, 'promise': true, maxWait: 2000 }
 )
 
 function onEvent(event, relay) {

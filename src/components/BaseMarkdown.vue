@@ -124,7 +124,7 @@ md.use(subscript)
         let src = `https://www.youtube.com/embed/${ytMatch.groups.v}`
         if (ytMatch.groups.s) src = src + `?start=${ytMatch.groups.s}`
         // src = src + `&origin=http://localhost:8080/`
-      console.log('ytMatch', src)
+      // console.log('ytMatch', src)
         return `<iframe anonymous async style="height: 15rem; width: 90%; object-fit: cover;" src="${src}"
           title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
           </iframe>`

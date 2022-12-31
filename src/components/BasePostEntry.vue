@@ -193,14 +193,14 @@
                 <span class='text-bold'>{{ "to mention a user: "}}</span>
                 {{ "type "}}
                 <code>{{`"@"`}}</code>
-                {{ " and select user from menu that pops up or paste in "}}
-                <code>{{`"@<pubkey-id>"`}}</code>
+                {{ " and select user from menu that pops up or paste in npub key"}}
+                <!-- <code>{{`"@<pubkey-id>"`}}</code> -->
               </div>
               <!-- <br> -->
               <div>
                 <span class='text-bold'>{{ "to mention a post: "}}</span>
-                {{ "paste in "}}
-                <code>{{`"&<event-id>"`}}</code>
+                <span>paste in note id (you can copy note id from embed <q-icon name='link' size='sm'/> button at the bottom of every post)"</span>
+                <!-- <code>{{`"&<event-id>"`}}</code> -->
               </div>
             </q-tab-panel>
           </q-tab-panels>
@@ -436,7 +436,7 @@ export default {
     },
     hashtags() {
       if (this.text.length === 0) return []
-      const hashtagRegex = /#(?<i>[\w]{1,63})/g
+      const hashtagRegex = /(?<s>^|[\s])#(?<i>[\w]{1,63})/g
       let matches = this.text.matchAll(hashtagRegex)
       let hashtags = []
       for (let match of matches) {
@@ -517,13 +517,10 @@ export default {
 
     async sendPost() {
       let tags = Object.values(this.mentions()).map(mention => mention.tag)
-      // let mentions = Object.assign({}, this.mentions())
       let text = await this.formatMentionsForPublishing(tags)
-      // let text = this.formatMentionsForPublishing(this.text, tags, mentions)
       this.appendHashtags(tags)
       text = this.appendLinks(text)
 
-      // let tags = this.tags.map(([...v]) => [...v])
       // console.log('sendPost:', tags, this.tags, text)
       let event = await this.$store.dispatch('sendPost', {message: text, tags})
       if (event) {
@@ -635,7 +632,7 @@ export default {
     async extractMentions(el, tags) {
       // const mentionRegex = /\B@(?<p>[a-f0-9]{64})\b/g
       // const mentionRegex = /@((?<t>[a-z]{1}):{1})?(?<p>[a-f0-9]{64})\b/g
-      const mentionRegex = /(?<t>[@&]{1})(?<v>[a-f0-9]{64})\b/g
+      const mentionRegex = /(?<t>note|npub)(?<v>[a-z0-9]{59})\b/g
       const textNodeTreeWalker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false)
       let tagIndexMap = {}
       let node = textNodeTreeWalker.nextNode()
@@ -643,10 +640,11 @@ export default {
         let text = node.textContent
         for (let match of text.matchAll(mentionRegex)) {
           let type = null
-          if (match.groups.t === '&') type = 'e'
-          else if (match.groups.t === '@') type = 'p'
+          if (match.groups.t === 'note') type = 'e'
+          else if (match.groups.t === 'npub') type = 'p'
           else return
-          let value = match.groups.v
+          let value = match[0]
+          let hexValue = this.bech32ToHex(value)
           let tagEntries = Object.entries(tags)
           let idx = tagEntries
             .map(([_, tag]) => tag)
@@ -655,12 +653,13 @@ export default {
             tagIndexMap[value] = tagEntries[idx][0]
           } else {
             if (type === 'e') {
-              let mention = `${this.shorten(this.hexToBech32(value, 'note'))}`
-              tags[mention] = await getEventIdTagWithRelay(value, 'mention')
+              let mention = `${this.shorten(value)}`
+              tags[mention] = await getEventIdTagWithRelay(hexValue, 'mention')
               tagIndexMap[value] = mention
             } else {
-              let mention = `@${this.$store.getters.displayName(value)}`
-              tags[mention] = await getPubKeyTagWithRelay(value)
+              console.log('extract mentions', `"${value}"`, match)
+              let mention = `@${this.$store.getters.displayName(hexValue)}`
+              tags[mention] = await getPubKeyTagWithRelay(hexValue)
               tagIndexMap[value] = mention
             }
           }
@@ -668,7 +667,7 @@ export default {
 
         text = text.replace(
           mentionRegex,
-          (_, __, value) => tagIndexMap[value]
+          (match, __, value) => tagIndexMap[match]
         )
 
         node.textContent = text
@@ -745,7 +744,7 @@ export default {
     async updateMentionsTags() {
       this.trigger++
       let { start } = this.startEndOfRange()
-      const mentionRegex = /(?<t>[@&]{1})(?<p>[a-f0-9]{64})/g
+      const mentionRegex = /(?<t>note|npub)(?<v>[a-z0-9]{59})/g
       if (this.text.toLowerCase().match(mentionRegex)) {
         this.mentionsUpdating = true
         await this.extractMentions(this.textarea, this.tags)
@@ -754,7 +753,7 @@ export default {
         else this.setCaret(start.el, start.pos)
         this.updateText()
         console.log('updateMentionTags', this.tags)
-        Object.keys(this.tags).forEach((key) => {
+        Object.keys(this.tags).filter((key) => this.tags[key][0] === 'p').forEach((key) => {
           if (!this.replyUserTags.includes(this.tags[key][1])) this.replyUserTags.push(this.tags[key][1])
         })
         this.mentionsUpdating = false
@@ -1004,12 +1003,12 @@ export default {
     },
     getReplyUserTags() {
       // remove invalid tags and/or not p
-      if (!this.event || !this.event.tags?.length) return []
+      if (!this.event || !this.event.tags) return []
       let usableTags = this.event.tags.filter(
         ([t, v]) => (t === 'p') && v
       ).map(([...values]) => { return [...values] })
 
-      // add last 4 pubkeys mentioned
+      // add last 9 pubkeys mentioned
       let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v).slice(0, 9)
       // plus the author of the note being replied to, if not present already
       if (!pubkeys.find((pubkey) => pubkey === this.event.pubkey)) {

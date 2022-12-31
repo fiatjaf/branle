@@ -38,7 +38,7 @@
           class='flex column items-self'
         >
           <div
-            v-if='index === 0 || dateUTC(messages[index].created_at) !== dateUTC(messages[index - 1].created_at)'
+            v-if='index === 0 || dateUTC(messagesGrouped[index].created_at) !== dateUTC(messagesGrouped[index - 1].created_at)'
             class='self-center text-accent datestamp'
             :class='index === 0 ? "q-pb-sm" : "q-py-sm"'
           >
@@ -166,14 +166,14 @@ export default {
     }
   },
 
-  async activated() {
+  async mounted() {
     // load saved messages and start listening for new ones
     await this.start()
     this.scrollToBottom()
     this.resizeHeaderPlaceholder()
   },
 
-  async deactivated() {
+  async beforeUnmount() {
     if (this.sub.listenMessages) this.sub.listenMessages.cancel()
     if (this.sub.streamUserProfile) this.sub.streamUserProfile.cancel()
   },

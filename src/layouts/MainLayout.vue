@@ -145,7 +145,7 @@
 import { defineComponent} from 'vue'
 import { scroll, useQuasar } from 'quasar'
 const { getVerticalScrollPosition, setVerticalScrollPosition} = scroll
-import { activateSub, deactivateSub, destroyStreams } from '../query'
+// import { activateSub, deactivateSub } from '../query'
 import TheUserMenu from 'components/TheUserMenu.vue'
 import TheSearchMenu from 'components/TheSearchMenu.vue'
 import TheKeyInitializationDialog from 'components/TheKeyInitializationDialog.vue'
@@ -168,7 +168,7 @@ export default defineComponent({
 
   data() {
     return {
-      cachedPages: ['Feed', 'Notifications', 'DevTools', 'Settings', 'Inbox', 'Messages'],
+      cachedPages: ['Feed', 'Notifications', 'DevTools', 'Settings', 'Inbox'],
       middlePagePos: {},
       fabPos: [0, 10],
       draggingFab: false,
@@ -207,18 +207,19 @@ export default defineComponent({
 
   mounted() {
     // coordinate closing/opening of db if multiple astral windows
-    this.broadcastChannel.onmessage = (event) => {
-      let {type} = event.data
+    // this.broadcastChannel.onmessage = (event) => {
+    //   let {type} = event.data
 
-      if (type === 'active' && this.activeWindow) this.deactivateWindow()
-      else if (type === 'closing' && this.timeout) clearTimeout(this.timeout)
-      else if (type === 'done' && this.activeWindow) this.launch()
-    }
-    this.activateWindow()
-    document.addEventListener('visibilitychange', this.activateWindow())
-    window.onfocus = this.activateWindow
+    //   if (type === 'active' && this.activeWindow) this.deactivateWindow()
+    //   else if (type === 'closing' && this.timeout) clearTimeout(this.timeout)
+    //   else if (type === 'done' && this.activeWindow) this.launch()
+    // }
+    // this.activateWindow()
+    // document.addEventListener('visibilitychange', this.activateWindow())
+    // window.onfocus = this.activateWindow
 
     // setup scrolling
+    this.launch()
     document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll, {passive: true})
     this.$router.beforeEach((to, from) => { this.preserveScrollPos(to, from) })
     this.$router.afterEach((to, from) => { this.restoreScrollPos(to, from) })
@@ -226,9 +227,9 @@ export default defineComponent({
     if (pageRect) this.fabPos[0] = pageRect.right - pageRect.width
 
     // destroy streams before unloading window
-    window.onbeforeunload = async () => {
-      await destroyStreams()
-    }
+    // window.onbeforeunload = async () => {
+    //   await destroyStreams()
+    // }
     // TODO Shoudl this go in the function?
     this.updatingFont = false
     this.resizePostEntryPlaceholder()
@@ -236,6 +237,9 @@ export default defineComponent({
 
   beforeUnmount() {
     document.querySelector('#left-drawer').removeEventListener('wheel', this.redirectScroll)
+    // document.removeEventListener('visibilitychange', this.activateWindow())
+    // window.onfocus = null
+    // this.deactivateWindow()
   },
 
   methods: {
@@ -282,27 +286,27 @@ export default defineComponent({
     async launch() {
       // await dbInit()
       this.timeout = null
-      if (this.hasLaunched) {
-        activateSub()
-      }
+      // if (this.hasLaunched) {
+      //   activateSub()
+      // }
       if (this.$store.state.keys.pub) this.$store.dispatch('launch')
       else this.$store.dispatch('launchWithoutKey')
       this.hasLaunched = true
     },
 
-    async activateWindow() {
-      if (document.hidden || this.activeWindow) return
-      this.activeWindow = true
-      this.broadcastChannel.postMessage({ type: 'active' })
-      if (!this.timeout) this.timeout = setTimeout(this.launch, 100)
-    },
+    // async activateWindow() {
+    //   if (document.hidden || this.activeWindow) return
+    //   this.activeWindow = true
+    //   this.broadcastChannel.postMessage({ type: 'active' })
+    //   if (!this.timeout) this.timeout = setTimeout(this.launch, 100)
+    // },
 
-    async deactivateWindow() {
-      this.broadcastChannel.postMessage({ type: 'closing' })
-      this.activeWindow = false
-      // deactivateSub will post 'done' message to broadcastChannel
-      deactivateSub()
-    },
+    // async deactivateWindow() {
+    //   this.broadcastChannel.postMessage({ type: 'closing' })
+    //   this.activeWindow = false
+    //   // deactivateSub will post 'done' message to broadcastChannel
+    //   deactivateSub()
+    // },
 
     togglePostEntry() {
       // if (this.messageMode) {

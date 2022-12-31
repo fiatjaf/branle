@@ -29,7 +29,9 @@ export function metadataFromEvent(event) {
 export function isValidEvent(event) {
   if (event.tags.filter(([t, v]) => t === 'e' && (!v || v.includes(' '))).length) return false
   if (event.content === 'this workshop is awesome!') return false
+  if (event.content === 'Hello Nostr! :)') return false
   if (event.content.trim() === '') return false
+  if (event.seen_on?.length && event.seen_on.includes('wss://rsslay.nostr.net')) return false
   try {
     JSON.parse(event.content)
     return false

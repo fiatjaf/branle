@@ -129,7 +129,7 @@ export default {
       }
 
       let replacedText = text.replace(/#\[(\d+)\]/g, replacer)
-      let hashtagReplacedText = replacedText.replace(/(?<s>[\s]?)#([\w]{1,63})\b/g, hashtagReplacer)
+      let hashtagReplacedText = replacedText.replace(/(?<s>^|[\s])#([\w]{1,63})\b/g, hashtagReplacer)
       let untaggedProfileReplacedText = hashtagReplacedText.replace(/@([\w]{64})/g, untaggedProfileReplacer)
       let replacedTextFinal = untaggedProfileReplacedText
 
@@ -182,7 +182,7 @@ export default {
         menuContainer: document.getElementById('tribute-wrapper'),
         positionMenu: false,
 
-        selectTemplate: item => `@${item.original.value.pubkey}`,
+        selectTemplate: item => `${this.hexToBech32(item.original.value.pubkey, 'npub')}`,
 
         menuItemTemplate: item => {
           return `
@@ -302,35 +302,35 @@ export default {
     },
 
     bech32ToHex(key) {
-      let { data } = decode(key.toLowerCase())
-      return data.reduce((s, byte) => {
+      let { data } = decode(key)
+      return this.toHexString(data)
+    },
+// note14s4haycwqpzpdfhm68wlmpwz4rrmlya9e3eeet9p50jekpk023zsrkfr69
+// npub19hmfe5xx4w27pr6xd2l8kwdmvnn5fm33llpsg8e8p007c23hasrq9ja0z2
+    hexToBech32(key, prefix) {
+      let buffer = this.fromHexString(key)
+      return encode(prefix, buffer, 'bech32')
+    },
+
+
+    toHexString(buffer) {
+      return buffer.reduce((s, byte) => {
         let hex = byte.toString(16)
         if (hex.length === 1) hex = '0' + hex
         return s + hex
       }, '')
     },
 
-    hexToBech32(key, prefix) {
-      if (key.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(key)) {
+    fromHexString(str) {
+      if (str.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(str)) {
         return null
       }
-      let buffer = new Uint8Array(key.length / 2)
+      let buffer = new Uint8Array(str.length / 2)
       for (let i = 0; i < buffer.length; i++) {
-        buffer[i] = parseInt(key.substr(2 * i, 2), 16)
+        buffer[i] = parseInt(str.substr(2 * i, 2), 16)
       }
-      // var buf = new ArrayBuffer(64) // 2 bytes for each char
-      // var bufView = new Uint8Array(buf)
-      // for (let i = 0; i < key.length; i++) {
-      //   bufView[i] = key.charCodeAt(i)
-      // }
-      // let data = key.toByte(16)
-      return encode(prefix, buffer)
-      // return data.reduce((s, byte) => {
-      //   let hex = byte.toString(16)
-      //   if (hex.length === 1) hex = '0' + hex
-      //   return s + hex
-      // }, '')
-    },
+      return buffer
+    }
   }
 }
 

@@ -379,7 +379,7 @@ function saveEventsToDb(events, output = console.log, outputTiming = console.log
   for (let i = 0; i < events.length; i++) {
     let event = events[i].event
     if (event.created_at > Math.round(Date.now() / 1000)) continue
-    let relay = events[i].relay || []
+    let relay = events[i].relay
     event.first_seen = Math.round(Date.now() / 1000)
     event.last_updated = Math.round(Date.now() / 1000)
     event.seen_on = []

@@ -52,7 +52,7 @@ export default {
     niceNIP05() {
       return this.$store.getters.NIP05Id(this.pubkey)
         .split('@')
-        .map(el => (el === '_' || el === this.$store.getters.name(this.pubkey)) ? '' : el).join('@')
+        .map((el, index) => (index === 0 && (el === '_' || el === this.$store.getters.name(this.pubkey))) ? '' : el).join('@')
     },
     isFollow() {
       return this.$store.state.follows.includes(this.pubkey)

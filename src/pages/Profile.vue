@@ -292,7 +292,6 @@ export default defineComponent({
       let searchResults = result.map(row => JSON.parse(row.event))
       this.processUserNotes(searchResults, this.results, false)
       this.searching = false
-      console.log('result ', searchResults)
     },
 
 

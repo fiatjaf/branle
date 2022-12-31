@@ -1,5 +1,5 @@
 <template>
-  <q-card>
+  <q-card style='box-shadow: none;'>
     <q-card-section>
       <div class="text-subtitle1">
         raw event data

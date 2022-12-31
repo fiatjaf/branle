@@ -188,10 +188,10 @@
             <span class='text-caption'>
               copy the formatted event ID below and paste it in any post to embed this event
             </span>
-            <BaseButtonCopy :button-text="'&' + event.id" color='primary' flat tooltip-text='copy event ID'/>
+            <BaseButtonCopy :button-text="hexToBech32(event.id, 'note')" color='primary' flat tooltip-text='copy event ID'/>
             <br>
             <span class='text-primary' style='word-break: break-all;'>
-              {{ '&' + event.id }}
+              {{ hexToBech32(event.id, 'note') }}
             </span>
           </q-tab-panel>
           <q-tab-panel name="reply" class='q-pa-sm'>

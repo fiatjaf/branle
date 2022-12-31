@@ -30,6 +30,7 @@ import emoji from 'markdown-it-emoji'
 import helpersMixin from '../utils/mixin'
 import * as bolt11Parser from 'light-bolt11-decoder'
 import BaseInvoice from 'components/BaseInvoice.vue'
+// import fetch from 'cross-fetch'
 
 const md = MarkdownIt({
   html: false,
@@ -100,9 +101,23 @@ md.use(subscript)
       var aIndexTarget = token.attrIndex('target')
       var aIndexHref = token.attrIndex('href')
 
-      // see issue https://issuetracker.google.com/issues/240387105
-      // var ytRegex = /^https:\/\/(www.|m.)youtu(be.com|.be)\/(watch\?v=|shorts\/)(?<v>[a-zA-Z0-9_-]{11})(&t=(?<s>[0-9]+)s)?/
-      var ytRegex = /^https:\/\/(www.|m.)?youtu(be.com|.be)\/(watch\?v=|shorts\/)?(?<v>[a-zA-Z0-9_-]{11})(&t=(?<s>[0-9]+)s)?/
+      // twitter doest serve cors headers
+      // var twitterRegex = /\bhttps:\/\/(mobile.)?twitter.com\/(?<user>[a-zA-Z0-9_]+)\/status\/(?<status>[0-9]{19})[a-zA-Z0-9_=?&-]*/
+      // let twitterMatch = token.attrs[aIndexHref][1].match(twitterRegex)
+      // if (twitterMatch) {
+      //   let queryUrl = `https://publish.twitter.com/oembed?url=https%3A%2F%2Ftwitter.com%2F${twitterMatch.groups.user}%2Fstatus%2F${twitterMatch.groups.status}`
+      //   try {
+      //     let response = await fetch(queryUrl)
+      //     // if (response && response.html) return response.html
+      //     console.log(' fetched tweet', response)
+      //   } catch (error) {
+      //     // continue
+      //     console.log('error fetching tweet', error)
+      //   }
+      // }
+      // console.log('twitterMatch', twitterMatch)
+
+      var ytRegex = /\bhttps:\/\/(www.|m.)?youtu(be.com|.be)\/(watch\?v=|shorts\/)?(?<v>[a-zA-Z0-9_-]{11})(&t=(?<s>[0-9]+)s)?/
       let ytMatch = token.attrs[aIndexHref][1].match(ytRegex)
       // console.log('ytMatch', ytMatch, token.attrs[aIndexHref][1])
       if (ytMatch) {
@@ -359,9 +374,7 @@ ul ol {
   display: block;
 }
 .break-word-wrap pre {
-  word-wrap: break-word;
-  word-break: break-word;
-  max-width: 100%;
+  overflow-x: auto;
 }
 .long-form {
   max-height: 10rem;

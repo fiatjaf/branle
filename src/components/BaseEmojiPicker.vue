@@ -1,8 +1,8 @@
 <template>
   <Picker
     :data='emojiIndex'
-    :native='true'
-    :emoji-size='16'
+    set='google'
+    :emoji-size='22'
     :per-line='perLine'
     :show-preview='false'
     :show-skin-tomes='false'

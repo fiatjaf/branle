@@ -1,6 +1,6 @@
 {
   "name": "astral",
-  "version": "0.0.12",
+  "version": "0.0.14",
   "description": "decentralized social platform (nostr client)",
   "productName": "astral",
   "author": "monica <monlovesmango@protonmail.com>",
@@ -20,7 +20,7 @@
     "core-js": "^3.6.5",
     "cross-fetch": "^3.1.5",
     "dompurify": "^2.4.1",
-    "emoji-mart-vue-fast": "^10.2.1",
+    "emoji-mart-vue-fast": "12.0.1",
     "identicon.js": "2.3",
     "light-bolt11-decoder": "^2.1.0",
     "markdown-it": "13.0",

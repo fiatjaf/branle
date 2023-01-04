@@ -58,6 +58,7 @@ export default {
 
   // buttons, labels & tooltips
   post: 'post',
+  follow: 'follow',
   close: 'close',
   setUser: 'set user',
   read: 'read',

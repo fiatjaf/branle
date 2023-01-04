@@ -81,15 +81,18 @@ export function reorderFollows(state, follows) {
 
 export function addProfileToCache(
   state,
-  {pubkey, name, about, picture, nip05}
+  metadata
 ) {
+  metadata = JSON.parse(JSON.stringify(metadata))
+  let {pubkey} = metadata
+  delete metadata.pubkey
   if (pubkey in state.profilesCache) {
     // was here already, remove from LRU (will readd next)
     state.profilesCacheLRU.splice(state.profilesCacheLRU.indexOf(pubkey), 1)
   }
 
   // replace the metadata in cache
-  state.profilesCache[pubkey] = {name, about, picture, nip05}
+  state.profilesCache[pubkey] = metadata
 
   // adding to LRU
   if (pubkey === state.keys.pub) {

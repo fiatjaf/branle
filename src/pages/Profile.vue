@@ -36,7 +36,6 @@
             rounded
             :label='$t("searchPosts")'
             dense
-            autofocus
             color='secondary'
             class='no-padding'
             :loading='searching'

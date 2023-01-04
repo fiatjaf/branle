@@ -255,7 +255,7 @@ import {queryName} from 'nostr-tools/nip05'
 
 import helpersMixin from '../utils/mixin'
 import {dbErase} from '../query'
-import { getCssVar, setCssVar } from 'quasar'
+import { setCssVar } from 'quasar'
 import BaseSelect from 'components/BaseSelect.vue'
 import BaseSelectMultiple from 'components/BaseSelectMultiple.vue'
 import BaseInformation from 'components/BaseInformation.vue'
@@ -416,16 +416,11 @@ export default {
     this.unsubscribe = this.$store.subscribe((mutation, state) => {
       switch (mutation.type) {
         case 'addProfileToCache': {
-          const {name, picture, about, nip05} =
-            state.profilesCache[state.keys.pub] || {}
+          if (mutation.payload.pubkey !== state.keys.pub) return
 
           nextTick(() => {
             setTimeout(() => {
-              if (!this.metadata.name && name) this.metadata.name = name
-              if (!this.metadata.picture && picture)
-                this.metadata.picture = picture
-              if (!this.metadata.about && about) this.metadata.about = about
-              if (!this.metadata.nip05 && nip05) this.metadata.nip05 = nip05
+              this.cloneMetadata()
             }, 1)
           })
 
@@ -451,8 +446,7 @@ export default {
 
   methods: {
     cloneMetadata() {
-      this.metadata = Object.assign({}, this.$store.state.profilesCache[this.$store.state.keys.pub])
-      // this.metadata = {name, picture, about, nip05}
+      this.metadata = JSON.parse(JSON.stringify(this.$store.state.profilesCache[this.$store.state.keys.pub]))
     },
     cloneRelays() {
       // this.relays = JSON.parse(JSON.stringify(this.$store.state.relays))
@@ -479,25 +473,7 @@ export default {
       this.editingMetadata = false
     },
     clonePreferences() {
-      this.preferences = {}
-      let config = LocalStorage.getItem('config') || {}
-      if (config['preferences']) {
-        this.preferences = config.preferences
-        if (!this.preferences.color.background) this.preferences.color.background = getCssVar('background')
-        if (!this.preferences.font) this.preferences.font = 'Roboto'
-      } else {
-        this.preferences = {
-          color: {
-            primary: getCssVar('primary'),
-            secondary: getCssVar('secondary'),
-            accent: getCssVar('accent'),
-            background: getCssVar('background'),
-          },
-          font: 'Roboto'
-        }
-        config.preferences = this.preferences
-        LocalStorage.set('config', config)
-      }
+      this.preferences = JSON.parse(JSON.stringify(this.$store.state.config.preferences))
     },
     addRelay() {
       if (this.newRelay && this.newRelay.length) this.relays[this.newRelay] = { read: true, write: true }
@@ -523,10 +499,7 @@ export default {
       this.editingRelays = false
     },
     savePreferences() {
-      // this.loadFont(this.preferences.font)
-      let config = LocalStorage.getItem('config') || {}
-      config.preferences = this.preferences
-      LocalStorage.set('config', config)
+      this.$store.commit('setConfig', {key: 'preferences', value: this.preferences})
       this.editingPreferences = false
     },
     updateColor(color, colorName) {

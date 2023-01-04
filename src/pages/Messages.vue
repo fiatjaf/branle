@@ -1,5 +1,5 @@
 <template>
-  <q-page class='flex column no-wrap' style='min-height: unset;'>
+  <q-page class='flex column no-wrap' style='min-height: 100vh;'>
     <div id='header-placeholder' />
     <div id='header' ref='header'>
       <div class='flex row justify-evenly no-wrap full-width q-pt-sm q-px-sm'>

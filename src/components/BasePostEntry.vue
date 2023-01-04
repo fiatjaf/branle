@@ -437,7 +437,7 @@ export default {
     hashtags() {
       if (this.text.length === 0) return []
       const hashtagRegex = /(?<s>^|[\s])#(?<i>[\w]{1,63})/g
-      let matches = this.text.matchAll(hashtagRegex)
+      let matches = this.innertext.matchAll(hashtagRegex)
       let hashtags = []
       for (let match of matches) {
         hashtags.push(match.groups.i.toLowerCase())
@@ -484,6 +484,7 @@ export default {
       // if (e) this.text = e.target.textContent
       // else this.text = this.textarea.textContent
       this.text = this.textarea.textContent
+      this.innertext = this.textarea.innerText
       this.textareaRange = this.caretRange
       this.updateReadonlyInput()
       if (!this.messageMode) this.updateReadonlyHightlightInput()
@@ -501,6 +502,7 @@ export default {
       this.toolSelected = ''
       this.sending = true
       this.animateSendIcon()
+      this.updateText()
       await this.extractMentions(this.textarea, this.tags)
       let event
       if (this.replyMode) event = await this.sendReply()

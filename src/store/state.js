@@ -53,6 +53,7 @@ const mainnetDefaultRelays = {
     'wss://relay.nostr.ch',
     'wss://nostr.mom',
     'wss://nostr.walletofsatoshi.com',
+    'wss://nostr-relay.alekberg.net',
     ]
 
 //   for (let i = 0; i < 3; i++) {

@@ -283,8 +283,8 @@ export default {
     },
 
     isKey(key) {
-      if (key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)) return true
-      return false
+      if (!key || typeof key !== 'string') return false
+      return /^[0-9a-f]{64}$/.test(key?.toLowerCase())
     },
 
     isBech32Key(key) {

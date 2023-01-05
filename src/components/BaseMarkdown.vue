@@ -14,7 +14,10 @@
     label='show full post'
     @click.stop="expand"
   />
-  <BaseInvoice v-if='invoice' :invoice='invoice'/>
+  <div v-if='invoices.length'>
+  <BaseLightningCard v-for='(invoice, index) in invoices' :key='index' :ln-string='invoice' class='lt-sm' style='padding: 1rem;'/>
+  <BaseLightningCard v-for='(invoice, index) in invoices' :key='index' :ln-string='invoice' class='gt-xs' row-or-column='row' style='padding: 1rem;'/>
+  </div>
   <!-- <div v-if='links.length'>
     <BaseLinkPreview v-for='(link, idx) of links' :key='idx' :url='link' />
   </div> -->
@@ -28,9 +31,7 @@ import deflist from 'markdown-it-deflist'
 import taskLists from 'markdown-it-task-lists'
 import emoji from 'markdown-it-emoji'
 import helpersMixin from '../utils/mixin'
-import * as bolt11Parser from 'light-bolt11-decoder'
-import BaseInvoice from 'components/BaseInvoice.vue'
-// import fetch from 'cross-fetch'
+import BaseLightningCard from 'components/BaseLightningCard.vue'
 
 const md = MarkdownIt({
   html: false,
@@ -201,13 +202,14 @@ export default {
   mixins: [helpersMixin],
   emits: ['expand', 'resized'],
   components: {
-    BaseInvoice,
+    BaseLightningCard,
   },
 
   data() {
     return {
       html: '',
-      invoice: null,
+      // lnString: null,
+      invoices: []
       // links: [],
     }
   },
@@ -227,13 +229,9 @@ export default {
     parsedContent() {
       const bolt11Regex = /\b(?<i>(lnbc|LNBC)[0-9a-zA-Z]*1[0-9a-zA-Z]+)\b/g
       const replacer = (match, index) => {
-        try {
-          this.invoice = bolt11Parser.decode(match)
-          return ''
-        } catch (e) {
-        console.log('invoice parsing error', e)
-          return match
-        }
+        // if (this.lnString) return match
+        this.invoices.push(match.toLowerCase())
+        return ''
       }
       let replacedContent = this.content.replace(bolt11Regex, replacer)
       return replacedContent

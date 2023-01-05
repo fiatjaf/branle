@@ -69,10 +69,10 @@ export default defineComponent({
   },
 
   methods: {
-    copy() {
+    async copy() {
       let text = this.copyText
       console.log(text)
-      navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(text)
       Notify.create({
         message: `copied ${this.copyText.length < 70 ? this.copyText : this.shorten(this.copyText, 30)}`,
       })

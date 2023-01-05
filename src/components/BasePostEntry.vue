@@ -1005,16 +1005,18 @@ export default {
     },
     getReplyUserTags() {
       // remove invalid tags and/or not p
-      if (!this.event || !this.event.tags) return []
-      let usableTags = this.event.tags.filter(
+      if (!this.event) return []
+      let event = Object.assign({}, this.event)
+      if (!event.tags) event.tags = []
+      let usableTags = event.tags.filter(
         ([t, v]) => (t === 'p') && this.isKey(v)
       ).map(([...values]) => { return [...values] })
 
       // add last 9 pubkeys mentioned
       let pubkeys = usableTags.filter(([t, v]) => t === 'p').map(([_, v]) => v).slice(0, 9)
       // plus the author of the note being replied to, if not present already
-      if (!pubkeys.find((pubkey) => pubkey === this.event.pubkey)) {
-        pubkeys.push(this.event.pubkey)
+      if (!pubkeys.find((pubkey) => pubkey === event.pubkey)) {
+        pubkeys.push(event.pubkey)
       }
       // remove ourselves
       pubkeys = pubkeys.filter((pubkey) => pubkey !== this.$store.state.keys.pub)

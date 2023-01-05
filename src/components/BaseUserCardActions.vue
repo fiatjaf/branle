@@ -24,6 +24,10 @@
       button-size='sm'
       @click.stop
     />
+    <BaseButtonLightning
+      v-if='(pubkey !== $store.state.keys.pub) && ($store.getters.profileLud06(pubkey))'
+      :pubkey='pubkey'
+    />
   </div>
 </template>
 
@@ -32,6 +36,7 @@ import { defineComponent } from 'vue'
 import BaseButtonMessage from 'components/BaseButtonMessage.vue'
 import BaseButtonFollow from 'components/BaseButtonFollow.vue'
 import BaseButtonCopy from 'components/BaseButtonCopy.vue'
+import BaseButtonLightning from 'components/BaseButtonLightning.vue'
 import helpersMixin from '../utils/mixin'
 
 export default defineComponent({
@@ -57,6 +62,7 @@ export default defineComponent({
     BaseButtonMessage,
     BaseButtonFollow,
     BaseButtonCopy,
+    BaseButtonLightning,
   },
 
   computed: {

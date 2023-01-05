@@ -1,5 +1,6 @@
 import Identicon from 'identicon.js'
 import * as helpersMixin from '../utils/mixin'
+import { utils } from 'lnurl-pay'
 
 export function namedProfiles(state, getters) {
   return Object.entries(state.profilesCache).reduce(
@@ -58,13 +59,16 @@ export function profileDescription(state) {
   }
 }
 
-// export function profileLud06(state) {
-//   return pubkey => {
-//     console.log('lud06', pubkey, state.profilesCache[pubkey])
-//     let {lud06 = ''} = state.profilesCache[pubkey] || {}
-//     return lud06
-//   }
-// }
+export function profileLud06(state) {
+  return pubkey => {
+    let {lud06, lud16} = state.profilesCache[pubkey] || {}
+    if (!lud06 && !lud16) return null
+    if (utils.isLnurl(lud06)) return lud06.toLowerCase()
+    if (utils.isLightningAddress(lud16)) return helpersMixin.default.methods.lnAddrToLnurl(lud16)
+    // if (utils.isLightningAddress(lud06)) return utils.parseLnUrl(utils.decodeUrlOrAddress(lud06))
+    return null
+  }
+}
 
 // export function contacts(state) {
 //   return (pubkey, short = true) =>

@@ -1,6 +1,6 @@
 <template>
   <div style='cursor: pointer; padding-left: .2rem;' class='relative-position'>
-    <div class="flex justify-between base-select" :style='(allowSelection ? "cursor: pointer; opacity: 1;" : "cursor: not-allowed; opacity: .5;")' @click.stop='toggle'>
+    <div class="flex justify-between base-select no-wrap items-center" style='border-radius: .5rem;' :style='(allowSelection ? "cursor: pointer; opacity: 1;" : "cursor: not-allowed; opacity: .5;")' @click.stop='toggle'>
       <span class='q-pl-sm' ><slot /></span>
       <q-icon :name='selecting ? "arrow_drop_up" : "arrow_drop_down"' size='xs'/>
     </div>
@@ -80,12 +80,12 @@ li:hover {
 .base-select-list ul {
   list-style: none
 }
-.base-select-list ul li:active,
-.base-select-list ul li:hover {
+.base-select-list li:active,
+.base-select-list li:hover {
   background: rgba(0, 0, 0, 0.05);
 }
-.body--dark .base-select-list ul li:active,
-.body--dark .base-select-list ul li:hover {
+.body--dark .base-select-list li:active,
+.body--dark .base-select-list li:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 </style>

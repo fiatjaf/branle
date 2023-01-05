@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
-    "bech32-buffer": "^0.2.0",
+    "bech32": "^2.0.0",
     "codemirror": "5",
     "core-js": "^3.6.5",
     "cross-fetch": "^3.1.5",
@@ -23,6 +23,7 @@
     "emoji-mart-vue-fast": "12.0.1",
     "identicon.js": "2.3",
     "light-bolt11-decoder": "^2.1.0",
+    "lnurl-pay": "^2.1.0",
     "markdown-it": "13.0",
     "markdown-it-deflist": "2.1",
     "markdown-it-emoji": "^2.0.2",

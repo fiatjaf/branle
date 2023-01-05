@@ -21,11 +21,15 @@
         </q-tooltip>
       </q-icon>
     </div>
-    <div class='flex row no-wrap items-center'>
+    <div class='flex row no-wrap items-center' :style='headerMode ? "gap: .3rem;" : "gap: .1rem;"'>
       <BaseButtonNIP05 :pubkey='pubkey' :button-size="headerMode ? 'sm' : 'xs'"/>
       <div v-if='$store.getters.NIP05Id(pubkey)' style='opacity: .9; font-size: 90%; font-weight: 300; line-height: 90%'>
-        {{ niceNIP05 }}
+        {{ headerMode ? niceNIP05 : niceShortNIP05 }}
       </div>
+    </div>
+    <div v-if='headerMode && lnurlToLnAddr($store.getters.profileLud06(pubkey))'  style='opacity: .9; font-size: 90%; font-weight: 300; line-height: 90%'
+    >
+      ⚡️{{ lnurlToLnAddr($store.getters.profileLud06(pubkey)) }}
     </div>
   </div>
 </template>
@@ -49,10 +53,15 @@ export default {
     // showVerified: {type: Boolean, default: false},
   },
   computed: {
-    niceNIP05() {
+    niceShortNIP05() {
       return this.$store.getters.NIP05Id(this.pubkey)
         .split('@')
         .map((el, index) => (index === 0 && (el === '_' || el === this.$store.getters.name(this.pubkey))) ? '' : el).join('@')
+    },
+    niceNIP05() {
+      return this.$store.getters.NIP05Id(this.pubkey)
+        .split('@')
+        .map((el, index) => (index === 0 && (el === '_')) ? '' : el).join('@')
     },
     isFollow() {
       return this.$store.state.follows.includes(this.pubkey)

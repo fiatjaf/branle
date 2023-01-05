@@ -173,7 +173,7 @@ import { defineComponent } from 'vue'
 import helpersMixin from '../utils/mixin'
 import { validateWords } from 'nostr-tools/nip06'
 import { generatePrivateKey } from 'nostr-tools'
-import { decode } from 'bech32-buffer'
+// import { decode } from 'bech32-buffer'
 import BaseSelectMultiple from 'components/BaseSelectMultiple.vue'
 import BaseInformation from 'components/BaseInformation.vue'
 
@@ -242,16 +242,14 @@ export default defineComponent({
 
     isBech32Pub() {
       if (this.isBech32Key(this.key)) {
-        let { prefix } = decode(this.key.toLowerCase())
-        return prefix === 'npub'
+        return this.key.toLowerCase().startsWith('npub')
       }
       return false
     },
 
     isBech32Sec() {
       if (this.isBech32Key(this.key)) {
-        let { prefix } = decode(this.key.toLowerCase())
-        return prefix === 'nsec'
+        return this.key.toLowerCase().startsWith('nsec')
       }
       return false
     },

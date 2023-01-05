@@ -4,8 +4,11 @@ import {shorten} from './helpers'
 import {date} from 'quasar'
 import { dbStreamEvent } from 'src/query'
 import {decrypt} from 'nostr-tools/nip04'
-import { decode, encode } from 'bech32-buffer'
+// import { decode, encode } from 'bech32-buffer'
+import { bech32 } from 'bech32'
 import * as DOMPurify from 'dompurify'
+import { utils } from 'lnurl-pay'
+import { Buffer } from 'buffer'
 const { formatDate } = date
 
 
@@ -283,30 +286,32 @@ export default {
     },
 
     isKey(key) {
-      if (key?.toLowerCase()?.match(/^[0-9a-f]{64}$/)) return true
-      return false
+      if (!key || typeof key !== 'string') return false
+      console.log('isKey:', `"${key}"`, typeof key, /^[0-9a-f]{64}$/.test(key?.toLowerCase()))
+      return /^[0-9a-f]{64}$/.test(key?.toLowerCase())
     },
 
     isBech32Key(key) {
       if (typeof key !== 'string') return false
       try {
-        let { prefix } = decode(key.toLowerCase())
+        let { prefix } = bech32.decode(key.toLowerCase())
         if (!['npub', 'nsec'].includes(prefix)) return false
         if (prefix === 'npub') this.watchOnly = true
         if (prefix === 'nsec') this.watchOnly = false
-        if (!this.isKey(this.bech32ToHex(key))) return false
+        return this.isKey(this.bech32ToHex(key))
       } catch (error) {
-        return false
+        console.log('isBech32Key error: ', error)
       }
-      return true
+      return false
     },
 
     bech32ToHex(key) {
       try {
-        let { data } = decode(key)
-        return this.toHexString(data)
+        let { words } = bech32.decode(key)
+        let buffer = Buffer.from(bech32.fromWords(words))
+        return this.toHexString(buffer)
       } catch (error) {
-        // continue
+        console.log('bech32ToHex error: ', error)
       }
       return ''
     },
@@ -314,21 +319,24 @@ export default {
 // npub19hmfe5xx4w27pr6xd2l8kwdmvnn5fm33llpsg8e8p007c23hasrq9ja0z2
     hexToBech32(key, prefix) {
       try {
-        let buffer = this.fromHexString(key)
-        return encode(prefix, buffer, 'bech32')
+        // let buffer = this.fromHexString(key)
+        let words = bech32.toWords(this.fromHexString(key))
+        return bech32.encode(prefix, words)
       } catch (error) {
         // continue
       }
       return ''
     },
-
-
+// 8c0da4862130283ff9e67d889df264177a508974e2feb96de139804ea66d6168
+// 8c0da4862130283ff9e67d889df264177a508974e2feb96de139804ea66d6168
     toHexString(buffer) {
-      return buffer.reduce((s, byte) => {
+      let hexString = buffer.reduce((s, byte) => {
         let hex = byte.toString(16)
         if (hex.length === 1) hex = '0' + hex
         return s + hex
       }, '')
+      // hexString = JSON.stringify(JSON.parse(hexString))
+      return hexString
     },
 
     fromHexString(str) {
@@ -340,7 +348,33 @@ export default {
         buffer[i] = parseInt(str.substr(2 * i, 2), 16)
       }
       return buffer
-    }
+    },
+
+    lnurlToLnAddr(lnurl) {
+      try {
+        let url = utils.decodeUrlOrAddress(lnurl)
+        if (!url) return null
+        console.log('lnurlToLnAddr', url)
+        let lnAddrRegex = /^https:\/\/(?<domain>[a-zA-z0-9.]+)\/.well-known\/lnurlp\/(?<user>[a-zA-Z0-9_-]+)/
+        let lnAddrMatch = url.match(lnAddrRegex)
+        if (lnAddrMatch) return `${lnAddrMatch.groups.user}@${lnAddrMatch.groups.domain}`
+      } catch (error) {
+        // console.log('lnurlToLnAddr error: ', error, ' for ', lnurl)
+      }
+      return null
+    },
+    lnAddrToLnurl(lnAddr) {
+      try {
+        if (!utils.isLightningAddress(lnAddr)) return null
+        let url = utils.decodeUrlOrAddress(lnAddr)
+        let words = bech32.toWords(Buffer.from(url, 'utf8'))
+        let lnurl = bech32.encode('lnurl', words, 2000)
+        // let lnurl = utils.parseLnUrl(url)
+        return lnurl
+      } catch (error) {
+        // console.log('lnAddrToLnurl error: ', error, ' for ', lnAddr)
+      }
+    },
   }
 }
 

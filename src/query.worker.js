@@ -320,6 +320,7 @@ function createTables(db, output = console.log) {
         json_extract(json_extract(event,'$.content'),'$.picture') picture,
         json_extract(json_extract(event,'$.content'),'$.about') about,
         json_extract(json_extract(event,'$.content'),'$.nip05') nip05,
+        json_extract(json_extract(event,'$.content'),'$.lud06') lud06,
         CASE (ROW_NUMBER() OVER (
             PARTITION BY json_extract(event,'$.pubkey')
             ORDER BY json_extract(event,'$.created_at') DESC

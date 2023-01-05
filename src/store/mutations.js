@@ -171,3 +171,7 @@ export function setUnreadMessages(state, {peer, count}) {
 export function setConfig(state, {key, value}) {
   state.config[key] = value
 }
+
+export function setConfigLightningTips(state, {key, value}) {
+  state.config.preferences.lightningTips[key] = value
+}

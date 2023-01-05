@@ -83,8 +83,9 @@ export default function () {
   let config = LocalStorage.getItem('config')
   let { timestamps, preferences } = config || {}
   let { lastUserMainSync = 0, lastFeedLoad = 0 } = timestamps || {}
-  let { color, font = 'Roboto' } = preferences || {}
+  let { color, font = 'Roboto', lightningTips } = preferences || {}
   let { primary = '#ffffff', secondary = '#aaaaaa', accent = '#777777', background = '#1f1f1f' } = color || {}
+  let { enabled = true, lastMode = 'copy', lastWallet = null, presets = [10, 100, 1000] } = lightningTips || {}
   config = {
     timestamps: {
       lastUserMainSync,
@@ -97,7 +98,13 @@ export default function () {
         accent,
         background
       },
-      font
+      font,
+      lightningTips: {
+        enabled,
+        lastMode,
+        lastWallet,
+        presets
+      }
     }
   }
 

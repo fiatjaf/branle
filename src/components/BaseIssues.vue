@@ -12,7 +12,7 @@
       </template>
       <q-card-section>
         <p>
-        the <a href='https://github.com/fiatjaf/nostr' target='_blank'>Nostr</a> protocol is
+        the <a href='https://github.com/fiatjaf/nostr' target='_blank' rel='noopener noreferrer'>Nostr</a> protocol is
         a decentralized and censorship resistant distributed information network that relies on clients and relays.
         relays store user data. clients communicate with the relays to save and fetch said user data.
         </p>
@@ -149,7 +149,7 @@
         <p>
           fortunately, on desktop devices Nostr provides an easy way for you to sign into Nostr clients without
           ever providing the client with your private key via browser extensions like
-          <a href='https://getalby.com/' target='_blank'>getAlby</a> or <a href='https://github.com/fiatjaf/nos2x#install' target='_blank'>nos2x</a>.
+          <a href='https://getalby.com/' target='_blank' rel='noopener noreferrer'>getAlby</a> or <a href='https://github.com/fiatjaf/nos2x#install' target='_blank' rel='noopener noreferrer'>nos2x</a>.
           these browser extensions will store your private key locally
           in your browser. when the client needs to send an event or decrypt your messages (ie. use your
           private key), it will employ your browser extension to do the necessary cryptographic functions.
@@ -178,11 +178,11 @@
       <q-card-section>
         <p>
           you can use any method you want to generate your keys, as long as they
-          conform to the <a href='https://github.com/nostr-protocol/nips/blob/master/01.md' target='_blank'>Nostr NIP-01</a>
+          conform to the <a href='https://github.com/nostr-protocol/nips/blob/master/01.md' target='_blank' rel='noopener noreferrer'>Nostr NIP-01</a>
           specification.
           <ul>
             <li>if you are on a desktop device the recommeneded option will be using a browser extension like
-              <a href='https://getalby.com/' target='_blank'>getAlby</a> or <a href='https://github.com/fiatjaf/nos2x#install' target='_blank'>nos2x</a>.
+              <a href='https://getalby.com/' target='_blank'>getAlby</a> or <a href='https://github.com/fiatjaf/nos2x#install' target='_blank' rel='noopener noreferrer'>nos2x</a>.
               (see <strong>why shouldn't I enter my private key?</strong> section above)</li>
             <li>if you are on a mobile device the easiest option will be using astral</li>
             <li>if you are a technical user who is concerned about key generation security you can try the local option</li>
@@ -227,7 +227,7 @@
             </template>
             <q-card-section>
               <ol>
-                <li>install <a href='https://github.com/fiatjaf/nos2x#install' target='_blank'>nos2x</a> browser extension</li>
+                <li>install <a href='https://github.com/fiatjaf/nos2x#install' target='_blank' rel='noopener noreferrer'>nos2x</a> browser extension</li>
                 <li>open the nos2x extension options page (usually in dropdown when clicking on extension's icon at the top of your broswer)</li>
                 <li>hit <strong>generate</strong> button</li>
                 <li>refresh astral.ninja page and hit the <strong>USE PUBLIC KEY FROM EXTENSION</strong> option that should appear in the key input</li>
@@ -251,7 +251,7 @@
             </template>
             <q-card-section>
               <ol>
-                <li>install <a href='https://getalby.com/' target='_blank'>getAlby</a> browser extension</li>
+                <li>install <a href='https://getalby.com/' target='_blank' rel='noopener noreferrer'>getAlby</a> browser extension</li>
                 <li>complete alby setup (when it asks <strong>Do you have a lightning wallet?</strong> just hit <strong>Alby Wallet</strong>
                   if you do not have one)</li>
                 <li>open the getAlby extension options page (usually in dropdown when clicking on extension's icon at the top of your broswer)</li>
@@ -333,7 +333,7 @@
                   <li><strong>picture</strong> image url for the picture you would like displayed as your Nostr
                   profile picture</li>
                   <li><strong>NIP-05 Identifier</strong> meant to be a unique, human readable identifier for
-                  Nostr (read more <a href='https://github.com/nostr-protocol/nips/blob/master/05.md' target='_blank'>here</a>)
+                  Nostr (read more <a href='https://github.com/nostr-protocol/nips/blob/master/05.md' target='_blank' rel='noopener noreferrer'>here</a>)
                   </li>
                 </ul>
               </li>

@@ -22,6 +22,8 @@ const mainnetDefaultRelays = {
   // ]
   const mainnetOptionalRelays = [
     'wss://nostr-pub.wellorder.net',
+    'wss://nostr.swiss-enigma.ch',
+    'wss://nostr.cercatrova.me',
     'wss://relay.damus.io',
     'wss://relayer.fiatjaf.com',
     'wss://nostr.rocks',

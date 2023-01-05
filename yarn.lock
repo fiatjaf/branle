@@ -3521,7 +3521,7 @@ elliptic@^6.5.4:
     minimalistic-assert "^1.0.1"
     minimalistic-crypto-utils "^1.0.1"
 
-emoji-mart-vue-fast@12.0.1:
+emoji-mart-vue-fast@^12.0.1:
   version "12.0.1"
   resolved "https://registry.yarnpkg.com/emoji-mart-vue-fast/-/emoji-mart-vue-fast-12.0.1.tgz#0bbc5f110c5d6c607e9a178619821c18c6a91057"
   integrity sha512-qO8F9aduHwPGEU2U1YobOH3lRXEMvrjej6KdhGMnSoMJ+OFSmNf+pUal/MbrEn0RUy+Uqc7U9sPopA+3ipK4+g==

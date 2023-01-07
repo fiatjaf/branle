@@ -19,6 +19,7 @@ export function metadataFromEvent(event) {
     let metadata = JSON.parse(event.content)
     for (let key of Object.keys(metadata)) metadata[key] = DOMPurify.sanitize(metadata[key])
     metadata.pubkey = event.pubkey
+    metadata.created_at = event.created_at
     return metadata
   } catch (_) {
     console.log('metadataFromEvent error', _)

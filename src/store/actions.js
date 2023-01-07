@@ -116,9 +116,7 @@ export async function restartMainSubscription(store) {
     let distinctPubkeys = {}
     if (!mainSub.streamFollowsProfiles)
       mainSub.streamFollowsProfiles = await streamUserProfile(store.state.follows, async event => {
-        let metadata = metadataFromEvent(event)
-        store.commit('addProfileToCache', metadata)
-        store.dispatch('useNip05', {metadata})
+        store.dispatch('handleAddingProfileEventToCache', event)
         distinctPubkeys[event.pubkey] = distinctPubkeys[event.pubkey] || 0
         distinctPubkeys[event.pubkey]++
         if (store.state.follows.length === Object.keys(distinctPubkeys).length)
@@ -147,17 +145,7 @@ export async function restartMainSubscription(store) {
         store.commit('setFollows', follows)
         store.dispatch('restartMainSubscription')
       } else if (event.kind === 0) {
-        let result = await dbQuery(`
-          SELECT json_extract(event,'$.created_at') created_at
-          FROM nostr
-          WHERE json_extract(event,'$.kind') = 0 AND
-            json_extract(event,'$.pubkey') = '${store.state.keys.pub}'
-          LIMIT 1
-        `)
-        if (result.length && event.created_at < result[0].created_at) return
-
-        let metadata = metadataFromEvent(event)
-        store.commit('addProfileToCache', metadata)
+        store.dispatch('handleAddingProfileEventToCache', event)
       }
     }
   )
@@ -295,6 +283,7 @@ export async function publishContactList(store) {
 }
 
 export async function setMetadata(store, metadata) {
+  if (metadata.created_at) delete metadata.created_at
   try {
     let unpublishedEvent = {
       pubkey: store.state.keys.pub,
@@ -307,7 +296,7 @@ export async function setMetadata(store, metadata) {
     let publishResult = await publish(event)
     if (!publishResult) throw new Error('could not publish updated profile event')
     store.dispatch('addEvent', {event})
-    store.commit('addProfileToCache', { pubkey: store.state.keys.pub, ...metadata })
+    store.dispatch('handleAddingProfileEventToCache', event)
 
     Notify.create({
       message: 'updated and published profile',
@@ -351,10 +340,8 @@ const debouncedStreamUserProfile = debounce(async (store, users) => {
     mainSub.streamUserProfile = await streamUserProfile(
       users.slice(0, 500),
       async event => {
-        if (event.pubkey in store.state.profilesCache) return
-        let metadata = metadataFromEvent(event)
-        store.commit('addProfileToCache', metadata)
-        store.dispatch('useNip05', {metadata})
+        // if (event.pubkey in store.state.profilesCache) return
+        store.dispatch('handleAddingProfileEventToCache', event)
         store.dispatch('cancelUseProfile', {pubkey: event.pubkey})
       }
     )
@@ -414,4 +401,11 @@ export async function useNip05(store, {metadata}) {
     }
   }
   store.commit('addProfileToCache', metadata)
+}
+
+export async function handleAddingProfileEventToCache(store, event) {
+  if (store.state.profilesCache[event.pubkey] && event.created_at <= store.state.profilesCache[event.pubkey].created_at) return
+  let metadata = metadataFromEvent(event)
+  store.commit('addProfileToCache', metadata)
+  store.dispatch('useNip05', {metadata})
 }

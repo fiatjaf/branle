@@ -93,6 +93,7 @@
           @resized='calcConnectorValues(10)'
         />
         <BaseRelayRecommend v-else-if="event.kind === 2" :url="sanitize(event.content)" />
+        <BaseUserCard v-else-if="event.kind === 0" :pubkey='event.pubkey' :header-mode='true' />
         <pre v-else> {{ cleanEvent }} </pre>
         <div
           v-if='!isEmbeded && (isQuote || isRepost)'
@@ -350,7 +351,7 @@ export default defineComponent({
     }
     this.calcConnectorValues()
     this.$emit('mounted')
-    this.isLongForm = this.event.content.length > 600
+    this.isLongForm = this.event.content.length > 600 || this.event.content.split(/\r\n|\r|\n/).length > 10
   },
 
   activated() {

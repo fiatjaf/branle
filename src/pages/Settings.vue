@@ -495,6 +495,7 @@ export default {
         Object.keys(this.$store.state.relays).length ? this.$store.state.relays : this.$store.state.defaultRelays)
     },
     async setMetadata() {
+      if (this.metadata.created_at) delete this.metadata.created_at
       if (this.metadata.nip05 === '') this.metadata.nip05 = undefined
       if (this.metadata.nip05) {
         if (
@@ -513,10 +514,20 @@ export default {
         if (utils.isLightningAddress(this.metadata.lud06)) {
           this.metadata.lud16 = this.metadata.lud06
           this.metadata.lud06 = this.lnAddrToLnurl(this.metadata.lud16)
+        } else {
+          let lnAddr = this.lnurlToLnAddr(this.metadata.lud06)
+          if (lnAddr) this.metadata.lud16 = lnAddr
         }
         if (!utils.isLnurl(this.metadata.lud06)) {
           this.$q.notify({
             message: 'Invalid lud06 identifier, must start with LNURL.',
+            color: 'warning'
+          })
+          return
+        }
+        if (this.metadata.lud16 && !utils.isLightningAddress(this.metadata.lud16)) {
+          this.$q.notify({
+            message: 'Invalid lud16 identifier, must be a lightning address.',
             color: 'warning'
           })
           return

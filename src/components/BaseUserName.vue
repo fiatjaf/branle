@@ -54,9 +54,10 @@ export default {
   },
   computed: {
     niceShortNIP05() {
-      return this.$store.getters.NIP05Id(this.pubkey)
+      let niceNIP05 = this.$store.getters.NIP05Id(this.pubkey)
         .split('@')
-        .map((el, index) => (index === 0 && (el === '_' || el === this.$store.getters.name(this.pubkey))) ? '' : el).join('@')
+        .map((el, index) => (index === 0 && (el === this.$store.getters.name(this.pubkey))) ? '' : el).join('@')
+      return niceNIP05.startsWith('_@') ? niceNIP05.replace('_@', '') : niceNIP05
     },
     niceNIP05() {
       return this.$store.getters.NIP05Id(this.pubkey)

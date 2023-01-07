@@ -1,5 +1,5 @@
 <template>
-  <q-page class='flex column no-wrap' style='min-height: 100vh;'>
+  <q-page class='flex column no-wrap' >
     <div id='header-placeholder' />
     <div id='header' ref='header'>
       <div class='flex row justify-evenly no-wrap full-width q-pt-sm q-px-sm'>
@@ -72,14 +72,14 @@
         @click.stop='scrollToBottom()'
       />
       <div class='gt-xs'>
-      <q-separator color='accent' size='1px' />
-      <BasePostEntry
-            :message-mode='messageMode'
-            :event='replyEvent'
-            @clear-event='replyEvent=null'
-            @sent='addSentMessage'
-            class='q-px-md q-pt-sm'
-          />
+        <q-separator color='accent' size='1px' />
+        <BasePostEntry
+          :message-mode='messageMode'
+          :event='replyEvent'
+          @clear-event='replyEvent=null'
+          @sent='addSentMessage'
+          class='q-px-md q-pt-sm'
+        />
       </div>
     </div>
   </q-page>
@@ -91,7 +91,6 @@ import { dbUserProfile, streamUserProfile, dbMessages, listenMessages } from '..
 import BaseMessage from 'components/BaseMessage.vue'
 import { useQuasar } from 'quasar'
 import { createMetaMixin } from 'quasar'
-import {metadataFromEvent} from '../utils/event'
 
 const metaData = {
   // sets document title
@@ -192,15 +191,9 @@ export default {
     async start() {
       // load peer profile if it exists
       let profile = await dbUserProfile(this.hexPubkey)
-      if (profile) {
-        let metadata = metadataFromEvent(profile)
-        this.$store.commit('addProfileToCache', metadata)
-        this.$store.dispatch('useNip05', {metadata})
-      }
+      if (profile) this.$store.dispatch('handleAddingProfileEventToCache', profile)
       this.sub.streamUserProfile = await streamUserProfile(this.hexPubkey, async event => {
-        let metadata = metadataFromEvent(event)
-        this.$store.commit('addProfileToCache', metadata)
-        this.$store.dispatch('useNip05', {metadata})
+        this.$store.dispatch('handleAddingProfileEventToCache', event)
       })
 
       // listen for new messages

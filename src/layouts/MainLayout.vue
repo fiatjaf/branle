@@ -221,12 +221,16 @@ export default defineComponent({
 
     // setup scrolling
     this.launch()
+    this.enableWebLn()
     document.querySelector('#left-drawer').addEventListener('wheel', this.redirectScroll, {passive: true})
     this.$router.beforeEach((to, from) => {
       this.preserveScrollPos(to, from)
       if (to.name === 'messages' && this.postEntryOpen) this.postEntryOpen = false
      })
-    this.$router.afterEach((to, from) => { this.restoreScrollPos(to, from) })
+    this.$router.afterEach((to, from) => {
+      if (to.path === from.path) return
+      this.restoreScrollPos(to, from)
+    })
     let pageRect = this.$refs.pageContainer?.$el.getBoundingClientRect()
     if (pageRect) this.fabPos[0] = pageRect.right - pageRect.width
 
@@ -387,6 +391,16 @@ export default defineComponent({
     },
     setLookingAroundMode() {
       this.lookingAround = true
+    },
+    async enableWebLn() {
+      try {
+        if (typeof window.webln !== 'undefined') {
+          await window.webln.enable()
+        }
+      } catch (error) {
+        // User denied permission or cancelled
+        console.log(error)
+      }
     }
   },
 })

@@ -113,7 +113,6 @@
 <script>
 import { defineComponent } from 'vue'
 import {debounce} from 'quasar'
-import {metadataFromEvent} from '../utils/event'
 import helpersMixin from '../utils/mixin'
 import {addToThread} from '../utils/threads'
 import BaseUserCard from 'components/BaseUserCard.vue'
@@ -197,15 +196,9 @@ export default defineComponent({
       // this.useProfile(this.hexPubkey)
       this.loadingMore = true
       let profile = await dbUserProfile(this.hexPubkey)
-      if (profile) {
-        let metadata = metadataFromEvent(profile)
-        this.$store.commit('addProfileToCache', metadata)
-        this.$store.dispatch('useNip05', {metadata})
-      }
+      if (profile) this.$store.dispatch('handleAddingProfileEventToCache', profile)
       this.sub.streamUserProfile = await streamUserProfile(this.hexPubkey, async event => {
-        let metadata = metadataFromEvent(event)
-        this.$store.commit('addProfileToCache', metadata)
-        this.$store.dispatch('useNip05', {metadata})
+        this.$store.dispatch('handleAddingProfileEventToCache', event)
       })
 
       let timer = setTimeout(async() => {

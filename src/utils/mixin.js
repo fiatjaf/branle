@@ -287,7 +287,7 @@ export default {
 
     isKey(key) {
       if (!key || typeof key !== 'string') return false
-      console.log('isKey:', `"${key}"`, typeof key, /^[0-9a-f]{64}$/.test(key?.toLowerCase()))
+      // console.log('isKey:', `"${key}"`, typeof key, /^[0-9a-f]{64}$/.test(key?.toLowerCase()))
       return /^[0-9a-f]{64}$/.test(key?.toLowerCase())
     },
 

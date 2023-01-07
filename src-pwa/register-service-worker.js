@@ -35,12 +35,6 @@ register(process.env.SERVICE_WORKER_FILE, {
 
   updated (registration) {
     console.log('New content is available; please refresh.')
-    try {
-      registration.update()
-      // location.reload(true)
-    } catch (err) {
-      console.err('SW update failed:', err)
-    }
   },
 
   offline () {

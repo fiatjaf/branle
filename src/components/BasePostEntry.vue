@@ -485,7 +485,7 @@ export default {
       // else this.text = this.textarea.textContent
       this.text = this.textarea.textContent
       this.innertext = this.textarea.innerText
-      this.textareaRange = this.caretRange
+      this.textareaRange = this.caretRange || this.textareaRange
       this.updateReadonlyInput()
       if (!this.messageMode) this.updateReadonlyHightlightInput()
     },
@@ -795,6 +795,7 @@ export default {
     },
 
     insertEmoji(emoji) {
+      if (!emoji.native) return
       this.trigger++
       this.insertText(emoji.native)
     },

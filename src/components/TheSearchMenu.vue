@@ -68,7 +68,7 @@
           <BaseUserCard
             v-for="pubkey in $store.state.follows"
             :pubkey="pubkey"
-            :key="pubkey + '_' + $store.state.profilesCacheToggle"
+            :key="pubkey"
           />
         </q-list>
         <Draggable
@@ -76,7 +76,7 @@
           v-model='reorderedFollows'
           @start="dragging=true"
           @end="dragging=false"
-          item-key="pubkey"
+          :item-key="pubkey + '_reordering'"
         >
           <template #header>
             <div class='flex row justify-between items-start'>

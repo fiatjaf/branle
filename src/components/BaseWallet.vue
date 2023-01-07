@@ -17,7 +17,7 @@
           <template #list-items>
             <q-dialog v-model='showWalletPicker'>
             <div class='flex column no-wrap q-pa-sm base-select-list' style='max-height: 80%; gap: .5rem; background: var(--q-background); font-size: 1.1rem;'>
-              <li v-for="(wallet, key) in wallets" :key='key' @click='selectWallet(wallet)' class='flex row items-center no-wrap q-pl-xs' style='gap: .5rem;'>
+              <li v-for="(wallet, key) in wallets" :key='key' @click.stop='selectWallet(wallet)' class='flex row items-center no-wrap q-pl-xs' style='gap: .5rem;'>
                 <img
                   v-if="!loadingInvoice"
                   :src="'wallet-icons/' + wallet.image"
@@ -28,33 +28,32 @@
             </div>
             </q-dialog>
           </template>
-
         </BaseSelect>
       </div>
     </div>
-      <div v-if='!isInvoice' class='flex row items-center justify-center' style='gap: .7rem;'>
-        <div
-          id='amount-input'
-          contenteditable
-          style='font-size: 2rem; padding: 0 .4rem; min-width: 2rem; outline: none; border: none;'
-          @input='updateTipAmount'
-          @keypress.enter="openInWallet()"
-        >
-          {{ tipAmount }}
-        </div>
-        <div style='font-size: 1.1rem;'> sats</div>
+    <div v-if='!isInvoice' class='flex row items-center justify-center' style='gap: .7rem;'>
+      <div
+        id='amount-input'
+        contenteditable
+        style='font-size: 2rem; padding: 0 .4rem; min-width: 2rem; outline: none; border: none;'
+        @input='updateTipAmount'
+        @keypress.enter="openInWallet()"
+      >
+        {{ tipAmount }}
       </div>
-      <div v-if='!isInvoice' class='flex row justify-center' style='gap: .3rem;'>
-        <q-btn v-for='(amount, index) in tipPresets' :key='index' :label='amount + " sats"' size='sm' outline @click.stop='tipAmount=amount'/>
-        <q-btn label='other' size='sm' outline @click.stop='focusAmount()'/>
+      <div style='font-size: 1.1rem;'> sats</div>
+    </div>
+    <div v-if='!isInvoice' class='flex row justify-center' style='gap: .3rem;'>
+      <q-btn v-for='(amount, index) in tipPresets' :key='index' :label='amount + " sats"' size='sm' outline @click.stop='tipAmount=amount'/>
+      <q-btn label='other' size='sm' outline @click.stop='focusAmount()'/>
 
-      </div>
-      <div class='flex column justify-center items-center' style='font-size: .9rem; width: 100%;'>
-        <span v-if='!selectedWallet'>please select a wallet</span>
-        <span v-else-if='!isInvoice && selectedWallet && tipAmount === 0'>please enter an amount greater than 0</span>
-        <span v-else-if='!isInvoice && selectedWallet && !tipAmount'>please enter an amount</span>
-        <q-btn v-else spread outline class='full-width' label='open wallet' color="primary" v-close-popup @click='openInWallet()' />
-      </div>
+    </div>
+    <div class='flex column justify-center items-center' style='font-size: .9rem; width: 100%;'>
+      <span v-if='!selectedWallet'>please select a wallet</span>
+      <span v-else-if='!isInvoice && selectedWallet && tipAmount === 0'>please enter an amount greater than 0</span>
+      <span v-else-if='!isInvoice && selectedWallet && !tipAmount'>please enter an amount</span>
+      <q-btn v-else spread outline class='full-width' label='open wallet' color="primary" v-close-popup @click.stop='openInWallet()' />
+    </div>
   </div>
 </template>
 
@@ -203,7 +202,17 @@ export default defineComponent({
 
       this.loadingInvoice = true
       const invoice = await this.getInvoice(this.tipAmount)
-      window.open(`${prefix}${invoice}`, '_self')
+
+      let lnbcLink = document.createElement('a')
+      lnbcLink.href = `${prefix}${invoice}`
+      lnbcLink.style.height = 0
+      lnbcLink.style.display = 'none'
+      lnbcLink.onclick = (e) => {
+        e.stopPropagation()
+      }
+      this.$refs.walletPicker.appendChild(lnbcLink)
+      setTimeout(() => lnbcLink.click(), 200)
+
       this.loadingInvoice = false
     },
 

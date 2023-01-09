@@ -88,7 +88,7 @@ export default function () {
   let { lastUserMainSync = 0, lastFeedLoad = 0 } = timestamps || {}
   let { color, font = 'Roboto', lightningTips } = preferences || {}
   let { primary = '#ffffff', secondary = '#aaaaaa', accent = '#777777', background = '#1f1f1f' } = color || {}
-  let { enabled = true, lastMode = 'copy', lastWallet = null, presets = [10, 100, 1000] } = lightningTips || {}
+  let { enabled = true, lastMode = 'copy', lastWallet = null, presets = [10, 100, 1000], oneClick = { enabled: false, amount: 10 } } = lightningTips || {}
   config = {
     timestamps: {
       lastUserMainSync,
@@ -106,7 +106,8 @@ export default function () {
         enabled,
         lastMode,
         lastWallet,
-        presets
+        presets,
+        oneClick,
       }
     }
   }

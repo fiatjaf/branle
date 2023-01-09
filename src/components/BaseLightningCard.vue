@@ -36,7 +36,7 @@
           <BaseQr :code='this.lnString' style='height: fit-content;'/>
         </q-tab-panel>
         <q-tab-panel name="wallet" class='no-padding flex items-center justify-center full-width'>
-          <BaseWallet :ln-string='lnString' />
+          <BaseWallet :ln-string='lnString' :pubkey='pubkey' :bolt11='bolt11'/>
         </q-tab-panel>
       </q-tab-panels>
     </div>
@@ -77,11 +77,14 @@ export default {
       if (!this.lnString.toLowerCase().startsWith('lnbc')) return null
       try {
         let inv = bolt11Parser.decode(this.lnString)
-        let includesAmount = inv.sections[2].name === 'amount'
-        let amount = includesAmount ? inv.sections[2].value / 1000 : null
-        let description = includesAmount ? inv.sections[6].value : inv.sections[5].value
-        let created = includesAmount ? parseInt(inv.sections[4].value) : parseInt(inv.sections[3].value)
-        let expiresValue = includesAmount ? parseInt(inv.sections[8].value) : parseInt(inv.sections[7].value)
+        let sections = {}
+        inv.sections.forEach(({name, value}) => {
+          sections[name] = value
+        })
+        let amount = sections.amount ? sections.amount / 1000 : null
+        let description = sections.description
+        let created = sections.timestamp
+        let expiresValue = sections.expiry
         let parsed = parseInt(expiresValue)
         let expires = isNaN(parsed) ? null : created + parsed
         let request = inv.paymentRequest

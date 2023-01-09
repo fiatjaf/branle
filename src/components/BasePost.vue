@@ -419,7 +419,7 @@ export default defineComponent({
     },
 
     addEvent(event) {
-      console.log('post reply threads add-event', event)
+      // console.log('post reply threads add-event', event)
       this.$emit('add-event', event)
     },
 

@@ -52,7 +52,16 @@
       <span v-if='!selectedWallet'>please select a wallet</span>
       <span v-else-if='!isInvoice && selectedWallet && tipAmount === 0'>please enter an amount greater than 0</span>
       <span v-else-if='!isInvoice && selectedWallet && !tipAmount'>please enter an amount</span>
-      <q-btn v-else spread outline class='full-width' label='open wallet' color="primary" v-close-popup @click.stop='openInWallet()' />
+      <q-btn
+        v-else
+        spread
+        outline
+        class='full-width'
+        :label='(hasWebLn && selectedWallet.prefix === "lightning:") ? "pay" : "open wallet"'
+        color="primary"
+        v-close-popup
+        @click.stop='openInWallet()'
+      />
     </div>
   </div>
 </template>
@@ -61,7 +70,7 @@
 import { defineComponent } from 'vue'
 import helpersMixin from '../utils/mixin'
 import {Notify} from 'quasar'
-import { requestInvoice } from 'lnurl-pay'
+// import { requestInvoice } from 'lnurl-pay'
 import BaseSelect from 'components/BaseSelect.vue'
 
 export default defineComponent({
@@ -77,6 +86,8 @@ export default defineComponent({
       required: true,
       default: '',
     },
+    pubkey: {type: String, default: null},
+    bolt11: {type: Object, default: null},
     extended: {
       type: Boolean,
       requred: false,
@@ -103,6 +114,11 @@ export default defineComponent({
           name: 'system default',
           prefix: 'lightning:',
           image: 'default.png',
+        },
+        {
+          name: 'browser extension (webln)',
+          prefix: 'lightning:',
+          image: 'webln.jpg',
         },
         {
           name: 'Strike',
@@ -150,6 +166,7 @@ export default defineComponent({
           image: 'bbw.jpg',
         },
       ],
+      hasWebLn: false,
       focusAmount() {
         setTimeout(async () => {
           await this.$nextTick()
@@ -171,6 +188,7 @@ export default defineComponent({
 
   mounted() {
     this.selectedWallet = this.wallets.find(wallet => wallet.name === this.$store.state.config.preferences.lightningTips.lastWallet)
+    this.hasWebLn = window.webln
   },
 
   methods: {
@@ -201,61 +219,75 @@ export default defineComponent({
       }
 
       this.loadingInvoice = true
-      const invoice = await this.getInvoice(this.tipAmount)
+      const invoice = await this.getInvoice(this.lnString, this.tipAmount)
 
-      let lnbcLink = document.createElement('a')
-      lnbcLink.href = `${prefix}${invoice}`
-      lnbcLink.style.height = 0
-      lnbcLink.style.display = 'none'
-      lnbcLink.onclick = (e) => {
-        e.stopPropagation()
+      if (invoice.startsWith('lnurl')) {
+        Notify.create({
+          message: `invoice couldn't be fetched for ${this.$store.getters.displayName(this.pubkey)}, please an different pay method`
+        })
+        this.loadingInvoice = false
+        return
       }
-      this.$refs.walletPicker.appendChild(lnbcLink)
-      setTimeout(() => lnbcLink.click(), 200)
+
+      if (prefix === 'lightning:' && window.webln && invoice.startsWith('lnbc')) {
+        try {
+          await window.webln.sendPayment(invoice)
+          Notify.create({
+            message: `${this.bolt11 ? this.bolt11.amount : this.tipAmount} sats sent`
+          })
+        } catch {
+          Notify.create({
+            message: `payment unsuccessful`
+          })
+        }
+      } else {
+        window.open(`${prefix}${invoice}`, '_self')
+      }
 
       this.loadingInvoice = false
     },
 
-    async getInvoice(amount) {
-      if (this.lnString.toLowerCase().indexOf('lnbc') === 0) {
-        return this.lnString
-      }
+    // async getInvoice(lnString, amount) {
+    //   if (lnString.toLowerCase().indexOf('lnbc') === 0) {
+    //     return lnString
+    //   }
 
-      if (!amount) {
-        return this.lnString
-      }
+    //   if (!amount) {
+    //     return lnString
+    //   }
 
-      try {
-        const { invoice } = await requestInvoice({
-          lnUrlOrAddress: this.lnString,
-          tokens: amount, // satoshis
-          fetchGet: (req) => {
-            let url = `https://proxy.astral.ninja/${req.url}`
+    //   try {
+    //     const { invoice } = await requestInvoice({
+    //       lnUrlOrAddress: lnString,
+    //       tokens: amount, // satoshis
+    //       fetchGet: (req) => {
+    //         let url = `https://proxy.astral.ninja/${req.url}`
 
-            if (req.params) {
-              url += '?'
-              url += new URLSearchParams(req.params)
-            }
+    //         if (!req.params) req.params = { amount }
+    //         if (req.params) {
+    //           url += '?'
+    //           url += new URLSearchParams(req.params)
+    //         }
 
-            return fetch(url)
-              .then((res) => res.json())
-              .catch((err) => {
-                Notify.create({
-                  message: 'Error fetching invoice from LNURL. ' + err.toString()
-                })
-              })
-          }
-        })
+    //         return fetch(url)
+    //           .then((res) => res.json())
+    //           .catch((err) => {
+    //             Notify.create({
+    //               message: 'Error fetching invoice from LNURL. ' + err.toString()
+    //             })
+    //           })
+    //       }
+    //     })
 
-        return invoice
-      } catch (e) {
-        Notify.create({
-          message: 'Error fetching invoice from LNURL. ' + e.toString()
-        })
+    //     return invoice
+    //   } catch (e) {
+    //     Notify.create({
+    //       message: 'Error fetching invoice from LNURL. ' + e.toString()
+    //     })
 
-        return this.lnString
-      }
-    }
+    //     return this.lnString
+    //   }
+    // }
   }
 })
 </script>

@@ -19,6 +19,7 @@ import {
 } from '../query'
 import {getPubKeyTagWithRelay} from '../utils/helpers'
 import {metadataFromEvent} from '../utils/event'
+import * as helpersMixin from '../utils/mixin'
 
 export function initKeys(store, keys) {
   // passing no arguments will cause a new seed to be generated
@@ -157,7 +158,6 @@ export async function addEvent(store, {event, relay = null}) {
 
 export async function sendPost(store, {message, tags = [], kind = 1}) {
   if (message.length === 0) return
-  tags.push(['client', 'astral'])
 
   try {
     const unpublishedEvent = {
@@ -185,7 +185,6 @@ export async function sendPost(store, {message, tags = [], kind = 1}) {
 
 export async function sendChatMessage(store, {now, pubkey, text, tags}) {
   if (text.length === 0) return
-  tags.push(['client', 'astral'])
 
   let ciphertext = '???'
   try {
@@ -352,6 +351,7 @@ const debouncedStreamUserProfile = debounce(async (store, users) => {
 
 let profilesInUse = {}
 export async function useProfile(store, {pubkey}) {
+  if (!helpersMixin.default.methods.isKey(pubkey)) return
   if (pubkey in store.state.profilesCache) {
     // we don't fetch again, but we do commit this so the LRU gets updated
     store.commit('addProfileToCache', {

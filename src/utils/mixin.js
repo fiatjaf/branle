@@ -7,8 +7,10 @@ import {decrypt} from 'nostr-tools/nip04'
 // import { decode, encode } from 'bech32-buffer'
 import { bech32 } from 'bech32'
 import * as DOMPurify from 'dompurify'
-import { utils } from 'lnurl-pay'
+// import { utils } from 'lnurl-pay'
 import { Buffer } from 'buffer'
+import {Notify} from 'quasar'
+import { requestInvoice, utils } from 'lnurl-pay'
 const { formatDate } = date
 
 
@@ -300,7 +302,7 @@ export default {
         if (prefix === 'nsec') this.watchOnly = false
         return this.isKey(this.bech32ToHex(key))
       } catch (error) {
-        console.log('isBech32Key error: ', error)
+        // console.log('isBech32Key error: ', error)
       }
       return false
     },
@@ -311,7 +313,7 @@ export default {
         let buffer = Buffer.from(bech32.fromWords(words))
         return this.toHexString(buffer)
       } catch (error) {
-        console.log('bech32ToHex error: ', error)
+        // console.log('bech32ToHex error: ', error)
       }
       return ''
     },
@@ -354,7 +356,6 @@ export default {
       try {
         let url = utils.decodeUrlOrAddress(lnurl)
         if (!url) return null
-        console.log('lnurlToLnAddr', url)
         let lnAddrRegex = /^https:\/\/(?<domain>[a-zA-z0-9.]+)\/.well-known\/lnurlp\/(?<user>[a-zA-Z0-9_-]+)/
         let lnAddrMatch = url.match(lnAddrRegex)
         if (lnAddrMatch) return `${lnAddrMatch.groups.user}@${lnAddrMatch.groups.domain}`
@@ -375,6 +376,48 @@ export default {
         // console.log('lnAddrToLnurl error: ', error, ' for ', lnAddr)
       }
     },
+    async getInvoice(lnString, amount) {
+      if (lnString.toLowerCase().indexOf('lnbc') === 0) {
+        return lnString
+      }
+
+      if (!amount) {
+        return lnString
+      }
+
+      try {
+        const { invoice } = await requestInvoice({
+          lnUrlOrAddress: lnString,
+          tokens: amount, // satoshis
+          fetchGet: (req) => {
+            let url = `https://proxy.astral.ninja/${req.url}`
+
+            if (req.params) {
+              if (url.includes('?')) url += '&'
+              else url += '?'
+              url += new URLSearchParams(req.params)
+            }
+
+            // console.log('getInvoice', req, url)
+            return fetch(url)
+              .then((res) => res.json())
+              .catch((err) => {
+                Notify.create({
+                  message: 'Error fetching invoice from LNURL. ' + err.toString()
+                })
+              })
+          }
+        })
+
+        return invoice
+      } catch (e) {
+        Notify.create({
+          message: 'Error fetching invoice from LNURL. ' + e.toString()
+        })
+
+        return this.lnString
+      }
+    }
   }
 }
 

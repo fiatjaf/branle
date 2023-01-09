@@ -326,7 +326,7 @@ export default defineComponent({
 
     setReplyEvent(event) {
       this.replyEvent = event
-      console.log('event', event, this.replyEvent)
+      // console.log('event', event, this.replyEvent)
     },
 
     resizePostEntryPlaceholder() {
@@ -440,7 +440,17 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* Hide scrollbar for Chrome, Safari and Opera */
+body::-webkit-scrollbar,
+::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  -webkit-appearance:none
+}
+body,
 #middle-page .q-page-container {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 #post-entry {
   border-top: 1px solid var(--q-accent);

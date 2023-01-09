@@ -122,7 +122,7 @@ export default defineComponent({
         },
         {
           name: 'Strike',
-          prefix: 'strike:',
+          prefix: 'strike:lightning:',
           image: 'strike.jpg',
         },
         {

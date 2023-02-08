@@ -15,7 +15,7 @@ const getMainnetRelays = () => {
     ['wss://nostr.onsats.org', '', ''],
     ['wss://nostr-relay.untethr.me', '', ''],
     ['wss://nostr-relay.wlvs.space', '', ''],
-    ['wss://nostr.bitcoiner.social', '', ''],
+    ['wss://offchain.pub', '', ''],
     ['wss://nostr.openchain.fr', '', ''],
     ['wss://nostr.drss.io', '', '']
   ]
